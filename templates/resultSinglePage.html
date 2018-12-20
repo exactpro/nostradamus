@@ -1,0 +1,186 @@
+<!--
+/*******************************************************************************
+* Copyright 2009-2018 Exactpro (Exactpro Systems Limited)
+* 
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+* 
+*     http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+******************************************************************************/
+-->
+
+<!DOCTYPE html>
+<html>
+<head>
+   <!-- Bootstrap -->
+    <link href="{{url_for('static',filename='style/bootstrap.min.css')}}" rel="stylesheet">
+    <link href="{{url_for('static',filename='style/jasny-bootstrap.min.css')}}" rel="stylesheet">
+    <!-- Google Fonts / Icons -->
+    <link href="{{url_for('static',filename='style/fonts/roboto.css')}}" rel="stylesheet">
+    <!-- Custom styles -->
+    <link href="{{url_for('static',filename='style/style1.css')}}" rel="stylesheet">
+    <link href="{{url_for('static',filename='style/style.css')}}" rel="stylesheet">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon.png') }}">
+    <!-- Menu styles -->      
+    <link rel="stylesheet" href="{{url_for('static',filename='style/sidenav.min.css')}}" type="text/css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+    <title>Results | Nostradamus</title>
+</head>
+<div id="info">.</div>
+<script id="json">"{{ json }}"</script>
+<body>
+<div class="loadDiv" id="loadDiv">
+ <!-- Header -->
+<section class="navbar-fixed-top">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-7 logo-block-header">
+                <img src="{{url_for('static',filename='img/logo_dark.png')}}" />
+                <span class="version">Portable</span>
+            </div>
+            <div class="col-md-4 user-info-block">
+            </div>
+            <!-- Menu Button-->
+                  <div class="col-md-1 menu-btn-block">
+                    <a href="javascript:;" class="toggle" id="sidenav-toggle">
+                      <i class="material-icons menu-closed">format_align_right</i>
+                      <i class="material-icons menu-hover">menu</i>
+                      <i class="material-icons menu-opened">close</i>
+                      </a>
+                  </div>
+        </div>
+    </div>
+</section>
+
+<!-- Menu -->
+      <nav class="sidenav" data-sidenav data-sidenav-toggle="#sidenav-toggle">
+        <ul class="sidenav-menu">
+         <li>
+           <form id="Analysis & Training" class="form-content form-horizontal" action = "/" method = "POST">
+                <a id="menu-analysis-train-link" href="#" onclick="clearFileNameLocalStorage();document.getElementById('Analysis & Training').submit();" class="not-dropdown">
+                  <span class="sidenav-link-title">Analysis &amp; Training</span>
+                </a>
+            </form>
+          </li>
+          <li>
+            <a id="menu-predictions-link" href="javascript:;" data-sidenav-dropdown-toggle>
+              <span class="sidenav-link-title">Predictions</span>
+              <span class="sidenav-dropdown-icon show" data-sidenav-dropdown-icon>
+                <i class="material-icons">arrow_drop_down</i>
+              </span>
+              <span class="sidenav-dropdown-icon" data-sidenav-dropdown-icon>
+                <i class="material-icons">arrow_drop_up</i>
+              </span>
+            </a>
+
+            <ul class="sidenav-dropdown ul-dropdown" data-sidenav-dropdown>
+              <li data-toggle="tooltip" data-placement="top" title="Multiple description mode page is under construction">
+              <form id="multiple descriptions mode" class="form-content form-horizontal" action = "/multipleMod" method = "POST">
+                  <a id="menu-multiple-descr-mode" href="#" onclick="document.getElementById('multiple descriptions mode').submit();" class="disabled" >Multiple description mode</a>
+                  </form></li>
+              <li>
+              <form id="single description mode" class="form-content form-horizontal" action = "/singleMod" method = "POST">
+                  <a id="menu-single-descr-mode" href="#" onclick="document.getElementById('single description mode').submit();">Single description mode</a></form></li>
+            </ul>
+          </li>
+        </ul>
+  </nav>
+ 
+ <!-- Main part of Results Page -->
+
+ <section class="main-section results">
+     <div class="container">
+        <form id="predictionForm">
+         <div class="row">
+            <div class="col-md-12">
+                <textarea required class="form-control descr" rows="5" type="text" id="descr" name="descr" placeholder="Your bug report description"></textarea>
+             </div>
+         </div>
+         <div class="row" id="Recommendations">
+             <div class="col-md-12">
+                 <div class="title">Recommendations:</div>
+             </div>
+         </div>
+         <div class="row" id="Priority_Histogram">
+             <div class="col-md-6">
+                 <div class="subtitle" >
+                  Priority Histogram</div>
+                  <canvas id="priority_hist"></canvas>
+             </div>
+             <div class="col-md-6">
+                 <div class="subtitle">TTR Histogram</div>
+                <canvas id="ttr_hist"></canvas>
+             </div>
+         </div>
+         <div class="row" id="wontReject">
+            <div class="col-md-6">
+            <div class="subtitle" text-xs-center>Wont Fix Pie Chart</div></div>
+            <div class="col-md-6">
+                <div class="subtitle" text-xs-center>Reject Pie Chart</div>
+            </div>
+         </div>
+         <div class="row" id="wontRejectCanv">
+             <div class="col-md-offset-1 col-md-5">
+                 <canvas id="wont_fix_hist"></canvas>
+             </div>
+             <div class="col-md-5">
+                 <canvas id="reject_hist"></canvas>
+             </div>
+         </div>
+         <div class="row" id="Area_Histogram">
+             <div class="col-md-12">
+                 <div class="subtitle">Area Histogram</div>
+          <canvas id="area_hist"></canvas>
+             </div>
+         </div>
+         <div class="row" id="advice">
+             <div class="col-md-12">
+                 <div class="subtitle" >Advice</div>
+                 <textarea id="recom" class="form-control textarea_readonly mb-20" readonly=true name="predlab"></textarea>
+             </div>
+         </div>
+         <div class="row">
+             <div class="col-md-12">
+                 <span id="prio" hidden></span>
+		          <span id="ttr" hidden></span>
+		          <span id="wontfix" hidden></span>
+		          <span id="reject" hidden></span>
+		          <span id="areas" hidden></span>
+             </div>
+            </div>
+         </form>
+     </div>
+     
+ </section>
+
+ <div class="ArticleImgHP-container" id="load">
+     <img class="ArticleImgHP"/>
+ </div>
+
+ <!-- Scripts -->
+ <script src="{{url_for('static',filename='js/jquery.min.js')}}"></script>
+  <script src="{{url_for('static',filename='js/layout-bootstrap.js')}}"></script>
+  <!-- Bootstrap -->
+<script src="{{url_for('static',filename='js/bootstrap.min.js')}}"></script>
+  <!-- Chart Scripts -->
+  <script src="{{url_for('static',filename='js/Chart.min.js')}}"></script>
+  <script src="{{url_for('static',filename='js/nostradamus_chart_jsonAJAX.js')}}"></script>
+<!-- Menu -->
+<script src="{{url_for('static',filename='js/sidenav.min.js')}}"></script>
+<script>$('[data-sidenav]').sidenav();</script>
+ <script>
+        function clearFileNameLocalStorage() {
+            sessionStorage.removeItem("fName");
+            sessionStorage.removeItem("finalName");
+          };
+</script>
+</div>
+</body>
+</html>

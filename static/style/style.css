@@ -1,0 +1,139 @@
+/*******************************************************************************
+* Copyright 2009-2018 Exactpro (Exactpro Systems Limited)
+* 
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+* 
+*     http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+******************************************************************************/
+
+/* body */
+
+    #inspire {
+          background-color: #f0f4f7;
+      }
+    button {
+          color: #1e2736;
+          text-decoration: none;
+      }
+    button:hover {
+          text-decoration: underline;
+      }
+
+    .valign {
+          display: flex;
+          align-items: center;
+      }
+/* header */
+
+    .toolbar {
+          box-shadow: none !important; 
+      }  
+    .toolbar__content {
+              height: 150px !important; 
+              display: flex;
+              justify-content:space-between;
+          }
+ 
+    .version {
+              text-align: right;
+              font-size: 12px;
+          }
+    .version, .logout {
+              color: #1e2736 !important;
+          } 
+    .user_wrap {
+              display: flex;
+              flex-direction: column;
+              height: 100%;
+              width: 200px;
+              justify-content: space-around;
+              border-left: solid 4px #f0f4f7;
+          }
+    .user {
+              text-align: center;
+              font-size: 18px;
+          }
+    .logout_block {
+              display: flex;
+              justify-content: center;
+          }
+    .logout {
+              font-size: 18px;
+              font-weight: 500;
+          }
+    .form_logout {
+            height:100%;
+    }
+/* login page*/
+
+        .login_error {
+        color:#ff5252;
+        text-align:center;
+        }
+
+        /*.p1{
+        color:red;
+        position: absolute;
+    	top: 155%;
+    	left: 50%;
+    	margin: -150px 0 0 -150px;
+    	width:300px;
+    	height:300px;
+         }*/
+
+    .logo_wrap {
+         text-align: center; 
+      }
+    .login_title {
+          height: 60px;
+      }
+    .login_title>p {
+          margin-bottom:0;
+          text-align:center;
+      }
+
+/* content */ 
+    .card {
+          border-radius: 0px;
+          box-shadow: none;
+    } 
+    .btn__content {
+          padding: 0;
+    }    
+    #submit_btn, #descr_btn {
+          background-color: #3f979f;
+          color: white; 
+          border-radius: 0; 
+          height: 70px;
+      }
+    .descr_title {
+          height: 80px;
+      }
+    .descr_title>p {
+          margin-bottom:0;
+          text-align:center;
+      } 
+    .descr {
+        font-size: 17px;
+        line-height: 28px;
+    }  
+    .container.grid-list-md .layout .flex {
+        padding: 0;
+    }
+    .btn--block {
+        margin: 0;
+    }    
+    .title {
+        font-weight: 300;
+    }
+    .elevation-12 {
+        box-shadow: none !important;
+    }
