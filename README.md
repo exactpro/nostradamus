@@ -16,3 +16,5 @@ Tool for analyzing software defect reports extracted from defect repositories
 
 ## Execution
 python3 app.py
+
+Please find the manual in the Wiki section  
