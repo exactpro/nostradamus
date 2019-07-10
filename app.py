@@ -1,15 +1,16 @@
-#!/usr/bin/python3.4
+#!/usr/bin/python3.5
+
 
 '''
 /*******************************************************************************
-* Copyright 2016-2018 Exactpro (Exactpro Systems Limited)
-* 
+* Copyright 2016-2019 Exactpro (Exactpro Systems Limited)
+*
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
-* 
+*
 *     http://www.apache.org/licenses/LICENSE-2.0
-* 
+*
 * Unless required by applicable law or agreed to in writing, software
 * distributed under the License is distributed on an "AS IS" BASIS,
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,1560 +20,1373 @@
 '''
 
 
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect, url_for
 from flask_bootstrap import Bootstrap
-import numpy
-import pandas
-import datetime
-import calendar
+from flask import session
+from flask_redisSession import RedisSession
+from flask_sessionstore import Session
+from datetime import timedelta
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.feature_extraction import text 
+from sklearn.feature_extraction import text
 from nltk.stem.snowball import SnowballStemmer
-import pickle
-from sklearn.feature_selection import (chi2, SelectKBest)
-from sklearn import feature_selection
-import matplotlib as plt
-import matplotlib.pyplot as plt
-from io import BytesIO
-import base64
-import configparser
-import os
-
-#from sklearn.metrics import classification_report
-from sklearn.model_selection import train_test_split, KFold
-#from sklearn import cross_validation
-from imblearn.over_sampling import SMOTE
-from imblearn.pipeline import Pipeline
-from sklearn.svm import SVC
-from werkzeug.utils import secure_filename
+import hashlib
 import json
-import scipy.stats as stats
-from collections import OrderedDict
 from datetime import datetime as dt
-from lxml import objectify
 import re
-import csv
-import traceback
 import logging
 from flask import send_from_directory
-from multiprocessing import cpu_count, Pool
+import os
+import shutil
+from pathlib import Path
+from werkzeug.utils import secure_filename
+from psycopg2.extras import Json
+import psycopg2
+import csv
+from globals_field import mandatory_fields, data_types, referring_to, requared_files
+from decimal import Decimal
+from exactpro import file_expire
+from exactpro.config_parser import SettingProvider, ConfigCreator
+from configparser import ConfigParser
+from exactpro.data_checker import Checker
+from exactpro.xml_parser import FileSwitcher
+from exactpro.markup_data import Markup
+from exactpro.informer import StatInfo
+from exactpro.charts import *
+from exactpro.filter import Filter
+from exactpro.file import File, backup_models, roll_back_models, remove_backup
+from exactpro.model import Model, Insert
+from exactpro.my_multithread import Multithreaded
+from exactpro.file import ReduceFrame
+from exactpro.exceptions import IncorrectValueError, NotExist, NotExistModel, NotExistFile, NotExistField, LDAPError
 
-global origFrame
-global newData
-global murkup
-global SignificanceTop
-global origFreqTop
-global asigneeReporterFin
-global statInfo
-global categoricDict
-global clearDictionary
-global tempFiles
-global description1
-global path
-global columns
-columns = []
-path = 'SingleMod.ini'
 
-config = configparser.ConfigParser()    
+# class for saving global information
+class GuardianState:
+    def __call__(self):
+        return self.__dict__
 
-config.read('myconf.ini')
-mymodel=config['Path']['models']
-myvocab=config['Path']['vocab']
+
+# use this variables to set name of temp frames and link to file_expire module variables
+frame_store = GuardianState()
+frame_store.orig_frame = 'orig_frame'
+frame_store.new_data = 'new_data'
+frame_store.tr_frame = 'tr_frame'
+frame_store.frame_multiple = 'frame_multiple'
+
+file_expire.tr_frame = frame_store.tr_frame
+file_expire.new_data = frame_store.new_data
+file_expire.orig_frame = frame_store.orig_frame
+file_expire.frame_multiple = frame_store.frame_multiple
+
+# variables for data storing
+ldap_store = GuardianState()
+db_store = GuardianState()
+version_store = GuardianState()
+file_info_store = GuardianState()
+
+myStopWords = ['monday', 'mon', 'tuesday', 'tue', 'wednesday', 'wed', 'thursday', 'thu', 'friday', 'fri', 'saturday',
+               'sat',
+               'sunday', 'sun', 'january', 'jan', 'february', 'feb', 'march', 'mar', 'april', 'may', 'june', 'july',
+               'august',
+               'aug', 'september', 'sep', 'octomber', 'oct', 'november', 'nov', 'december', 'dec']
+
 
 class StemmedTfidfVectorizer(TfidfVectorizer):
     def build_analyzer(self):
         analyzer = super(TfidfVectorizer, self).build_analyzer()
-        return lambda doc: (stemmer.stem(w) for w in analyzer(doc))
-
-p00 = r'<((th)|(li)|(span)|p|(td)|(tr)|(pre)|(tbody)|(div)|(p)|(b)|(thead))>.*'
-p000 = r'.*((\/th)|(\/li)|(\/p)|(\/span)|(span\/)|(p\/)|(td\/)|(tr\/)|(pre\/)|(tbody\/)|(div\/)|(p\/)|(br\/)|(thead\/))>'
-p0000 = r'.*New'
-p0 = r'<table'
-p1 = r'&lt;p&gt;'
-p2 = r'</?p>'
-p3 = r'&amp;'
-p4 = r'&gt;'
-p5 = r'&lt;'
-p7 = ('Original Message.*\\n(>\\s)?Subject:.*\\n(>\\s)?Date:.*\\n(>\\s)?From:.*\\n(>\\s)?To:.*')
-p8 = (
-    '\\n(>\\s)?Service Level:.*\\n(>\\s)?Product:.*\\n(>\\s)?Response Time:.*\\n(>\\s)?Time of Expiration:.*\\n(>\\s)?Created:.*\\n(>\\s)?URL:.*\\n(>\\s)?Subject:.*')
-p9 = ('[[(][0-9][0-9]:[0-9][0-9].*(?:(PM)|(AM)).*:')
-
-p10 = (
-    '\\n(>\\s)?Resolving.*\\n(>\\s)?Connecting.*\\n(>\\s)?HTTP.*\\n(>\\s)?(\\s)+HTTP.*\\n(>\\s)?(\\s)+Date:.*\\n(>\\s)?(\\s)+Server:.*(?:(\\n(>\\s)?(\\s)+Location:.*\\n(>\\s)?(\\s)+Content-Length:.*\\n(>\\s)?(\\s)+Keep-Alive:.*\\n(>\\s)?(\\s)+Connection:.*\\n(>\\s)?(\\s)+Content-Type:.*(\\n(>\\s)?(\\s)+Location:.*)?)|(\\n(>\\s)?(\\s)+X-Powered-By:.*\\n(>\\s)?(\\s)+Content-Type:.*\\n(>\\s)?(\\s)+(?:(Content-Language:)|(Content-Length:)).*(\\n(>\\s)?(\\s)+Set-Cookie:.*)?(\\n(>\\s)?(\\s)+Via:.*)?(\\n(>\\s)?(\\s)+Connection:.*)?))(.*Length:.*)?')
-p11 = (
-    '(?:(.*ALERT.*)|(?:(.*ERROR.*)|(?:.*ERROR.*|(?:.*INFO.*|(?:.*WARN.*|(?:.*CLOSE_WAIT.*|(?:.*BLOCKED.*|(?:.*DEBUG.*|.*WAITING.*))))))))')
-p12 = (
-    '(?:(((\\n.*ERROR.*)+)?((.*ERROR.*\\n)+)?((.*[a-zA-Z]Exception.*\\n)+)?((.*[a-zA-Z]Error.*\\n)+)?((.*at .*[(].*(?:java|(?:Unknown Source|Native Method)).*[)].*)+))|((((?:((\\n.*ERROR.*)+)|((.*ERROR.*\\n)+)))+)((((.*[a-zA-Z]Exception.*\\n)+)))))')
-p13 = ('.*(?:waiting|locked).*0x.*[(].*[)].*')
-p14 = ('.*0x.*0x.*')
-p15 = ('.*(?:(".*ActiveMQ.*")|(".*Thread-7.*")).*')
-p16 = (
-    '([a-zA-Z]+\.[a-zA-Z]+\.[a-zA-Z]+[(](?:.*java.*|(?:.*Native Method.*|.*No such file or directory.*))[)])')
-p17 = ('.*[Cc]aused by.*java.*\\n(.*[Cc]aused by.*java.*\\n)+')
-p18 = ('.*at line.*\\n.*at line.*\\n((.*at line.*\\n)+)')
-p19 = ('((.*[0-9][0-9]:[0-9][0-9]:[0-9][0-9].*[[]error[]].*client.*)+)')
-p20 = ('.*java.*[(].*[)].*\\n.*java.*[(].*[)].*\\n')
-p21 = ('.*[(].*".*".*=>.*".*".*[)].*')
-
-p22 = ('[/][^\\s]*=[^\\s]*[/][^\\s]*=[^\\s]*')
-p23 = ('[^\\s]+[.][^\\s"]+')
-p24 = ('{{.*}}')  #
-p25 = ('[^\\s]+[/][^\\s]+')
-p26 = ('.*Event.*receive.*from remote server.*\\nInternal Server Error.*')
-
-p27 = ('(?:({panel})|(?:({code[^\\s]*})|(?:({noformat})|({quote}))))')
-
-p28 = ('[A-Z][a-z]+[A-Z][a-z]+[(].*[)]')
-
-p29 = ('[^\\s]*@[^\\s]*')
-p30 = ('[A-Z]+?[a-z]+[A-Z][a-z]+[^\\s]*')
-p31 = ('[0-9]+.*has been deprecated')
-
-p32 = ('@[^\\s]*')
-p33 = ('[.][a-z]+[^\\s]*')
-p34 = ('<[^\\s]*>')
-p35 = ('<[[].*[]]>')
-p36 = ('[[]disconnected.*[/][]]')
-p37 = ('[-][-][a-z]*')
-p38 = ('try.*{.*}')
-p39 = ('catch.*{.*}')
-p40 = ('{.*throw.*}')
-p41 = ('check.*{.*}')
-p42 = ('public void')
-p43 = ('private void')
-p44 = ('[[][[].*[]][]]')
-p45 = ('<.*[/]>')
-p46 = (
-    '(?:a2p|ac|addgroup|adduser|agrep|alias|apropos|apt-cache|apt-get|aptitude|ar|arch|arp|as|aspell|at|awk|basename|bash|bc|bdiff|bfs|bg|biff|break|bs|bye|cal|calendar|cancel|cat|cc|cd|cfdisk|chdir|checkeq|checknr|chfn|chgrp|chkey|chmod|chown|chroot|chsh|cksum|clear|cmp|col|comm|compress|continue|cp|cpio|crontab|csh|csplit|ctags|cu|curl|cut|date|dc|dd|delgroup|deluser|depmod|deroff|df|dhclient|diff|dig|dircmp|dirname|dmesg|dos2unix|dpkg|dpost|du|echo|ed|edit|egrep|eject|elm|emacs|enable|env|eqn|ex|exit|expand|expr|fc|fdisk|fg|fgrep|file|find|findsmb|finger|fmt|fold|for|foreach|free|fsck|ftp|fuser|gawk|getfacl|gpasswd|gprof|grep|groupadd|groupdel|groupmod|gunzip|gview|gvim|gzip|halt|hash|hashstat|head|help|history|host|hostid|hostname|id|ifconfig|ifdown|ifquery|ifup|info|init|insmod|iostat|ip|isalist|iwconfig|jobs|join|keylogin|kill|killall|ksh|last|ld|ldd|less|lex|link|ln|lo|locate|login|logname|logout|losetup|lp|lpadmin|lpc|lpq|lpr|lprm|lpstat|ls|lsmod|lsof|lzcat|lzma|mach|mail|mailcompat|mailx|make|man|merge|mesg|mii-tool|mkdir|mkfs|mkswap|modinfo|modprobe|more|mount|mt|mv|myisamchk|mysql|mysqldump|nc|neqn|netstat|newalias|newform|newgrp|nice|niscat|nischmod|nischown|nischttl|nisdefaults|nisgrep|nismatch|nispasswd|nistbladm|nl|nmap|nohup|nroff|nslookup|od|on|onintr|optisa|pack|pagesize|parted|partprobe|passwd|paste|pax|pcat|perl|pg|pgrep|pico|pine|ping|pkill|poweroff|pr|printenv|printf|priocntl|ps|pstree|pvs|pwd|quit|rcp|readlink|reboot|red|rehash|rename|renice|repeat|replace|rgview rgvim|rlogin|rm|rmdir|rmmod|rn|route|rpcinfo|rsh|rsync|rview|rvim|s2p|sag|sar|scp|screen|script|sdiff|sed|sendmail|service|set|setenv|setfacl|sfdisk|sftp|sh|shred|shutdown|sleep|slogin|smbclient|sort|spell|split|startx|stat|stop|strftime|strip|stty|su|sudo|swapoff|swapon|sysklogd|tabs|tac|tail|talk|tar|tbl|tcopy|tcpdump|tcsh|tee|telinit|telnet|test|time|timex|todos|top|touch|tput|tr|traceroute|trap|tree|troff|tty|ul|umask|umount|unalias|uname|uncompress|unhash|uniq|unlink|unlzma|unpack|until|unxz|unzip|uptime|useradd|userdel|usermod|vacation|vgrind|vi|view|vim|vipw|visudo|vmstat|w|wait|wall|wc|wget|whatis|whereis|which|while|who|whoami|whois|write|X|Xorg|xargs|xfd|xhost|xinit|xlsfonts|xrdb|xset|xterm|xz|xzcat|yacc|yes|yppasswd|yum|zcat|zip|zipcloak|zipinfo|zipnote|zipsplit) -{1,2}\w+ \w*')
-
-p47 = (
-    r'\b(a2p|ac|addgroup|adduser|agrep|alias|apropos|apt-cache|apt-get|aptitude|ar|arch|arp|as|aspell|at|awk|basename|bash|bc|bdiff|bfs|bg|biff|break|bs|bye|cal|calendar|cat|cc|cd|cfdisk|chdir|checkeq|checknr|chfn|chgrp|chkey|chmod|chown|chroot|chsh|cksum|cmp|col|comm|compress|cp|cpio|crontab|csh|csplit|ctags|cu|curl|date|dc|dd|delgroup|deluser|depmod|deroff|df|dhclient|diff|dig|dircmp|dirname|dmesg|dos2unix|dpkg|dpost|du|echo|ed|egrep|eject|elm|emacs|env|eqn|ex|expr|fc|fdisk|fg|fgrep|findsmb|finger|fmt|foreach|fsck|ftp|fuser|gawk|getfacl|gpasswd|gprof|grep|groupadd|groupdel|groupmod|gunzip|gview|gvim|gzip|halt|hash|hashstat|hostid|ifconfig|ifdown|ifquery|ifup|init|insmod|iostat|ip|isalist|iwconfig|keylogin|kill|killall|ksh|last|ld|ldd|less|lex|link|ln|lo|logname|logout|losetup|lp|lpadmin|lpc|lpq|lpr|lprm|lpstat|ls|lsmod|lsof|lzcat|lzma|mach|mailcompat|mailx|mesg|miitool|mkdir|mkfs|mkswap|modinfo|modprobe|mount|mt|mv|myisamchk|mysqldump|nc|neqn|netstat|newalias|newform|newgrp|niscat|nischmod|nischown|nischttl|nisdefaults|nisgrep|nismatch|nispasswd|nistbladm|nl|nmap|nohup|nroff|nslookup|od|on|onintr|optisa|pack|pagesize|parted|partprobe|passwd|pax|pcat|perl|pg|pgrep|pico|pine|pkill|poweroff|pr|printenv|printf|priocntl|ps|pstree|pvs|pwd|rcp|readlink|red|rehash|renice|repeat|rgview|rgvim|rlogin|rm|rmdir|rmmod|rn|route|rpcinfo|rsh|rsync|rview|rvim|s2p|sag|sar|scp|sdiff|sed|sendmail|setenv|setfacl|sfdisk|sftp|sh|shred|slogin|smbclient|sort|spell|split|startx|stat|strftime|strip|stty|su|sudo|swapoff|swapon|sysklogd|tac|tar|tbl|tcopy|tcpdump|tcsh|tee|telinit|telnet|timex|todos|tput|tr|traceroute|trap|tree|troff|tty|ul|umask|umount|unalias|uname|uncompress|unhash|uniq|unlink|unlzma|unpack|until|unxz|unzip|uptime|useradd|userdel|usermod|vacation|vgrind|vi|vim|vipw|visudo|vmstat|w|wall|wc|wget|whatis|whereis|which|while|who|whoami|whois|X|Xorg|xargs|xfd|xhost|xinit|xlsfonts|xrdb|xset|xterm|xz|xzcat|yacc|yppasswd|yum|zcat|zip|zipcloak|zipinfo|zipnote|zipsplit)\b')
-p48 = ('[^\\s]*[0-9][^\\s]*')
-
-p49 = ('[^a-zA-Z\\s]+')
-p50 = ('\\sPM\\s')
-p51 = ('\\sAM\\s')
+        return lambda doc: (SnowballStemmer("english").stem(w) for w in analyzer(doc))
 
 
-p52 = ('(?:(\\sabstract\\s)|(\\sassert\\s))')
-p53 = ('(?:(\\sboolean\\s)|(\\sbreak\\s))')
-p54 = ('(?:(\\sbyte\\s)|(\\scase\\s))')
-p55 = ('(?:(\\scatch\\s)|(\\schar\\s))')
-p56 = ('(?:(\\sclass\\s)|(\\sconst\\s))')
-p57 = ('(?:(\\scontinue\\s)|(\\sdefault\\s))')
-p58 = ('(?:(\\sdo\\s)|(\\sdouble\\s))')
-p59 = ('(?:(\\selse\\s)|(\\senum\\s))')
-p60 = ('(?:(\\sfor\\s)|(\\sfloat\\s))')
-p61 = ('(?:(\\sgoto\\s)|(\\sif\\s))')
-p62 = ('(?:(\\sinstanceof\\s)|(\\sint\\s))')
-p63 = ('(?:(\\snew\\s)|(\\sprivate\\s))')
-p64 = ('(?:(\\sprotected\\s)|(\\spublic\\s))')
-p65 = ('(?:(\\sreturn\\s)|(\\sstatic\\s))')
-p66 = ('(?:(\\sstrictfp\\s)|(\\sswitch\\s))')
-p67 = ('(?:(\\sthis\\s)|(\\sthrow\\s))')
-p68 = ('(?:(\\sthrows\\s)|(\\stransient\\s))')
-p69 = ('(?:(\\stry\\s)|(\\svoid\\s))')
-p70 = ('(?:(\\svolatile\\s)|(\\swhile\\s))')
-p71 = ('(?:(\\strue\\s)|(\\sfalse\\s))')
-p72 = ('\\snull\\s')
-p73 = ('[a-zA-Z]+\'[a-zA-Z]+')
-p74 = ('\\s[a-zA-Z]\\s')
-p75 = ('\\s[A-Z]+\\s')
-p76 = ('.*undefined.*\\n.*undefined.*\\n.*undefined.*\\n.*undefined.*\\n.*undefined.*\\n')
-p77 = ('relay.*undefined.*\\n.*transport.*\\n.*undefined.*\\n.*undefined')
-p78 = ('drwxr xr.*')
-p79 = ('\\t\\t\\t\\t\\t\\soption.*\\n\\t\\t\\t\\t\\t\\soption.*\\n\\t\\t\\t\\t\\t\\soption.*\\n')
-p80 = ('\\t\\smodule option.*\\n\\t\\smodule option.*\\n\\t\\smodule option.*\\n')
-p81 = (
-    '\\s\\sFailed to load module\\s\\s\\sextension.*\\n.*\\n\\s\\sFailed to load module\\s\\s\\sextension.*\\n.*\\n')
-p82 = ('\\sdoes\\s')
-p83 = ('\\sdoesnt\\s')
-p84 = ('\\sive\\s')
-p85 = ('\\sdont\\s')
-p86 = ('\\shes\\s')
-p87 = ('\\sill\\s')
-p88 = ('\\sdid\\s')
-p89 = ('\\syoull\\s')
-p90 = ('\\sdoesn\\s')
-p91 = ('\\shaven\\s')
-p92 = ('\\sdon\\s')
-p93 = ('\\sisnt\\s')
+#   Flask startup
+def start_server():
+    app.run(debug=False)
 
-pattern0 = re.compile(r'({{.*?}})', re.DOTALL)
-pattern1 = re.compile(r'({code.*?{code})', re.DOTALL)
-pattern2 = re.compile(r'({noformat.*?{noformat})', re.DOTALL)
-pattern3 = re.compile(r'({panel.*?{panel})', re.DOTALL)
-pattern4 = re.compile(r'({quote.*?{quote})', re.DOTALL)
-pattern5 = re.compile(r'\\nmysql>.* sec[)]', re.DOTALL)
-pattern6 = re.compile(r'failure description:.*[{].*[}]', re.DOTALL)
-pattern7 = re.compile(r'[\\s][{][\\s].*[\\s][}][\\s]', re.DOTALL)
-pattern8 = re.compile(r'(?:https|http)://\w*\S*\d*', re.DOTALL)
-pattern9 = re.compile(r'\(\d{2}:.*?\n', re.DOTALL)
 
-p124 = r' fghfgh | cebd | jcmd | tx | seq | ute |fsvlmdsfvfn| trc | SLL |addToBATSG| cf | fw | Sl | id | cmd | pre '
-p126 = r'gzaa'
-p125 = r'(&lt.*)|(&lt.*&gt)|(.*&gt)'
-p00000 = r'<((li)|(span)|p|(td)|(tr)|(pre)|(tbody)|(div)|(p)|(b)|(thead)).*'
+def start_expire(other=None):
+    # other is flask process for session shutdown if redis service is not started
+    file_expire.start(other=other)
 
-remove_pat = [p126, p125, p00, p000, p00000, p0000, p0, p1, p2, p3, p4, p5, p7, p8, p9, p10, p11, p12, p13, p14, p15,
-         p16, p17, p18, p19, p20, p21,
-         p22, p23, p24, p25, p26, p27, p28, p29, p30, p31, p32, p33, p34, p35, p36, p37, p38, p39, p40, p41,
-         p42, p43, p44, p45, p46, p47
-    , p48, p49, p50, p51, p52, p53, p54, p55, p56, p57, p58, p59, p60, p61, p62, p63, p64, p65, p66, p67, p68,
-         p69, p70, p71, p72, p73,
-         p74, p75, p76, p77, p78, p79, p80, p81, p82, p83, p84, p85, p86, p87, p88, p89, p90, p91, p92, p93,
-         pattern0, pattern1,
-         pattern2, pattern3, pattern4, pattern5, pattern6, pattern7, pattern8, pattern9, p124]
-
-stemmer = SnowballStemmer("english")
-
-myStopWords = ['monday', 'mon', 'tuesday', 'tue', 'wednesday', 'wed', 'thursday', 'thu', 'friday', 'fri', 'saturday', 'sat',
-               'sunday', 'sun', 'january', 'jan', 'february', 'feb', 'march', 'mar', 'april', 'may', 'june', 'july', 'august',
-               'aug', 'september', 'sep', 'octomber', 'oct', 'november', 'nov', 'december', 'dec']
-
-def proc_text(text, col_class, name_model):
-    test_pro=text
-    for i in range(len(remove_pat)):
-        test_pro=re.sub(remove_pat[i],'', test_pro)
-    proba={}
-    load_model_test=pickle.load(open(mymodel+name_model+'.sav', 'rb'))
-    proba_=list(numpy.array(numpy.around(load_model_test.predict_proba([test_pro])[0],3), dtype=float).flatten())
-    proba_dic=dict(zip(col_class, proba_))
-    return proba_dic
-
-def build_prob_bar(dic, angle):    
-    plt.figure() 
-    ax = plt.axes() 
-    plt.tight_layout()
-    plt.ylabel('probability', fontsize=8, rotation_mode='anchor')
-    ax.yaxis.grid(which="major", color='r', linestyle='-')
-    plt.xticks(range(len(dic)), dic.keys(),rotation=angle, rotation_mode='anchor')    
-    plt.bar(range(len(dic)), dic.values(), align='center')
-    figfile = BytesIO()
-    plt.savefig(figfile, format='png')
-    figfile.seek(0)  
-    figdata_png = base64.b64encode(figfile.getvalue()).decode('utf-8').replace('\n', '')
-    figfile.close()
-    return figdata_png
-
-def build_prob_pie(mydict):  
-    plt.figure()
-    mypie=plt.pie([float(v) for v in mydict.values()], labels=[k for k in mydict.keys()],autopct=None)
-    figfile = BytesIO()
-    plt.savefig(figfile, format='png')
-    figfile.seek(0)  
-    figdata_png = base64.b64encode(figfile.getvalue()).decode('utf-8').replace('\n', '')
-    figfile.close()
-    return figdata_png
 
 app = Flask(__name__, static_url_path='/static')
-app.config.from_object(__name__)
-bootstrap = Bootstrap(app)
 
-@app.route('/',methods = ['POST', 'GET'])
+
+@app.errorhandler(413)
+def request_entity_too_large(error):
+    checker = Checker()
+    return render_template('filterPage.html', json=json.dumps({'username': session['username'],
+                                                                           'message': 'File size is bigger than maximum file size,'
+                                                                           ' maximum size is equal to {} mb'.format(file_info_store.max_file_size/1000**2),
+                                                                           'fields': session['fields'],
+                                                                           'inner': version_store.inner,
+                                                                           'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                                                                           'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)})), 413
+
+
+@app.route("/", methods=['POST', 'GET'])
+def home():
+    if version_store.inner == '1':
+        page_name = 'loginPage.html'
+    else:
+        page_name = 'loginPage_portable.html'
+    if request.method == 'POST':
+        try:
+            checker = Checker()
+            # check permission for user
+            if version_store.inner == '1':
+                config_reader = SettingProvider('myconf.ini')
+                if not os.path.exists('top_terms.csv'):
+                    raise NotExistModel('for single mod not exist {} file'.format('top_terms.csv'))
+                # read ldap settings
+                ldap_store.ad_domain_suffix = config_reader.get_setting(section='Path', setting='ad_domain_suffix', evaluate=False)
+                ldap_store.ad_server = config_reader.get_setting(section='Path', setting='ad_server', evaluate=False)
+                ldap_store.ad_search_tree = config_reader.get_setting(section='Path', setting='ad_search_tree', evaluate=False)
+                ldap_store.ad_security_group = config_reader.get_setting(section='Path', setting='ad_security_group', evaluate=False)
+                # read DB settings
+                db_store.dbname_insert = config_reader.get_setting(section='Path', setting='dbname_insert', evaluate=False)
+                db_store.dbname_admin = config_reader.get_setting(section='Path', setting='dbname_admin', evaluate=False)
+                db_store.user = config_reader.get_setting(section='Path', setting='user', evaluate=False)
+                db_store.password = config_reader.get_setting(section='Path', setting='password', evaluate=False)
+                db_store.devHost = config_reader.get_setting(section='Path', setting='devHost', evaluate=False)
+                db_store.host_local = config_reader.get_setting(section='Path', setting='host_local', evaluate=False)
+                db_store.prodHost = config_reader.get_setting(section='Path', setting='prodHost', evaluate=False)
+                db_store.port = config_reader.get_setting(section='Path', setting='port', evaluate=False)
+                db_store.connection_parameters_insert_local = {
+                    'dbname': db_store.dbname_insert,
+                    'user': db_store.user,
+                    'password': db_store.password,
+                    'host': db_store.host_local
+                }
+                check = checker.check_user(request.form['username'], request.form['password'], ldap_store)
+                if check:
+                    session.permanent = True  # set time delta for expired session
+                    session['username'] = request.form['username']
+                    session['password'] = hashlib.md5(str.encode(request.form['password'])).hexdigest()
+                else:
+                    raise LDAPError('You have not permission for work with nostradamus')
+            else:
+                session.permanent = False
+                session['username'] = 'user'
+            
+            config_reader = SettingProvider('myconf.ini')
+            session['description1'] = ''  # save description for single mod
+            session['tempFiles'] = []  # store temp files to del them after logout
+            version_store.session_id = session.session_id if version_store.inner == '1' else session.sid[:32]
+            # check that mandatory config files are exist
+            session['requared_files'] = config_reader.get_setting(section='Path', setting='required_files', evaluate=True)
+            if set(requared_files).issubset(set(session['requared_files'].keys())):
+                for path in session['requared_files'].values():
+                    if not os.path.exists(path):
+                        raise NotExistFile('please create {} file in nostradamus folder'.format(path))
+            else:
+                raise IncorrectValueError('please use all required files(regularExpression.csv, '
+                                            'attributes.ini, myconf.ini) in config')
+            # geting file store settings
+            file_info_store.upload_folder = os.path.abspath(os.curdir)+'/files'
+            # creating /files folder if this folder doesn't exist
+            if not os.path.exists(file_info_store.upload_folder):
+                # use os.chmod to grant required permissions
+                os.makedirs(file_info_store.upload_folder)
+                os.chmod(file_info_store.upload_folder, 0o775)
+
+            
+            # getting available file formats from config file
+            file_info_store.allowed_extensions = set(config_reader.get_setting(section='Path',
+                                                                                setting='allowed_extensions',
+                                                                                evaluate=False).split(','))
+            try:
+                # getting the max file size (bytes)
+                file_info_store.max_file_size = float(config_reader.get_setting(section='Path', setting='max_file_size', evaluate=True))*1000**2
+            except TypeError as e:
+                return render_template(page_name, json=json.dumps({'error': 'incorrect value for max_file_size in myconf.ini',
+                                                            'mandatory_fields': mandatory_fields,
+                                                            'data_types': data_types,
+                                                            'referring_to': referring_to}))
+            # log learning process
+            try:
+                file_info_store.log_train = int(config_reader.get_setting(section='Path', setting='log_train', evaluate=False))
+                if file_info_store.log_train not in (0, 1):
+                    raise IncorrectValueError('')
+            except ValueError:
+                raise ValueError('please use only 0 or 1 for log parameter values')
+
+            # specify location where Flask will store session data
+            app.config['UPLOAD_FOLDER'] = file_info_store.upload_folder
+            # app.config['MAX_CONTENT_LENGTH'] = file_info_store.max_file_size
+
+            # check that attributes.ini config is correct
+            attributes_setting_mod, error, config_data = checker.check_config()
+            
+            # if attributes.ini isn't correct open settings.ini
+            if attributes_setting_mod:
+                return redirect('/enterlog', code=307)
+            else:
+                if version_store.inner == '1':
+                    # creating the folder for session files
+                    if not os.path.exists(os.path.abspath(os.curdir)+'/files/'+version_store.session_id):
+                        os.makedirs('files/'+version_store.session_id)
+                return render_template('setting.html', json=json.dumps({'error': 'please setup attributes:\n{}'.format(error),
+                                                                        'mandatory_fields': mandatory_fields,
+                                                                        'data_types': data_types,
+                                                                        'referring_to': referring_to,
+                                                                        'config_data': config_data}))
+
+        except LDAPError as e:
+            return render_template(page_name, json=json.dumps({'error': str(e)}))
+        except FileNotFoundError as e:
+            return render_template(page_name, json=json.dumps({'error': str(e)}))
+        except KeyError as e:
+            return render_template(page_name, json=json.dumps({'error': str(e)}))
+        except SyntaxError as e:
+            return render_template(page_name, json=json.dumps({'error': str(e)}))
+        except NameError as e:
+            return render_template(page_name, json=json.dumps({'error': str(e)}))
+        except IncorrectValueError as e:
+            return render_template(page_name, json=json.dumps({'error': str(e)}))
+        except ValueError as e:
+            return render_template(page_name, json=json.dumps({'error': str(e)}))
+        except NotExistFile as e:
+            return render_template(page_name, json=json.dumps({'error': str(e)}))
+
+    else:
+        if 'expired' in dict(request.args).keys():
+            if request.args['expired'] == '1':
+                return render_template(page_name, json=json.dumps({'error': 'Session expired. Please login again'}))
+            else:
+                return render_template(page_name, json=json.dumps({'error': ''}))
+        else:
+            return render_template(page_name, json=json.dumps({'error': ''}))
+
+
+# creating files/ folder for session files
+@app.route('/set_config', methods=['POST', 'GET'])
+def set_config():
+    if request.method == 'GET':
+        session.clear()
+        return redirect(url_for('home', expired='0'), code=302)
+    if 'username' not in session:
+        # return redirect(url_for('home', expired='1', _external=True,
+        #                         _scheme='https'), code=302)
+        return redirect(url_for('home', expired='1'), code=302)
+    # create folder for session files
+    #data = request.form.to_dict(flat=False)
+    try:
+        data = request.form.to_dict(flat=False)
+
+        mondatory_fields = {el['gui_name']: {'name': el['xml_name'], 'type': el['type']} for el 
+                            in json.loads(data['mandatory_fields'][0])}
+        
+        special_fields = {el['gui_name']: {'name': el['xml_name'], 'type': el['type']} for el 
+                            in json.loads(data['special_fields'][0])}
+        
+        referring_to_fields = data['referring_to[]']
+
+        multiple_mod_fields = data['multiple_mod_fields'][0].split(',')
+        
+        resolution1value = ''.join(data['resolution1value'])
+        resolution1name = ''.join(data['resolution1name'])
+        resolution2value = ''.join(data['resolution2value'])
+        resolution2name = ''.join(data['resolution2name'])
+        resolution_fields = {resolution1name: [resolution1value]}
+        if resolution2name in resolution_fields:
+            resolution_fields[resolution2name].append(resolution2value)
+        else:
+            resolution_fields[resolution2name] = resolution2value
+
+        creator = ConfigCreator()
+        creator.create_config('{}/attributes.ini'.format(os.curdir), 'fields')
+        
+        creator.update_setting(
+            '{}/attributes.ini'.format(os.curdir),
+            'fields',
+            'mandatory_fields',
+            str(mondatory_fields)
+            )
+
+        creator.update_setting(
+            '{}/attributes.ini'.format(os.curdir),
+            'fields',
+            'special_fields',
+            str(special_fields)
+            )
+
+        creator.update_setting(
+            '{}/attributes.ini'.format(os.curdir),
+            'fields',
+            'referring_to',
+            str(referring_to_fields)
+            )
+
+        creator.update_setting(
+            '{}/attributes.ini'.format(os.curdir),
+            'fields',
+            'multiple_mod_fields',
+            str(multiple_mod_fields)
+            )
+
+        creator.update_setting(
+            '{}/attributes.ini'.format(os.curdir),
+            'fields',
+            'resolution',
+            str(resolution_fields)
+            )
+
+        checker = Checker()
+        attributes_setting_mod, error, config_data = checker.check_config()
+
+    except KeyError: # appears when any field isn't filled in on GUI
+        return jsonify({
+            'error': 'Field couldn\'t be empty.\nPlease fill in all required fields.',
+            'mandatory_fields': mandatory_fields,
+            'data_types': data_types,
+            'referring_to': referring_to
+            })
+
+    if attributes_setting_mod:
+
+        if version_store.inner == '1':
+            try:
+                config_reader = SettingProvider('single_mod.ini')
+                session['areas_inner'] = config_reader.get_fields(section='single_mod', categories='columns', evaluate=False)
+                # checking that models for:  ttr,  priority, areas_inner and resolution are exist
+                exist = checker.check_exist_model(['ttr', 'priority']+session['areas_inner']['columns'].split(',')
+                                                    + checker.get_resolutions(session['resolution']))
+                if exist[0]:
+                    return jsonify({'error': 'for single mod not exist {} model'.format(exist[1]),
+                                    'mandatory_fields': mandatory_fields,
+                                    'data_types': data_types,
+                                    'referring_to': referring_to})
+            except (FileNotFoundError, KeyError, ValueError) as e:
+                return jsonify({'error': str(e),
+                                'mandatory_fields': mandatory_fields,
+                                'data_types': data_types,
+                                'referring_to': referring_to})
+
+        return jsonify(dict(redirect=url_for('enterlog')))
+    else:
+        return jsonify({'error': 'please setup attributes:\n{}'.format(error),
+                        'mandatory_fields': mandatory_fields,
+                        'data_types': data_types,
+                        'referring_to': referring_to,
+                        'config_data': config_data})
+
+
+@app.route('/attribute_setting', methods=['POST', 'GET'])
+def setting():
+    if request.method == 'GET':
+        session.clear()
+        return redirect(url_for('home', expired='0'), code=302)
+    if 'username' not in session:
+        return redirect(url_for('home', expired='1'), code=302)
+
+    checker = Checker()
+    attributes_setting_mod, error, config_data = checker.check_config()
+
+    return render_template('setting.html', json=json.dumps({'error': '',
+                                                            'mandatory_fields': mandatory_fields,
+                                                            'data_types': data_types,
+                                                            'referring_to': referring_to,
+                                                            'config_data': config_data,
+                                                            'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                                                            'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)}))
+
+
+@app.route('/enterlog', methods=['POST', 'GET'])
 def enterlog():
-    global description1
-    global tempFiles
-    description1 = ''
-    tempFiles = []
-    return render_template('filterPage.html', json=json.dumps({'message':'please choose file'}))
+    if 'username' not in session:
+        # return redirect(url_for('home', expired='1', _external=True,
+        #                         _scheme='https'), code=302)
+        return redirect(url_for('home', expired='1'), code=302)
+    # creating folder for session files
+    # for del temp files in os version 
+    if version_store.inner == '0':
+        session['tempFiles'].append("{cur}/files/{id}".format(cur=os.curdir, id=version_store.session_id))
+    if not os.path.exists(os.path.abspath(os.curdir)+'/files/'+version_store.session_id):
+        # use os.chmod to grant required permissions
+        os.makedirs('files/'+version_store.session_id)
+        os.chmod('files/'+version_store.session_id, 0o775)
+    checker = Checker()
 
-UPLOAD_FOLDER = os.path.abspath(os.curdir)+'/files'
-ALLOWED_EXTENSIONS = set(['xml'])
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024
+    return render_template('filterPage.html', json=json.dumps({'username': session['username'],
+                                                               'fields': session['fields'],
+                                                               'inner': version_store.inner,
+                                                               'file_size': file_info_store.max_file_size,
+                                                               'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                                                               'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)}))
 
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
-def open_file(file, markup):
-    filename, file_extension = os.path.splitext(file.filename)
-    if(file_extension == '.csv'):
-        if(markup == 1):
-            data = pandas.read_csv(file)
-        else:
-            data = pandas.read_csv(file)
+@app.route("/logout", methods=['POST', 'GET'])
+def logout():
+    if request.method == 'GET':
+        session.clear()
+        return redirect(url_for('home', expired='0'), code=302)
+    if 'username' not in session:
+        return redirect(url_for('home', expired='0'), code=302)
+    # del files after subset saving
+    #for path in session['tempFiles']:
+    #    os.chmod(path, 0o664)
+    #    shutil.rmtree(path)
+    # del frame tempfiles
+    # if version_store.inner == '1':
+    # add to any temp file -rw-rw-r-- permission for dev
+    for root, dirs, files in os.walk('files/'+version_store.session_id):
+        if files:
+            for file_name in files:
+                os.chmod('{root}/{file_name}'.format(root=root, file_name=file_name), 0o664)
+    shutil.rmtree('files/'+version_store.session_id)
+    # shutil.rmtree('flask_sessionstore/')
+    session.clear()
+    # session['clearDictionary'] = {}
+    if version_store.inner == '1':
+        page_name = 'loginPage.html'
     else:
-        if(isinstance(parseXML(file, markup, app.config['UPLOAD_FOLDER']+'/'+secure_filename(file.filename+'.csv')), str)):
-            os.remove(app.config['UPLOAD_FOLDER']+'/'+secure_filename(file.filename)+'.csv')
-            return 'incorrect format for xml'
-        data = pandas.read_csv(open(app.config['UPLOAD_FOLDER']+'/'+secure_filename(file.filename)+'.csv', 'r'))
-        os.remove(app.config['UPLOAD_FOLDER']+'/'+secure_filename(file.filename)+'.csv')
-    return data
+        page_name = 'loginPage_portable.html'
+    return render_template(page_name, json=json.dumps({'error': ''}))
 
-def get_attributes(data, murkup):
-    mas = []
-    area = []
-    if(murkup == 0):
-        for el in list(data.keys()):
-            if el not in area:
-                mas.append(el)
-    else:
-        mas = list(data.keys())
-    return mas
 
-def prepare_categorical(date, murkup):
-    if(document_verification(date, murkup)):
-        fields = {'Status': date['Status'].fillna('null').unique().tolist(), 'Project_name': date['Project_name'].fillna('null').unique().tolist(), 'Priority': date['Priority'].fillna('null').unique().tolist(), 'Resolution': date['Resolution'].fillna('null').unique().tolist(), 'DEV_resolution': date['DEV_resolution'].fillna('null').unique().tolist(), 'ReferringTo': add_prefix(origFrame['Priority'].fillna('null').unique().tolist(), 'Priority ')+add_prefix(origFrame['Resolution'].fillna('null').unique().tolist(), 'Resolution ')}
-        return fields
-    else:
-        if(murkup == 1):
-            return 'document is not valid. Please check that document have following fields:' + '\n' + '\'Issue_key\', \'Summary\', \'Status\', \'Project_name\', \'Priority\', \'Resolution\', \'Components\', \'Labels\', \'Description\', \'Comments\', \'Attachments\', \'Version\', \'DEV_resolution\', \'Created\', \'Resolved\''
-        else:
-            return 'document is not valid. Please check that document have following fields:' + '\n' + '\'Issue_key\', \'Summary\', \'Status\', \'Project_name\', \'Priority\', \'Resolution\', \'Components\', \'Labels\', \'Description\', \'Comments\', \'Attachments\', \'Version\', \'DEV_resolution\', \'Created\', \'Resolved\''
-
-def categorical_json(date, murkup):
-    dictionary = prepare_categorical(date, murkup)
-    if(isinstance(dictionary, str)):
-        return dictionary
-    for listName in dictionary:
-        for el in dictionary[listName]:
-            el = str(el)
-    return dictionary
-
-def document_verification(date, murkup):
-    required_fields = ['Issue_key','Summary','Status','Project_name','Priority','Resolution','Components','Labels','Description','Comments','Attachments','DEV_resolution','Created','Resolved','Version']
-    required_fields_murkup = ['Issue_key','Summary','Status','Project_name','Priority','Resolution','Components','Labels','Description','Comments','Attachments','DEV_resolution','Created','Resolved','Version']
-    trigger = False
-    if(murkup == 0):
-        for field in required_fields_murkup:
-            for el in get_attributes(date, murkup):
-                if(field.lower() == el.lower()):
-                    trigger = True
-            if(trigger == False):
-                return False
-            trigger = False
-        return True
-    else:
-        for field in required_fields:
-            for el in get_attributes(date, murkup):
-                if(field.lower() == el.lower()):
-                    trigger = True
-            if(trigger == False):
-                return False
-            trigger = False
-        return True
-
-def add_prefix(list, prefix):
-    return [prefix+el for el in list]
-
-def transform_fields(data):
-    try:
-        global origFrame
-        global newData
-        data['summary'] = data['Summary'].fillna(value='?')
-        data['summary'] = data['summary'].str.lower()
-        data['descr'] = data['Description'].fillna(value='default_descr_value')
-        data['descr'] = data['descr'].str.lower()
-        data['labels'] = data['Labels'].fillna(value='?')
-        data['labels'] = data['labels'].str.lower()
-        data['components'] = data['Components'].fillna(value='?')
-        data['components'] = data['components'].str.lower()
-        data['date_created'] = pandas.to_datetime(data['Created'],dayfirst=True)
-        data['date_resolved'] = pandas.to_datetime(data['Resolved'],dayfirst=True)
-        data['date_resolved_td'] = data['date_resolved'].fillna(value=datetime.date.today())
-        data['ttr'] = (data['date_resolved_td']-data['date_created']).dt.days
-        newData = data
-        origFrame = data
-        return data
-    except KeyError:
-            return 'document is not valid. Please check that document have following fields:' + '\n' + '\'Comments\', \'Summary\' ,\'Components\', \'Labels\', \'Description\', \'Comments\', \'Attachments\', \'Created\', \'Resolved\''
-    except ValueError: return 'invalid value for date field please use format dd-mm-yyyy'
-
-def nonetozero(val):
-    if(val == 'None'):
-        return '0'
-    else: return val
-
-def get_statInfo(data):
-    return {'total': str(origFrame['Issue_key'].count()),
-            'filtered': str(data['Issue_key'].count()),
-            'commentStat': {'max': str(data['Comments'].max()),
-                            'min': str(data['Comments'].min()),
-                            'mean': str(round(data['Comments'].mean(), 3)),
-                            'std': str(round(data['Comments'].std(), 3))
-                            },
-            'attachmentStat': {
-                                'max': str(data['Attachments'].max()),
-                                'min': str(data['Attachments'].min()),
-                                'mean': str(round(data['Attachments'].mean(), 3)),
-                                'std': str(round(data['Attachments'].std(), 3))
-                                },
-            'ttrStat': {
-                        'max': str(data['ttr'].max()),
-                        'min': str(data['ttr'].min()),
-                        'mean': str(round(data['ttr'].mean(), 3)),
-                        'std': str(round(data['ttr'].std(), 3))
-                        }
-            }
-
-def parse_to_int(var):
-    try:
-        intVar = int(var)
-        return intVar
-    except ValueError:
-        return 'incorrect value for \'' + var + '\'.Please enter correct type of data'
-
-def parse_to_date(var):
-    try:
-        varDate =pandas.to_datetime(dt.strptime(var, '%d-%m-%Y'))
-        return varDate
-    except ValueError:
-        return 'incorrect value for \'' + var + '\'.Please use type of data like \'dd-mm-yyyy\''
-
-def fields_for_filtration(dictionary):
-    newDictionary = {}
-    for key in dictionary:
-        if(dictionary[key] != '' and dictionary[key] != []):
-            newDictionary[key] = dictionary[key]
-    return newDictionary
-
-def checkNumeric(dictionary, key):
-    if key in dictionary:
-        el = parse_to_int(dictionary[key])
-        return isinstance(el, str)
-    else:
-        return False
-
-def checkDate(dictionary, key):
-    if key in dictionary:
-        el = parse_to_date(dictionary[key])
-        return isinstance(el, str)
-    else: return False
-
-def parseToIntFinal(dictionary):
-    newDictionary = {}
-    for key in dictionary:
-        newDictionary[key] = parse_to_int(dictionary[key])
-    return newDictionary
-
-def parseToDateFinal(dictionary):
-    newDictionary ={}
-    for key in dictionary:
-        newDictionary[key] = parse_to_date(dictionary[key])
-    return newDictionary
-
-def merge_two_dicts(x, y):
-    z = x.copy()
-    z.update(y)
-    return z
-
-def special_character_escaping(val):
-        newVal = val.replace('[', '\[')
-        newVal1 = newVal.replace(']', '\]')
-        newVal2 = newVal1.replace('*', '\*')
-        newVal3 = newVal2.replace('(', '\(')
-        newVal4 = newVal3.replace(')', '\)')
-        newVal5 = newVal4.replace('{', '\{')
-        newVal6 = newVal5.replace('}', '\}')
-        newVal7 = newVal6.replace('-', '\-')
-        newVal8 = newVal7.replace('+', '\+')
-        newVal9 = newVal8.replace('?', '\?')
-        newVal10 = newVal9.replace('.', '\.')
-        newVal11 = newVal10.replace('|', '\|')
-        newVal12 = newVal11.replace('$', '\&')
-        newVal13 = newVal12.replace('^', '\^')
-        newVal14 = newVal13.replace(r'\n', '')
-        newVal15 = newVal14.replace(r' ', '')
-        return newVal15
-
-def filtration(key, value, data):
-        global newData
-        if key.lower()=='issue_key':
-            newData = data[data['Issue_key'].str.lower() == value.lower()]
-            return newData
-        if key.lower()=='summary':
-            newData = data[data['summary'].str.replace(r'\n', ' ').str.contains(value, case=False, na=False, regex=False) == True]
-            return newData
-        if key.lower() == 'status':
-            newData = data[data["Status"].isin(value) == True]
-            #for val in value:
-            #    newData = newData[newData['Status'].str.replace(r'\n', ' ').str.contains(val, case=False, na=False, regex=False) == True]
-            return newData
-        if key.lower()=='project_name':
-            newData = data[data["Project_name"].isin(value) == True]
-            return newData
-        if key.lower()=='priority':
-            newData = data[data["Priority"].isin(value) == True]
-            return newData
-        if key.lower()=='resolution':
-            newData = data[data["Resolution"].isin(value) == True]
-            return newData
-        if key.lower()=='components':
-            newData = data
-            newData['components'] = newData['Components'].astype(str)
-            for pattern in value.split(','):
-                newData = contains(newData, 'components', pattern.strip())
-            return newData
-        if key.lower()=='labels':
-            newData = data
-            newData['labels'] = newData['Labels'].astype(str)
-            for pattern in value.split(','):
-                newData = contains(newData, 'labels', pattern.strip())
-            return newData
-        if key.lower()=='description':
-            newData = data[data['descr'].str.replace(r'\n', ' ').str.replace(' ', '').str.contains(value.replace(r'\n', ' ').replace(' ', ''), case=False, na=False, regex=False) == True]
-            return newData
-        if key.lower()=='version':
-            newData = data
-            newData['version'] = newData['Version'].astype(str)
-            for pattern in value.split(','):
-                newData = contains(newData, 'version', pattern.strip())
-            return newData
-        if key.lower()=='comments2':
-            newData = data[data['Comments'] >= value]
-            return newData
-        if key.lower()=='comments4':
-            newData = data[data['Comments'] <= value]
-            return newData
-        if key.lower()=='attachments2':
-            newData = data[data['Attachments'] >= value]
-            return newData
-        if key.lower()=='attachments4':
-            newData = data[data['Attachments'] <= value]
-            return newData
-        if key.lower()=='date_created2':
-            data['date_created'] = pandas.to_datetime(data['date_created'])
-            newData = data[data['date_created'] >= value]
-            return newData
-        if key.lower()=='date_created4':
-            data['date_created'] = pandas.to_datetime(data['date_created'])
-            newData = data[data['date_created'] <= value]
-            return newData
-        if key.lower()=='date_resolved2':
-            data['date_resolved_td'] = pandas.to_datetime(data['date_resolved_td'])
-            newData = data[data['date_resolved_td'] >= value]
-            return newData
-        if key.lower()=='date_resolved4':
-            data['date_resolved_td'] = pandas.to_datetime(data['date_resolved_td'])
-            newData = data[data['date_resolved_td'] <= value]
-            return newData
-        if key.lower()=='ttr2':
-            newData = data[data['ttr'] >= value]
-            return newData
-        if key.lower()=='ttr4':
-            newData = data[data['ttr'] <= value]
-            return newData
-        if key.lower()=='DEV_resolution':
-            newData = data[data["DEV_resolution"].isin(value) == True]
-            return newData
-
-def find(value, pattern):
-    pattern = re.compile(r'\b' + re.sub(r'[%;"\\.^:\/$​–•\|!#<~&@>*\-+=◾\'\?╙“”‘’]*', '', pattern) + r'\b')
-    if (re.findall(pattern, re.sub(r'[%;"\\.^:\/$​–•\|!#<~&@>*\-+=◾\'\?╙“”‘’]*', '', value))):
-        return True
-    else:
-        return False
-
-def contains(df, field, pattern):
-    newDf = df[df[field].str.replace(r'\n', ' ').apply(find, args=(pattern,)) == True]
-    return newDf[newDf[field].str.contains(pattern, case=False, na=False, regex=False) == True]
-
-def check_fileName(fileName):
-    if not re.match(r'.*\.csv', fileName):
-        return False
-    else: return True
-
-def save_file(data, fileName, murkup):
-    if(murkup == 0):
-        data.to_csv(os.path.join(UPLOAD_FOLDER, fileName), columns=['Issue_key', 'Summary', 'Status', 'Project_name', 'Priority', 'Resolution', 'Components', 'Labels', 'Description', 'Comments', 'Attachments', 'DEV_resolution', 'Created', 'Resolved', 'Affects_Ver', 'Version'], index=False)
-    else:
-        data.to_csv(os.path.join(UPLOAD_FOLDER, fileName), columns=['Issue_key', 'Summary', 'Status', 'Project_name', 'Priority', 'Resolution', 'Components', 'Labels', 'Description', 'Comments', 'Attachments', 'DEV_resolution', 'Created', 'Resolved', 'Affects_Ver', 'Version'], index=False)
-
-def drop_filter():
-    global origFrame
-    global newData
-    global statInfo
-    global categoricDict
-    global clearDictionary
-    newData = origFrame
-    categoricDict = categorical_json(newData, murkup)
-    statInfo = get_statInfo(newData)
-    clearDictionary = {'SignificanceTop': SignificanceTop[categoricDict['ReferringTo'][0]], 'ReferringTo': 'Priority '+categoricDict['Priority'][0], 'freqTop': origFreqTop}
-    return statInfo
-
-def drop_newData():
-    global origFrame
-    global newData
-    newData = origFrame
-    return newData
-
-def prepareToFiltering(dictionary, key, val1, val2, val3, val4):
-    dictionary[key] = {'operation': [ifExist(dictionary, val1), ifExist(dictionary, val3)], 'left': ifExist(dictionary, val2), 'rigth': ifExist(dictionary, val4)}
-    return dictionary
-
-def ifExist(dictionary, val):
-    if val not in dictionary:
-        dictionary[val] = ''
-    return dictionary[val]
-
-def checkLeftRigth(dictionary):
-    newDict = {}
-    for key in dictionary:
-        if(key in ['Date_created', 'Comments', 'TTR', 'Date_resolved', 'Attachments']):
-            innerDict = dictionary[key]
-            if(str(innerDict['left']) != ''):
-                    newDict[key] = dictionary[key]
-            else:
-                if(str(innerDict['rigth']) != ''):
-                    newDict[key] = dictionary[key]
-
-        if(key in ['Issue_key']):
-            if(str(dictionary[key]) != ''):
-                newDict[key] = str(dictionary[key])
-
-        if(key in ['Summary', 'Status', 'Project_name', 'priority', 'Resolution', 'Components', 'Labels', 'Description', 'DEV_resolution']):
-            if(str(dictionary[key]) != ''):
-                newDict[key] = dictionary[key]
-    return newDict
-
-def checkLeftRigthWithoutSings(dictionary):
-    newDict = {}
-    for key in dictionary:
-        if(key in ['Comments2', 'Comments4', 'Attachments2', 'Attachments4', 'Date_created2', 'Date_created4', 'Date_resolved2', 'Date_resolved4', 'TTR2', 'TTR4']):
-            newDict[key] = dictionary[key]
-        if(key in ['Issue_key', 'Version']):
-            if(str(dictionary[key]) != ''):
-                newDict[key] = str(dictionary[key])
-        if(key in ['Summary', 'Components', 'Labels', 'Description']):
-            if(str(dictionary[key]) != ''):
-                newDict[key] = dictionary[key]
-        if(key in ['Status', 'Project_name', 'Priority', 'Resolution', 'DEV_resolution']):
-            if dictionary[key]:
-                newDict[key] = dictionary[key]
-    return newDict
-
-def checkEmptyElInList(dictionary):
-    for el in dictionary:
-        if(el == ''):
-            return False
-    return True
-
-def toBool(val):
-    if(val == 'Yes'):
-        return True
-    else: return False
-
-def to_0_1(val):
-    if(val == 'yes'):
-        return 1
-    else: return 0
-
-def  rel_freq(ser, _bins):
-    btt=numpy.array(list(ser))
-    y_, x_, bars = plt.hist(btt, weights=numpy.zeros_like(btt) + 1. / btt.size, bins=_bins)
-    return x_, y_
-
-def  den_rel_freq(ser, _bins):
-    btt=numpy.array(list(ser))
-    y_, x_, bars = plt.hist(btt, bins=_bins, density=True)
-    return x_, y_
-
-def  den_rel_freq_gauss(ser):
-    try:
-        btt=numpy.array(list(ser))
-        density = stats.kde.gaussian_kde(list(ser))
-        x_den = numpy.linspace(0, ser.max(), ser.count())
-        density = density(x_den)
-        return x_den, density
-    except numpy.linalg.linalg.LinAlgError: return [-1], [-1]
-
-def data_for_plot(data):
-    listFinal = []
-    for list in data:
-        listFinal.append(array_to_List(list))
-    return listFinal
-
-def array_to_List(array):
-    myList = []
-    for el in array:
-        myList.append(el)
-    return myList
-
-def prepare_XY(data, x, y, scale, stepSize):
-        dict = {}
-        rezDict = {}
-        valDict = {}
-        if(y == 'Relative Frequency'):
-            rezDict['Relative Frequency'] = data_for_plot(rel_freq(data[x].dropna().apply(int), 10))
-            rezDict['scale'] = scale
-            rezDict['stepSize'] = stepSize
-            valDict['x'] = x
-            valDict['y'] = y
-            rezDict['fieldsVal'] = valDict
-            return rezDict
-        if(y == 'Frequency density'):
-            dict['histogram'] = data_for_plot(den_rel_freq(data[x].dropna().apply(int), 'fd'))
-            dict['line'] = data_for_plot(den_rel_freq_gauss(data[x].dropna().apply(int)))
-            rezDict['Frequency density'] = dict
-            rezDict['scale'] = scale
-            rezDict['stepSize'] = stepSize
-            valDict['x'] = x
-            valDict['y'] = y
-            rezDict['fieldsVal'] = valDict
-            return rezDict
-
-def add_0(dict):
-    for key in dict:
-        if(key == 'Relative Frequency'):
-            masHist = dict[key]
-            masHistY = masHist[1]
-            masHistY.append(float(0))
-            return dict
-        if(key == 'Frequency density'):
-            dictFr = dict['Frequency density']
-            masHist = dictFr['histogram']
-            masHistY = masHist[1]
-            masHistY.append(float(0))
-            return dict
-
-class MyException(Exception):
-    pass
-
-def parseXML(xmlFile, markup, path):
-    logging.basicConfig(format=u'%(levelname)-8s [%(asctime)s] %(message)s', level=logging.WARNING, filename = u'mylog.log')
-    global asigneeReporterFin
-    try:
-        xml = xmlFile.read()
-        root = objectify.fromstring(xml)
-
-        file = open(path, 'w')
-        csvwriter = csv.writer(file)
-        head = ["Issue_key", "Issue_id", "Summary", "Status", "Project_name", "Priority", "Resolution", "Created", "Resolved", "Affects_Ver", "Fix_Ver", "Components", "Labels", "Description", "is related to", "blocks", "is blocked by", "is duplicated by", "incorporates", "is incorporated by", "is dependant on", "has a dependency of", "resolves", "is resolved by", "DEV_Target_Fix_ver", "Reported_In", "Reported_In_Env", "Root_Cause_Analysis", "System", "Test_Name", "DEV_resolution", "Comments", "Attachments", "Version"]
-        headMark = ["Issue_key", "Issue_id", "Summary", "Status", "Project_name", "Priority", "Resolution", "Created", "Resolved", "Affects_Ver", "Fix_Ver", "Components", "Labels", "Description", "is related to", "blocks", "is blocked by", "is duplicated by", "incorporates", "is incorporated by", "is dependant on", "has a dependency of", "resolves", "is resolved by", "DEV_Target_Fix_ver", "Reported_In", "Reported_In_Env", "Root_Cause_Analysis", "System", "Test_Name", "DEV_resolution", "Comments", "Attachments", "Version"]
-        row = {"Issue_key": None, "Issue_id": None, "Summary": None, "Status": None, "Project_name": None, "Priority": None, "Resolution": None, "Created": None, "Resolved": None, "Affects_Ver": None, "Fix_Ver": None, "Components": None, "Labels": None, "Description": None, "is related to": None, "blocks": None, "is blocked by": None, "is duplicated by": None, "incorporates": None, "is incorporated by": None, "is dependant on": None, "has a dependency of": None, "resolves": None, "is resolved by": None, "DEV_Target_Fix_ver": None, "Reported_In": None, "Reported_In_Env": None, "Root_Cause_Analysis": None, "System": None, "Test_Name": None, "DEV_resolution": None, "Comments": None, "Attachments": None, "Version": None}
-        if(markup == 1):
-            csvwriter.writerow(headMark)
-        else: csvwriter.writerow(head)
-        countVersion = 0
-        countComment = 0
-        countAttachments = 0
-        countComponent = ''
-        countLabels = ''
-        issuelinks = []
-        fixVersion = ''
-        countItem = 0
-        version = ''
-        asigneeReporter = []
-        customFields = {"DEV target fix version": None, "reported in": None, "reported in\ environment": None, "root cause analysis": None, "system": None, "test name": None, "DEV resolution": None}
-
-        tags = []
-        #for rssChilds in root.getchildren():
-        #    for channelChilds in rssChilds.getchildren():
-        #        tags.append(channelChilds.tag)
-
-        for rssChilds in root.getchildren():
-            for channelChilds in rssChilds.getchildren():
-                if(channelChilds.tag == 'item'):
-                    countItem = countItem + 1
-                    tags.append(channelChilds.tag)
-                    try:
-                        for chield in channelChilds.getchildren():
-                            if(chield.tag == 'key'):
-                                row["Issue_key"] = chield.text
-                                row["Issue_id"] = chield.attrib['id']
-                            if(chield.tag == 'status'):
-                                row["Status"] = chield.text
-                            if(chield.tag == 'summary'):
-                                row["Summary"] = chield.text
-                            if(chield.tag == 'project'):
-                                row["Project_name"] = chield.text
-                            if(chield.tag == 'priority'):
-                                row["Priority"] = chield.text
-                            if(chield.tag == 'resolution'):
-                                row["Resolution"] = chield.text
-                            if(chield.tag == 'created'):
-                                row["Created"] = getDate(chield.text)
-                            if(chield.tag == 'resolved'):
-                                row["Resolved"] = getDate(chield.text)
-                            if(chield.tag == 'description'):
-                                row["Description"] = clean(chield.text)
-                            if(chield.tag == 'version'):
-                                countVersion = countVersion + 1
-                                if(version != ''):
-                                    version = version + ',' + chield.text
-                                else: version = chield.text
-                            if(chield.tag == 'component'):
-                                if(countComponent != ''):
-                                    countComponent = countComponent + ',' + chield.text
-                                else:countComponent = chield.text
-                            if(chield.tag == 'labels'):
-                                for chieldLab in chield.getchildren():
-                                    if(chieldLab.text != None):
-                                        if(countLabels != ''):
-                                            countLabels = countLabels + ',' + chieldLab.text
-                                        else:countLabels = chieldLab.text
-                            if(chield.tag == 'fixVersion'):
-                                fixVersion = chield.text
-                            if(chield.tag == 'issuelinks'):
-                                try:
-                                    issuelinks.append(chield.issuelinktype.name.text)
-                                except AttributeError: logging.warning( u'In '+ xmlFile + ' for block \'Item\' № ' + countItem.__str__() + ':\n' + traceback.format_exc().splitlines()[traceback.format_exc().splitlines().__len__()-1])
-                            if(chield.tag == 'customfields'):
-                                for chieldCust in chield.getchildren():
-                                    try:
-                                        if(chieldCust.customfieldname.text.lower() in list(customFields.keys())):
-                                            customFields[chieldCust.customfieldname.text.lower()] = chieldCust.customfieldvalues.customfieldvalue.text
-                                    except AttributeError: logging.warning( u'In '+ xmlFile + ' for block \'Item\' № ' + countItem.__str__() + ':\n' + traceback.format_exc().splitlines()[traceback.format_exc().splitlines().__len__()-1])
-                            if(chield.tag == 'comments'):
-                                for comment in chield.getchildren():
-                                    countComment = countComment + 1
-                            if(chield.tag == 'attachments'):
-                                for attachment in chield.getchildren():
-                                    countAttachments = countAttachments + 1
-                            if (chield.tag == 'assignee'):
-                                asigneeReporter = asigneeReporter + chield.text.lower().split()
-                            if (chield.tag == 'reporter'):
-                                asigneeReporter = asigneeReporter + chield.text.lower().split()
-
-                        row["Comments"] = countComment
-                        row["Attachments"] = countAttachments
-                        row["Version"] = version
-                        row["Affects_Ver"] = countVersion
-                        row["Fix_Ver"] = fixVersion
-                        row["Components"] = countComponent
-                        row["Labels"] = countLabels
-                        row = issuelinksF(row, issuelinks)
-                        row["DEV_Target_Fix_ver"] = customFields["DEV target fix version"]
-                        row["Reported_In"] = customFields["reported in"]
-                        row["Reported_In_Env"] = customFields["reported in\ environment"]
-                        row["Root_Cause_Analysis"] = customFields["root cause analysis"]
-                        row["System"] = customFields["system"]
-                        if(customFields["test name"] == None):
-                            row["Test_Name"] = 0
-                        else: row["Test_Name"] = 1
-                        row["DEV_resolution"] = customFields["DEV resolution"]
-
-                        if(markup == 1):
-                            csvwriter.writerow(dictionaryToList(row, markup))
-                        else:
-                            csvwriter.writerow(dictionaryToList(row, markup))
-
-                        countVersion = 0
-                        countComponent = ''
-                        countLabels = ''
-                        issuelinks = []
-                        cleanDictionary(customFields)
-                        cleanDictionary(row)
-                        countAttachments = 0
-                        countComment = 0
-                        fixVersion = ''
-                        version = ''
-                    except AttributeError:
-                        logging.warning( u'In '+ xmlFile + ' for block \'Item\' № ' + countItem.__str__() + ':\n' + traceback.format_exc().splitlines()[traceback.format_exc().splitlines().__len__()-1])
-            if 'item' not in tags:
-                return 'incorrect format for xml'
-        asigneeReporterFin = list(set(asigneeReporter))
-    except Exception:
-        return 'incorrect format for xml'
-
-def getDate(date):
-    if(date == None):
-        return ''
-    d = dt.strptime(date, "%a, %d %b %Y %H:%M:%S %z")
-    day = d.day.__str__()
-    month = d.month.__str__()
-    if(d.day.__str__().__len__()==1):
-        day = '0'+day
-    if(d.month.__str__().__len__()==1):
-        month = '0'+month
-
-    date =day +'-'+month+'-'+d.year.__str__()
-    return date
-
-def clean(text):
-    if text is None:
-        return None
-    else:
-        p1 = r'&lt;p&gt;'
-        p2 = r'</?p>'
-        p3 = r'&amp;'
-        p4 = r'&gt;'
-        p5 = r'&lt;'
-        remove_pat = [p1, p2, p3, p4, p5]
-        test_clean=text
-        for el in remove_pat:
-            test_clean=re.sub(el, ' ', test_clean)
-        return test_clean
-
-def dictionaryToList(dictionary, markup):
-
-    listForWrite = []
-
-    listForWrite.append(dictionary["Issue_key"])
-    listForWrite.append(dictionary["Issue_id"])
-    listForWrite.append(dictionary["Summary"])
-    listForWrite.append(dictionary["Status"])
-    listForWrite.append(dictionary["Project_name"])
-    listForWrite.append(dictionary["Priority"])
-    listForWrite.append(dictionary["Resolution"])
-    listForWrite.append(dictionary["Created"])
-    listForWrite.append(dictionary["Resolved"])
-    listForWrite.append(dictionary["Affects_Ver"])
-    listForWrite.append(dictionary["Fix_Ver"])
-    listForWrite.append(dictionary["Components"])
-    listForWrite.append(dictionary["Labels"])
-    listForWrite.append(dictionary["Description"])
-    listForWrite.append(dictionary["is related to"])
-    listForWrite.append(dictionary["blocks"])
-    listForWrite.append(dictionary["is blocked by"])
-    listForWrite.append(dictionary["is duplicated by"])
-    listForWrite.append(dictionary["incorporates"])
-    listForWrite.append(dictionary["is incorporated by"])
-    listForWrite.append(dictionary["is dependant on"])
-    listForWrite.append(dictionary["has a dependency of"])
-    listForWrite.append(dictionary["resolves"])
-    listForWrite.append(dictionary["is resolved by"])
-    listForWrite.append(dictionary["DEV_Target_Fix_ver"])
-    listForWrite.append(dictionary["Reported_In"])
-    listForWrite.append(dictionary["Reported_In_Env"])
-    listForWrite.append(dictionary["Root_Cause_Analysis"])
-    listForWrite.append(dictionary["System"])
-    listForWrite.append(dictionary["Test_Name"])
-    listForWrite.append(dictionary["DEV_resolution"])
-    listForWrite.append(dictionary["Comments"])
-    listForWrite.append(dictionary["Attachments"])
-    listForWrite.append(dictionary["Version"])
-    return listForWrite
-
-def issuelinksF(dictionary, issuelinks):
-    dictionary["is related to"] = 0
-    dictionary["blocks"] = 0
-    dictionary["is blocked by"] = 0
-    dictionary["is duplicated by"] = 0
-    dictionary["incorporates"] = 0
-    dictionary["is incorporated by"] = 0
-    dictionary["is dependant on"] = 0
-    dictionary["has a dependency of"] = 0
-    dictionary["resolves"] = 0
-    dictionary["is resolved by"] = 0
-
-    for el in issuelinks:
-        if(el.lower() == "is related to"):
-            dictionary["is related to"] = 1
-        if(el.lower() == "blocks"):
-            dictionary["blocks"] = 1
-        if(el.lower() == "is blocked by"):
-            dictionary["is blocked by"] = 1
-        if(el.lower() == "is duplicated by"):
-            dictionary["is duplicated by"] = 1
-        if(el.lower() == "incorporates"):
-            dictionary["incorporates"] = 1
-        if(el.lower() == "is incorporated by"):
-            dictionary["is incorporated by"] = 1
-        if(el.lower() == "is dependant on"):
-            dictionary["is dependant on"] = 1
-        if(el.lower() == "has a dependency of"):
-            dictionary["has a dependency of"] = 1
-        if(el.lower() == "resolves"):
-            dictionary["resolves"] = 1
-        if(el.lower() == "is resolved by"):
-            dictionary["is resolved by"] = 1
-
-    return dictionary
-
-def cleanDictionary(dictionary):
-    for el in dictionary:
-        dictionary[el] = None
-
-def check_scale_step(scale, stepSize, x, statInfo):
-    if(scale == '' and stepSize == ''):
-        return True
-    elif(scale != '' and stepSize == ''):
-        if(isinstance(string_to_float(scale), float)):
-            return validate_step_scale(string_to_float(scale), x, statInfo)
-        else: return 'incorrect value'
-    elif(stepSize != '' and scale ==''):
-        if(isinstance(string_to_float(stepSize), float)):
-            return validate_step_scale(string_to_float(stepSize), x, statInfo)
-        else: return 'incorrect value'
-    elif(scale != '' and stepSize != ''):
-        if(isinstance(string_to_float(stepSize), float) and isinstance(string_to_float(scale), float)):
-            return validate_step_scale(string_to_float(scale), x, statInfo) and validate_step_scale(string_to_float(stepSize), x, statInfo)
-        else: 'incorrect value'
-    else: return False
-
-def validate_step_scale(param, x, statInfo):
-    if(x == 'ttr' and param >= 0 and param <= float(statInfo['ttrStat']['max'])):
-        return True
-    if(x == 'Comments' and param >= 0 and param <= float(statInfo['commentStat']['max'])):
-        return True
-    if(x == 'Attachments' and param >= 0 and param <= float(statInfo['attachmentStat']['max'])):
-        return True
-    return False
-
-def string_to_float(val):
-    if check_float(val):
-        return float(val)
-    elif try_convert_float(val):
-        return float(val.replace(',', '.'))
-    else: return False
-
-def check_float(val):
-    try:
-        float(val)
-        return True
-    except:
-        return False
-
-def try_convert_float(val):
-    try:
-        float(val.replace(',', '.'))
-        return True
-    except:
-        return False
-
-def dynamic_bug_chart(frame, stepSize):
-    plot = {}
-    dynamic_bugs = []
-    x = []
-    y = []
-    plot['period'] = stepSize
-    if(stepSize == 'W-SUN'):
-        periods = get_periods(frame, stepSize)
-        if(len(periods) == 0):
-            return 'error'
-        cumulative = 0
-        for period in periods:
-            if(pandas.to_datetime(period[0]) < pandas.to_datetime(frame['date_created']).min()):
-                newFrame = frame[(pandas.to_datetime(frame['date_created']) >= pandas.to_datetime(frame['date_created']).min()) & (pandas.to_datetime(frame['date_created']) <= pandas.to_datetime(period[1]))]
-                cumulative = cumulative + int(newFrame['Issue_key'].count())
-                x.append(str(datetime.datetime.date(pandas.to_datetime(frame['date_created'], format='%Y-%m-%d').min())))
-                y.append(cumulative)
-            else:
-                newFrame = frame[(pandas.to_datetime(frame['date_created']) >= pandas.to_datetime(period[0])) & (pandas.to_datetime(frame['date_created']) <= pandas.to_datetime(period[1]))]
-                cumulative = cumulative + int(newFrame['Issue_key'].count())
-                x.append(str((period[0])))
-                y.append(cumulative)
-        if(pandas.to_datetime(frame['date_created']).max() > pandas.to_datetime(periods[-1][1])):
-            newFrame = frame[(pandas.to_datetime(frame['date_created']) > pandas.to_datetime(periods[-1][1])) & (pandas.to_datetime(frame['date_created']) <= pandas.to_datetime(frame['date_created']).max())]
-            cumulative = cumulative + int(newFrame['Issue_key'].count())
-            x.append(str(datetime.datetime.date(pandas.to_datetime(periods[-1][1], format='%Y-%m-%d'))+datetime.timedelta(days=1)))
-            y.append(cumulative)
-        dynamic_bugs.append(x)
-        dynamic_bugs.append(y)
-        plot['dynamic bugs'] = dynamic_bugs
-        cumulative = 0
-        return plot
-    if(stepSize in ['7D', '10D', '3M', '6M', 'A-DEC']):
-        count0 = 0
-        count1 = 1
-        periods = get_periods(frame, stepSize)
-        if(len(periods) == 0):
-            return 'error'
-        cumulative = 0
-        countPeriodsList = len(periods)
-        count = 1
-        if(countPeriodsList == 1):
-            if(stepSize == '7D'):
-                newFrame = frame[(pandas.to_datetime(frame['date_created']) >= pandas.to_datetime(frame['date_created']).min()) & (pandas.to_datetime(frame['date_created']) < pandas.to_datetime(datetime.datetime.date(pandas.to_datetime(frame['date_created']).min())+datetime.timedelta(days=7)))]
-                cumulative = cumulative + int(newFrame['Issue_key'].count())
-                x.append(str(getDateForDynamicMY(datetime.datetime.date(pandas.to_datetime(frame['date_created'], format='%Y-%m-%d').min()), stepSize)))
-                y.append(cumulative)
-                if(pandas.to_datetime(frame['date_created']).max() > pandas.to_datetime(datetime.datetime.date(pandas.to_datetime(frame['date_created']).min())+datetime.timedelta(days=7))):
-                    newFrame = frame[(pandas.to_datetime(frame['date_created']) >= pandas.to_datetime(datetime.datetime.date(pandas.to_datetime(frame['date_created']).min())+datetime.timedelta(days=7))) & (pandas.to_datetime(frame['date_created']) <= pandas.to_datetime(frame['date_created']).max())]
-                    cumulative = cumulative + int(newFrame['Issue_key'].count())
-                    x.append(str(getDateForDynamicMY((datetime.datetime.date(pandas.to_datetime(frame['date_created']).min())+datetime.timedelta(days=7)), stepSize)))
-                    y.append(cumulative)
-                cumulative = 0
-            if(stepSize == '10D'):
-                newFrame = frame[(pandas.to_datetime(frame['date_created']) >= pandas.to_datetime(frame['date_created']).min()) & (pandas.to_datetime(frame['date_created']) < pandas.to_datetime(datetime.datetime.date(pandas.to_datetime(frame['date_created']).min())+datetime.timedelta(days=10)))]
-                cumulative = cumulative + int(newFrame['Issue_key'].count())
-                x.append(str(getDateForDynamicMY(datetime.datetime.date(pandas.to_datetime(frame['date_created'], format='%Y-%m-%d').min()), stepSize)))
-                y.append(cumulative)
-                if(pandas.to_datetime(frame['date_created']).max() > pandas.to_datetime(datetime.datetime.date(pandas.to_datetime(frame['date_created']).min())+datetime.timedelta(days=10))):
-                    newFrame = frame[(pandas.to_datetime(frame['date_created']) >= pandas.to_datetime(datetime.datetime.date(pandas.to_datetime(frame['date_created']).min())+datetime.timedelta(days=10))) & (pandas.to_datetime(frame['date_created']) <= pandas.to_datetime(frame['date_created']).max())]
-                    cumulative = cumulative + int(newFrame['Issue_key'].count())
-                    x.append(str(getDateForDynamicMY(datetime.datetime.date(pandas.to_datetime(frame['date_created']).min())+datetime.timedelta(days=10), stepSize)))
-                    y.append(cumulative)
-                cumulative = 0
-            if(stepSize == '3M'):
-                newFrame = frame[(pandas.to_datetime(frame['date_created']) >= pandas.to_datetime(frame['date_created']).min()) & (pandas.to_datetime(frame['date_created']) < pandas.to_datetime(add_months(datetime.datetime.date(pandas.to_datetime(frame['date_created']).min()), 3)))]
-                cumulative = cumulative + int(newFrame['Issue_key'].count())
-                x.append(str(getDateForDynamicMY(datetime.datetime.date(pandas.to_datetime(frame['date_created'], format='%Y-%m-%d').min()), stepSize)))
-                y.append(cumulative)
-                if(pandas.to_datetime(frame['date_created']).max() > pandas.to_datetime(add_months(datetime.datetime.date(pandas.to_datetime(frame['date_created']).min()), 3))):
-                    newFrame = frame[(pandas.to_datetime(frame['date_created']) >= pandas.to_datetime(add_months(datetime.datetime.date(pandas.to_datetime(frame['date_created']).min()), 3))) & (pandas.to_datetime(frame['date_created']) <= pandas.to_datetime(frame['date_created']).max())]
-                    cumulative = cumulative + int(newFrame['Issue_key'].count())
-                    x.append(str(getDateForDynamicMY(add_months(datetime.datetime.date(pandas.to_datetime(frame['date_created']).min()), 3), stepSize)))
-                    y.append(cumulative)
-                cumulative = 0
-            if(stepSize == '6M'):
-                newFrame = frame[(pandas.to_datetime(frame['date_created']) >= pandas.to_datetime(frame['date_created']).min()) & (pandas.to_datetime(frame['date_created']) < pandas.to_datetime(add_months(datetime.datetime.date(pandas.to_datetime(frame['date_created']).min()), 6)))]
-                cumulative = cumulative + int(newFrame['Issue_key'].count())
-                x.append(str(getDateForDynamicMY(datetime.datetime.date(pandas.to_datetime(frame['date_created'], format='%Y-%m-%d').min()), stepSize)))
-                y.append(cumulative)
-                if(pandas.to_datetime(frame['date_created']).max() > pandas.to_datetime(add_months(datetime.datetime.date(pandas.to_datetime(frame['date_created']).min()), 6))):
-                    newFrame = frame[(pandas.to_datetime(frame['date_created']) >= pandas.to_datetime(add_months(datetime.datetime.date(pandas.to_datetime(frame['date_created']).min()), 6))) & (pandas.to_datetime(frame['date_created']) <= pandas.to_datetime(frame['date_created']).max())]
-                    cumulative = cumulative + int(newFrame['Issue_key'].count())
-                    x.append(str(getDateForDynamicMY(add_months(datetime.datetime.date(pandas.to_datetime(frame['date_created']).min()), 6), stepSize)))
-                    y.append(cumulative)
-                cumulative = 0
-            if(stepSize == 'A-DEC'):
-                newFrame = frame[(pandas.to_datetime(frame['date_created']) >= pandas.to_datetime(frame['date_created']).min()) & (pandas.to_datetime(frame['date_created']) < pandas.to_datetime(str(int(periods[0])+1)))]
-                cumulative = cumulative + int(newFrame['Issue_key'].count())
-                x.append(str(getDateForDynamicMY(datetime.datetime.date(pandas.to_datetime(frame['date_created'], format='%Y-%m-%d').min()), stepSize)))
-                y.append(cumulative)
-                if(pandas.to_datetime(frame['date_created']).max() > pandas.to_datetime(str(int(periods[0])+1))):
-                    newFrame = frame[(pandas.to_datetime(frame['date_created']) >= pandas.to_datetime(str(int(periods[0])+1))) & (pandas.to_datetime(frame['date_created']) <= pandas.to_datetime(frame['date_created']).max())]
-                    cumulative = cumulative + int(newFrame['Issue_key'].count())
-                    x.append(str(getDateForDynamicMY(datetime.datetime.date(pandas.to_datetime(str(int(periods[0])+1))), stepSize)))
-                    y.append(cumulative)
-                cumulative = 0
-        else:
-            while(count < countPeriodsList):
-                newFrame = frame[(pandas.to_datetime(frame['date_created']) >= pandas.to_datetime(periods[count0])) & (pandas.to_datetime(frame['date_created']) < pandas.to_datetime(periods[count1]))]
-                cumulative = cumulative + int(newFrame['Issue_key'].count())
-                x.append(str(getDateForDynamicMY(datetime.datetime.date(pandas.to_datetime(periods[count0], format='%Y-%m-%d')), stepSize)))
-                y.append(cumulative)
-                count0 = count0 +1
-                count1 = count1 +1
-                count = count +1
-            if(pandas.to_datetime(frame['date_created']).max() >= pandas.to_datetime(periods[-1])):
-                newFrame = frame[(pandas.to_datetime(frame['date_created']) >= pandas.to_datetime(periods[-1])) & (pandas.to_datetime(frame['date_created']) <= pandas.to_datetime(frame['date_created']).max())]
-                cumulative = cumulative + int(newFrame['Issue_key'].count())
-                x.append(str(getDateForDynamicMY(datetime.datetime.date(pandas.to_datetime(periods[-1], format='%Y-%m-%d')), stepSize)))
-                y.append(cumulative)
-            cumulative = 0
-        dynamic_bugs.append(x)
-        dynamic_bugs.append(y)
-        plot['dynamic bugs'] = dynamic_bugs
-        return plot
-
-def get_periods(frame, period):
-    periods = []
-    periodsFrame = pandas.period_range(start=pandas.to_datetime(frame['date_created']).min(), end=pandas.to_datetime(frame['date_created']).max(), freq=period)
-    if(period == 'W-SUN'):
-        for period in periodsFrame:
-            periods.append(str(period).split('/'))
-    if(period in ['7D', '10D', '3M', '6M', 'A-DEC']):
-        for period in periodsFrame:
-            periods.append(str(period))
-    return periods
-
-def add_months(sourcedate, months):
-     month = sourcedate.month - 1 + months
-     year = sourcedate.year + month // 12
-     month = month % 12 + 1
-     day = min(sourcedate.day,calendar.monthrange(year, month)[1])
-     return year.__str__() + '-' + month.__str__()
-
-def parse_period(period):
-    if(period == '1 week'):
-        return 'W-SUN'
-    if(period == '10 days'):
-        return '10D'
-    if(period == '3 months'):
-        return '3M'
-    if(period == '6 months'):
-        return '6M'
-    if(period == '1 year'):
-        return 'A-DEC'
-
-def combine_charts(distr, dynamic):
-    distr['dynamic bugs'] = dynamic
-    return distr
-
-def getDateForDynamicMY(date, stepSize):
-    if(date == None):
-        return ''
-    if(stepSize == '10D'):
-        day = date.day.__str__()
-        month = date.month.__str__()
-        if(date.day.__str__().__len__()==1):
-            day = '0'+day
-        if(date.month.__str__().__len__()==1):
-            month = '0'+month
-        date =day +'-'+month+'-'+date.year.__str__()
-        return date
-    if(stepSize in ['3M', '6M']):
-        month = date.month.__str__()
-        if(date.month.__str__().__len__()==1):
-            month = '0'+month
-        date = date.year.__str__() + '-' + month
-        return date
-    if(stepSize == 'A-DEC'):
-        return date.year.__str__()
-
-def friquency_stat(data):
-    SW = text.ENGLISH_STOP_WORDS.union(asigneeReporterFin, myStopWords)
-    tfidf = StemmedTfidfVectorizer(norm='l2', sublinear_tf=True, min_df=1, stop_words=SW, analyzer='word', max_features=1000)
-
-    tfs = tfidf.fit_transform(parallelize(data['descr'], cleanDescr))
-
-    idf = tfidf.idf_
-    voc_feat = dict(zip(tfidf.get_feature_names(), idf))
-
-    voc_feat_s = OrderedDict((k, v) for k, v in sorted(voc_feat.items(), key=lambda x: x[1], reverse=True))
-    return list(voc_feat_s.keys())[:100]
-
-def defaultsCleanForTop(text, remove_pat):
-    if text is None:
-        return None
-    else:
-        test_clean = text
-        for el in remove_pat:
-            test_clean = re.sub(el, ' ', test_clean)
-        return test_clean
-
-def top_terms(data, metric, field):
-    chi2 = feature_selection.chi2
-    SW = text.ENGLISH_STOP_WORDS.union(asigneeReporterFin, myStopWords)
-    tfidf = StemmedTfidfVectorizer(norm='l2', sublinear_tf=True, min_df=1, stop_words=SW, analyzer='word', max_features=1000)
-
-    bidata = pandas.get_dummies(data, prefix=[field], columns=[field])
-
-    tfs = tfidf.fit_transform(parallelize(bidata['descr'], cleanDescr))
-
-    y = bidata[metric]
-    selector = SelectKBest(score_func=chi2, k='all')
-    selector.fit_transform(tfs, y)
-    X_new = dict(zip(tfidf.get_feature_names(), selector.scores_))
-
-    temp_dict = OrderedDict((k, v) for k, v in sorted(X_new.items(), key=lambda x: x[1], reverse=True))
-    return list(temp_dict.keys())[:20]
-
-def get_topPriority(frame, field):
-    if(field.split()[0] == 'Priority'):
-        return top_terms(frame, 'Priority_' + ' '.join(e for e in field.split()[1:]), 'Priority')
-    if(field.split()[0] == 'Resolution'):
-        return top_terms(frame, 'Resolution_' + ' '.join(e for e in field.split()[1:]), 'Resolution')
-
-def save_significanceTop(referenceTo, significanceTop):
-    global SignificanceTop
-    if referenceTo in significanceTop.keys():
-        return significanceTop[referenceTo]
-    else:
-        significanceTop[referenceTo] = get_topPriority(origFrame, referenceTo)
-        return significanceTop[referenceTo]
-
-def parallelize(data, func):
-    cores = cpu_count()
-    split = numpy.array_split(data, cores)
-    pool = Pool(cores)
-    data = pandas.concat(pool.map(func, split))
-    pool.close()
-    pool.join()
-    return data
-
-def cleanDescr(data):
-    return data.apply(defaultsCleanForTop, args=(remove_pat,)).fillna(value='aftercleaning')
-
-def categorical(dict, field):
-    if field not in dict.keys():
-        return []
-    else: return dict[field]
-
-def collabels(data,list_pat, list_aot, colname, field):
-    global columns
-    columns.append(list_aot+colname)
-    data[list_aot+colname] = data[field].str.contains(list_pat.strip(), case=False, na=False, regex=True).astype(int)
-    return data
-
-def other_lab(frame, columns):
-    other = pandas.Series([])
-    for count in range(len(frame.index)):
-        other[count] = 1
-        for column in columns:
-            if(frame[column].iloc[count] == 1):
-                other[count] = 0
-                break
-            else: continue
-    return other
-
-def training_imbalance_kf (X_, Y_, TFIDF_, IMB_, FS_,pers_,CLF_, name_):
-    transform = feature_selection.SelectPercentile(FS_)
-    clf_model = Pipeline([('tfidf', TFIDF_),('imba', IMB_),('fs', transform), ('clf', CLF_)])
-    kf = KFold(n_splits=10)
-    kf.get_n_splits(X_)
-    #X_train, X_test, y_train, y_test = cross_validation.train_test_split(X_,Y_,train_size=.8, stratify=Y_)
-    for train_index, test_index in kf.split(X_):
-        X_train, X_test = X_[train_index], X_[test_index]
-        y_train, y_test = Y_[train_index], Y_[test_index]
-
-    clf_model.set_params(fs__percentile=pers_).fit(X_train, y_train)
-    pickle.dump(clf_model, open(mymodel+name_+'.sav', 'wb'))
-    #y_pred = clf_model.predict(X_test)
-    #print(classification_report(y_test, y_pred))
-    return
-
-def ifZero(val):
-    if val<0:
-        return 0
-    else: return val
-
-def sortIntervals(list):
-    print(list)
-    list.sort()
-    print(list.sort())
-    newList = list.sort()
-    return [str(newList[0])+'-'+str(newList[1]), str(newList[1])+'-'+str(newList[2]), str(newList[2])+'-'+str(newList[3]), '>'+str(newList[3])]
-
-def create_config(path):
-    config = configparser.ConfigParser()
-    config.add_section("SingleMod")
-    with open(path, "w") as config_file:
-        config.write(config_file)
-
-def update_setting(path, section, setting, value):
-    config = get_config(path)
-    config.set(section, setting, value)
-    with open(path, "w") as config_file:
-        config.write(config_file)
-
-def get_config(path):
-    if not os.path.exists(path):
-        create_config(path)
-
-    config = configparser.ConfigParser()
-    config.read(path)
-    return config
-
-def get_setting(path, section, setting):
-    config = get_config(path)
-    value = config.get(section, setting)
-    return value
-
-def checkSingle():
-    try:
-        get_config(path)
-        if(get_setting(path, 'SingleMod', 'prior_col_class') and get_setting(path, 'SingleMod', 'ttr_col_class') and get_setting(path, 'SingleMod', 'fix_col_class') and get_setting(path, 'SingleMod', 'rej_col_class') and get_setting(path, 'SingleMod', 'columns') and get_setting(path, 'SingleMod', 'binary_col_class')):
-            return True
-        else: False
-    except Exception: return False
-
-@app.route('/trainingModel', methods = ['GET', 'POST'])
-def trainingModel():
-    SW = text.ENGLISH_STOP_WORDS.union(asigneeReporterFin, myStopWords)
-    smt = SMOTE(ratio='minority', random_state=0, kind='borderline1')
-    svm_imb = SVC(gamma=2, C=1, probability=True, class_weight='balanced')
-    tfidf_imb = StemmedTfidfVectorizer(norm='l2',sublinear_tf=True, stop_words=SW, analyzer='word', max_df=0.5, max_features=500)
-    anova=feature_selection.f_classif
-    chi2=feature_selection.chi2
-    if not os.path.exists('../model'):
-        os.makedirs('../model')
-
-    for col in columns:
-        training_imbalance_kf(newData['descr'], newData[col], tfidf_imb, smt, chi2, 50, svm_imb, col+'_svmImb_chi2_smt_timb')
-
-    newData['Priority_ord'] = newData['Priority'].astype("category")
-    training_imbalance_kf(newData['descr'], newData['Priority_ord'], tfidf_imb, smt, chi2, 50, svm_imb, 'priority_svmImb_chi250_smt_timb')
-
-    bins = 4
-    ldis=[i for i in range(1, bins+1)]
-    newData['temp_ttr_class'] = pandas.qcut(newData['ttr'], bins, labels=ldis, duplicates='drop')
-    training_imbalance_kf(newData['descr'], newData['temp_ttr_class'], tfidf_imb, smt, chi2, 50, svm_imb, 'ttr_svmImb_chi250_smt_timb')
-
-    bin_data = pandas.get_dummies(newData, prefix=['Resolution'], columns=['Resolution'])
-    training_imbalance_kf(bin_data['descr'], bin_data['Resolution_Out of Date'], tfidf_imb, smt, chi2, 50, svm_imb, 'Resolution_Out of Date_svmImb_chi250_smt_timb')
-    training_imbalance_kf(bin_data['descr'], bin_data['Resolution_Rejected'], tfidf_imb, smt, chi2, 50, svm_imb, 'Resolution_Rejected_svmImb_chi250_smt_timb')
-    training_imbalance_kf(bin_data['descr'], bin_data["Resolution_Won't Fix"], tfidf_imb, smt, chi2, 50, svm_imb, "Resolution_Won't Fix_svmImb_chi250_smt_timb")
-
-    create_config(path)
-    update_setting(path, 'SingleMod', 'prior_col_class', ','.join(newData['Priority'].fillna('null').unique().tolist()))
-    update_setting(path, 'SingleMod', 'binary_col_class', ','.join(['0', '1']))
-    update_setting(path, 'SingleMod', 'fix_col_class', ','.join(['Fix', 'Wont Fix']))
-    update_setting(path, 'SingleMod', 'rej_col_class', ','.join(['Not reject', 'Reject']))
-    ttr_col_classTemp = pandas.qcut(newData['ttr'], 4,duplicates='drop').unique()
-    update_setting(path, 'SingleMod', 'ttr_col_class', ','.join([str(ifZero(ttr_col_classTemp[0].left))+'-'+str(ifZero(ttr_col_classTemp[0].right)), str(ifZero(ttr_col_classTemp[1].left))+'-'+str(ifZero(ttr_col_classTemp[1].right)), str(ifZero(ttr_col_classTemp[2].left))+'-'+str(ifZero(ttr_col_classTemp[2].right)), '>'+str(ifZero(ttr_col_classTemp[2].right))]))
-    update_setting(path, 'SingleMod', 'columns', ','.join(columns))
-
-    return jsonify({'message': 'model trained', 'statInfo': statInfo, 'categoric': categoricDict, 'attributes': clearDictionary, 'plot': combine_charts(add_0(prepare_XY(newData, 'ttr', 'Relative Frequency', '', '')), dynamic_bug_chart(newData, 'W-SUN')), 'markup': str(murkup), 'singleMod': checkSingle()})
-
-@app.route('/uploader', methods = ['GET', 'POST'])
+# File uploading process
+@app.route('/uploader', methods=['GET', 'POST'])
 def upload_file():
-    global origFrame
-    global murkup
-    global SignificanceTop
-    global origFreqTop
-    global asigneeReporterFin
-    global statInfo
-    global categoricDict
-    global clearDictionary
-    global columns
+    if request.method == 'GET':
+        session.clear()
+        return redirect(url_for('home', expired='0'), code=302)
+    if 'username' not in session:
+        file = request.files.getlist("file[]") # if session expired but user have sent a file to backend the system firstly accept the file
+        return redirect(url_for('home', expired='1'), code=302)
+
     if request.method == 'POST':
-        file = request.files['file']
-        if file and allowed_file(file.filename):
-            murkup = 0#to_0_1(request.form['murkup'])
-            asigneeReporterFin = []
-            newFile = open_file(file, murkup)
-            if(isinstance(newFile, str)):
-                return render_template('filterPage.html', json=json.dumps({'message': newFile}))
-            origFrame = newFile
-            categoricDict = categorical_json(origFrame, murkup)
-            if(isinstance(categoricDict, str)):
-                return render_template('filterPage.html', json = json.dumps({'message': categoricDict}))
-            if(isinstance(transform_fields(origFrame), str)):
-                return render_template('filterPage.html', json = json.dumps({'message': transform_fields(origFrame)}))
-            trFrame = transform_fields(origFrame)
-            columns = []
-            if request.form['areas']:
+        checker = Checker()
+        # file = request.files['file[]']
+        # session['file'] = file.filename
+        files = request.files.getlist("file[]") # list of all uploaded files
+        
+        # reset area fields for case if murkup = 0
+        session['fields']['areas_fields'] = {}
+        
+        #if file and checker.allowed_file(session['file'], file_info_store):
+        if all(files) and checker.allowed_file(files, file_info_store): # allowed_file - checks file format, 
+                                                                        # all - checks that all array elements are exist
+            session['murkup'] = 0 if version_store.inner == '1' else 1 if ('1' if request.form['murkup'] == 'yes' else '0') == '1' else 0
+            session['asigneeReporter'] = []     # stop-words container for Name/Surname values
+            session['origFrame'] = 'files/{0}/{1}_{2}.pkl'.format(version_store.session_id, frame_store.orig_frame, version_store.session_id)
+            try:
+                # creates the list of names of numeric fields from configuration (num_fields_to_convert)
+                # for using it in data type conversion process in csv-file processing in Pandas (open_file method)
+                manfi_num = list({k: v for k, v in session['fields']['mandatory_fields'].items() if k
+                                                        in [el for group in session['fields'] for el in session['fields'][group] if
+                                                        session['fields'][group][el]['type'] == 'number']}.keys())
+                spefi_num = list({k: v for k, v in session['fields']['special_fields'].items() if k
+                                                        in [el for group in session['fields'] for el in session['fields'][group] if
+                                                        session['fields'][group][el]['type'] == 'number' and not session['fields'][group][el]['name'] == 'Time to Resolve (TTR)']}.keys())
+                num_fields_to_convert = manfi_num + spefi_num
+                frames = [] # DataFrames container
+                for file in files:
+                    file_switcher = FileSwitcher(file_info_store, file, session) # makes class instance for each file
+                    # parses and converts values of XML file to Pandas DataFrame
+                    frame = file_switcher.open_file(list(session['fields']['mandatory_fields'].keys()),
+                                                    list(session['fields']['special_fields'].keys()),
+                                                    num_fields_to_convert)
+                    frames.append(frame)
+                # concatenates DataFrames to consolidated table
+                data = Filter().reindex_data(pandas.concat(frames)) # reindex_data - makes row reindexing
+                                                                    # of concatenated table (otherwise indices will be like '0 1 2 0 1 2 3')
+            except Exception as e:
+                return render_template('filterPage.html', json=json.dumps({'username': session['username'],
+                                                                           'message': str(e),
+                                                                           'fields': session['fields'],
+                                                                           'inner': version_store.inner,
+                                                                           'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                                                                           'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)}))
+            
+            session['frame_count'], session['frame_count_error'] = checker.count_frame_rows(data)  # count of filtered defects
+            if session['frame_count_error']:
+                return render_template('filterPage.html', json=json.dumps({'username': session['username'], 
+                                                                           'message': session['frame_count_error'],
+                                                                           'fields': session['fields'],
+                                                                           'inner': version_store.inner,
+                                                                           'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                                                                           'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)}))
+            # alternative for pickle from pandas is HDFStore
+            # store = pandas.HDFStore(filename+'.h5')
+            # store['orig_frame'] = data
+            # temp file creaftion
+            data.to_pickle(session['origFrame'])
+            # save placeholder values for fields of DataFrame
+            session['placeholder'] = {k: str(pandas.read_pickle(session['origFrame'])[k].iloc[0])
+                                      for k in pandas.read_pickle(session['origFrame']).keys()}
+            # murkup engine
+            if session['murkup'] == 1:
+                # saving areas fields to session['fields'] to use them on GUI and subset saving
+                session['fields']['areas_fields'] = {el.split('=')[0].strip()+'_lab': {'name': el.split('=')[0].strip(), 'type': 'bool'}
+                                                     for el in request.form['areas'].split(',')+['Other']}
+                markup = Markup()
                 for pattern in request.form['areas'].split(','):
-                    trFrame = collabels(trFrame, pattern.split('=')[1], pattern.split('=')[0], '_lab', 'components')
-                trFrame['Other_lab'] = other_lab(trFrame, columns)
-                columns.append('Other_lab')
-            statInfo = get_statInfo(trFrame)
-            period = 'W-SUN'
-            origFreqTop = friquency_stat(trFrame)
-            SignificanceTop = {categoricDict['ReferringTo'][0]: top_terms(origFrame, 'Priority_' + categoricDict['Priority'][0], 'Priority')}
-            clearDictionary = {'SignificanceTop': SignificanceTop[categoricDict['ReferringTo'][0]], 'ReferringTo': 'Priority '+categoricDict['Priority'][0], 'freqTop': origFreqTop}
-            return render_template('filterPage.html', json=json.dumps({'message': 'file uploaded successfully', 'statInfo': statInfo, 'categoric': categoricDict, 'plot': combine_charts(add_0(prepare_XY(trFrame, 'ttr', 'Relative Frequency', '', '')), dynamic_bug_chart(trFrame, period)), 'markup': str(murkup), 'attributes': {'SignificanceTop': SignificanceTop[categoricDict['ReferringTo'][0]], 'ReferringTo': 'Priority '+categoricDict['Priority'][0], 'freqTop': origFreqTop}, 'singleMod': checkSingle()}))
-        else: return render_template('filterPage.html', json=json.dumps({'message': 'incorrect file format. Please use only xml'}))
+                    data = markup.collabels(pandas.read_pickle(session['origFrame']),
+                                                               pattern.split('=')[1],
+                                                               pattern.split('=')[0],
+                                                               '_lab',
+                                                               'Components')
+                data['Other_lab'] = markup.other_lab(data, [el for el in list(session['fields']['areas_fields'].keys()) if el != 'Other_lab'])
+                data.to_pickle(session['origFrame'])
+            
+            try:
+                # drop-down fields preparation
+                session['categoricDict'] = checker.prepare_categorical(pandas.read_pickle(session['origFrame']),    
+                                                                        fields_data=session['fields'],
+                                                                        ref_to_data=session['ref_to'])
+                # paths and file names creation for future temp files storing
+                session['newData'] = 'files/{0}/{1}_{2}.pkl'.format(version_store.session_id, frame_store.new_data, version_store.session_id)
+                session['trFrame'] = 'files/{0}/{1}_{2}.pkl'.format(version_store.session_id, frame_store.tr_frame, version_store.session_id)
 
-@app.route('/buildChart/onlyDynamic/', methods = ['GET', 'POST'])
-def build_onlyDynamic_chart():
-    if request.method == 'POST':
-        period = parse_period(request.args.get('period', default='W-SUN', type=str))
-        return jsonify({'message': 'chart builded', 'statInfo': statInfo, 'categoric': categoricDict, 'plot': dynamic_bug_chart(newData, period), 'attributes': clearDictionary, 'markup': str(murkup)})
+                # data types setting, empty fields blocking, ttr calculation
+                data = checker.transform_fields(pandas.read_pickle(session['origFrame']), session['fields'])
+                # reduce = ReduceFrame()
+                # data_reduce = reduce.reduce(data)
+                data.to_pickle(session['newData']) # filtered DataFrame
+                data.to_pickle(session['origFrame']) # initial DataFrame
+                data.to_pickle(session['trFrame'])  # transformed DataFrame
 
-@app.route('/buildChart/onlyDistribution/', methods = ['GET', 'POST'])
-def build_onlyDistribution_chart():
-    if request.method == 'POST':
-        scale = request.form['scale']
-        stepSize = request.form['stepSize']
-        x = request.form['x']
-        y = request.form['y']
-        if(len(newData)<=1 and y=='Frequency density'):
-            return jsonify({'message': 'you are cannot to build frequency density chart for data with one value', 'statInfo': statInfo, 'categoric': categoricDict, 'attributes': clearDictionary, 'plot': add_0(prepare_XY(newData, x, 'Relative Frequency', '', '')), 'markup': str(murkup)})
-        if(check_scale_step(scale, stepSize, x, statInfo) == 'incorrect value'):
-            return jsonify({'message': 'incorrect value for Xmax or StepSize', 'statInfo': statInfo, 'categoric': categoricDict, 'attributes': clearDictionary, 'plot': add_0(prepare_XY(newData, x, y, '', '')), 'markup': str(murkup)})
-        elif(check_scale_step(scale, stepSize, x, statInfo)):
-            return jsonify({'message': 'chart builded', 'statInfo': statInfo, 'categoric': categoricDict, 'plot': add_0(prepare_XY(newData, x, y, scale, stepSize)), 'attributes': clearDictionary, 'markup': str(murkup)})
+                stat_info = StatInfo()
+                # STAT INFO calculations
+                session['statInfo'] = stat_info.get_statInfo(pandas.read_pickle(session['trFrame']), pandas.read_pickle(session['origFrame']))
+                # setting up period for chart calculation in CUMULATIVE CHART OF DEFECT SUBMISSION
+                session['period'] = 'W-SUN'
+                # THE TOP OF THE MOST FREQUENTLY USED TERMS calculation
+                session['origFreqTop'] = stat_info.friquency_stat(pandas.read_pickle(session['trFrame']),
+                                                                    sw=text.ENGLISH_STOP_WORDS.union(session['asigneeReporter'], myStopWords))
+                
+            
+            except KeyError as e:
+                return render_template('filterPage.html', json=json.dumps({'username': session['username'],
+                                                                        'message': str(e),
+                                                                        'fields': session['fields'],
+                                                                        'inner': version_store.inner,
+                                                                        'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                                                                        'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)}))
+            except Exception as e:
+                return render_template('filterPage.html', json=json.dumps({'username': session['username'],
+                                                                        'message': str(e),
+                                                                        'fields': session['fields'],
+                                                                        'inner': version_store.inner,
+                                                                        'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                                                                        'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)}))
+                
+            charts = PlotChart()
+            # if cateforical fields are empty so we do not build significance top
+            if session['categoricDict']['ReferringTo'] == ['null']:
+                
+                session['SignificanceTop'] = 'null'
+                session['clearDictionary'] = {'SignificanceTop': session['SignificanceTop'],
+                                              'ReferringTo': 'Priority ' + session['categoricDict']['Priority'][0],
+                                              'freqTop': session['origFreqTop']}
+                # use update for attributes to disable empty ones
+                attr = {'SignificanceTop': session['SignificanceTop'], 'ReferringTo': 'Priority '+session['categoricDict']['Priority'][0], 'freqTop': session['origFreqTop']}
+                # blocking empty fields on gui
+                attr.update({el: None for el in  list(data) if len(data[el].dropna().unique().tolist()) == 0})
+                return render_template('filterPage.html', json=json.dumps({'username': session['username'],
+                                                                           'message': 'file uploaded successfully',
+                                                                           'statInfo': session.get('statInfo'),
+                                                                           'categoric': session.get('categoricDict'),
+                                                                           'plot': charts.combine_charts(charts.prepare_data(data=pandas.read_pickle(session['trFrame']), x='ttr', y='Relative Frequency', step_size='', period=''), charts.prepare_data(data=pandas.read_pickle(session['trFrame']), y='Dynamic', period=session['period'])),
+                                                                           'murkup': str(session.get('murkup')),
+                                                                           'file_size': file_info_store.max_file_size,
+                                                                           'attributes': attr,
+                                                                           'fields': session['fields'],
+                                                                           'placeholder': session['placeholder'],
+                                                                           'inner': version_store.inner,
+                                                                           'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                                                                           'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)}))
+            else:
+                try:
+                    data_set = session['categoricDict']['ReferringTo'][0]
+                    data_splitted = session['categoricDict']['ReferringTo'][0].split()
+                    metric = data_splitted[0] + '_' + ' '.join(data_splitted[1:len(data_splitted)])
+                    field = session['categoricDict']['ReferringTo'][0].split()[0]
+                    #session['SignificanceTop'] = {session['categoricDict']['ReferringTo'][0]:
+                    #                                stat_info.top_terms(pandas.read_pickle(session['origFrame']),
+                    #                                                    session['categoricDict']['ReferringTo'][0].split()[0]+'_' + session['categoricDict']['ReferringTo'][0].split()[1],
+                    #                                                    session['categoricDict']['ReferringTo'][0].split()[0],
+                    #                                                    sw=text.ENGLISH_STOP_WORDS.union(session['asigneeReporter'], myStopWords))}
+                    
+                    session['SignificanceTop'] = {
+                        data_set: stat_info.top_terms(
+                                                    pandas.read_pickle(session['origFrame']),
+                                                    metric,
+                                                    field,
+                                                    sw=text.ENGLISH_STOP_WORDS.union(session['asigneeReporter'], myStopWords)
+                                                    )}
+                except Exception as e:
+                    return render_template('filterPage.html', json=json.dumps({'username': session['username'],
+                                                                               'message': str(e),
+                                                                               'fields': session['fields'],
+                                                                               'inner': version_store.inner,
+                                                                               'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                                                                               'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)}))
+                # use update for attributes to disable empty ones
+                attr = {'SignificanceTop': session['SignificanceTop'][session['categoricDict']['ReferringTo'][0]],
+                        'ReferringTo': 'Resolution '+session['categoricDict']['Resolution'][0], 'freqTop': session['origFreqTop']}
+                attr.update({el: None for el in  list(data) if len(data[el].dropna().unique().tolist()) == 0})
+                #plot = combine_charts(add_0(prepare_XY(pandas.read_pickle(session['trFrame']), 'ttr', 'Relative Frequency', '', '')), dynamic_bug_chart(pandas.read_pickle(session['trFrame']), session['period']))
+                session['clearDictionary'] = {'SignificanceTop': session['SignificanceTop'][session['categoricDict']['ReferringTo'][0]], 'ReferringTo': 'Resolution '+session['categoricDict']['Resolution'][0], 'freqTop': session['origFreqTop']}
+                return render_template('filterPage.html', json=json.dumps({'username': session['username'],
+                                                                           'message': 'file uploaded successfully',
+                                                                           'statInfo': session.get('statInfo'),
+                                                                           'categoric': session.get('categoricDict'),
+                                                                           'plot': charts.combine_charts(charts.prepare_data(data=pandas.read_pickle(session['trFrame']), x='ttr', y='Relative Frequency', step_size='', period=''), charts.prepare_data(data=pandas.read_pickle(session['trFrame']), y='Dynamic', period=session['period'])),
+                                                                           'murkup': str(session.get('murkup')),
+                                                                           'file_size': file_info_store.max_file_size,
+                                                                           'attributes': attr,
+                                                                           'fields': session['fields'],
+                                                                           'placeholder': session['placeholder'],
+                                                                           'inner': version_store.inner,
+                                                                           'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                                                                           'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)}))
         else:
-            return jsonify({'message': 'please use Xmax and StepSize value in the array [0,maxValue from stat info]', 'statInfo': statInfo, 'categoric': categoricDict, 'attributes': clearDictionary, 'plot':add_0(prepare_XY(newData, x, y, '', '')), 'markup': str(murkup)})
+            return render_template('filterPage.html', json=json.dumps({'username': session['username'],
+                                                                       'message': 'incorrect file format.Please use only {}'.
+                                                                                   format(','.join(file_info_store.allowed_extensions)),
+                                                                       'fields': session['fields'],
+                                                                       'inner': version_store.inner,
+                                                                       'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                                                                       'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)}))
 
 
-@app.route('/filtering', methods = ['GET', 'POST'])
+# CUMULATIVE CHART OF DEFECT SUBMISSION calculation
+@app.route('/buildChart/onlyDynamic/', methods=['GET', 'POST'])
+def build_onlyDynamic_chart():
+    if request.method == 'GET':
+        session.clear()
+        return redirect(url_for('home', expired='0'), code=302)
+    if 'username' not in session:
+        return jsonify(dict(redirect=url_for('home', expired='1')))
+    if request.method == 'POST':
+        charts = PlotChart()
+        checker = Checker()
+        session['period'] = charts.parse_period(request.args.get('period', default='W-SUN', type=str))
+        return jsonify({'username': session['username'],
+                        'message': 'chart builded',
+                        'statInfo': session['statInfo'],
+                        'categoric': session['categoricDict'],
+                        'plot': charts.prepare_data(data=pandas.read_pickle(session['newData']), y='Dynamic',
+                                                    period=session['period']),
+                        'attributes': session['clearDictionary'],
+                        'murkup': str(session['murkup']),
+                        'fields': session['fields'],
+                        'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                        'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)})
+
+
+@app.route('/buildChart/onlyDistribution/', methods=['GET', 'POST'])
+def build_onlyDistribution_chart():
+    if request.method == 'GET':
+        session.clear()
+        return redirect(url_for('home', expired='0'), code=302)
+    if 'username' not in session:
+        return jsonify(dict(redirect=url_for('home', expired='1')))
+    if request.method == 'POST':
+        session['scale'] = request.form['scale']
+        session['stepSize'] = request.form['stepSize']
+        session['x'] = request.form['x']
+        session['y'] = request.form['y']
+        charts = PlotChart()
+        checker = Checker()
+        if len(pandas.read_pickle(session['newData'])) <= 1 and session['y'] == 'Frequency density':
+            return jsonify({'username': session['username'],
+                            'message': 'you are cannot to build frequency density chart for data with one value',
+                            'statInfo': session['statInfo'],
+                            'categoric': session['categoricDict'],
+                            'attributes': session['clearDictionary'],
+                            'plot': charts.prepare_data(pandas.read_pickle(session['newData']), session['x'], 'Relative Frequency', '', ''),
+                            'murkup': str(session['murkup']),
+                            'fields': session['fields'],
+                            'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                            'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)})
+        try:
+            if charts.check_scale_step(session['scale'], session['stepSize'], session['x'], session['statInfo']):
+                return jsonify({'username': session['username'],
+                                'message': 'chart builded',
+                                'statInfo': session['statInfo'],
+                                'categoric': session['categoricDict'],
+                                'plot': charts.prepare_data(pandas.read_pickle(session['newData']), session['x'], session['y'], session['scale'], session['stepSize']),
+                                'attributes': session['clearDictionary'],
+                                'murkup': str(session['murkup']),
+                                'fields': session['fields'],
+                                'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                                'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)})
+            else:
+                return jsonify({'username': session['username'],
+                                'message': 'please use Xmax and StepSize value in the array [0,maxValue from stat info]',
+                                'statInfo': session['statInfo'],
+                                'categoric': session['categoricDict'],
+                                'attributes': session['clearDictionary'],
+                                'plot': charts.prepare_data(pandas.read_pickle(session['newData']), session['x'], session['y'], '', ''),
+                                'murkup': str(session['murkup']),
+                                'fields': session['fields'],
+                                'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                                'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)})
+        except ValueError:
+            return jsonify({'username': session['username'],
+                            'message': 'incorrect value for Xmax or StepSize',
+                            'statInfo': session['statInfo'],
+                            'categoric': session['categoricDict'],
+                            'attributes': session['clearDictionary'],
+                            'plot': charts.prepare_data(pandas.read_pickle(session['newData']), session['x'], session['y'], '', ''),
+                            'murkup': str(session['murkup']),
+                            'fields': session['fields'],
+                            'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                            'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)})
+
+
+
+# ATTRIBUTES LIST FILTRATION filtration
+@app.route('/filtering', methods=['GET', 'POST'])
 def filter():
-    global newData
-    global statInfo
-    global categoricDict
-    global clearDictionary
+    if request.method == 'GET':
+        session.clear()
+        return redirect(url_for('home', expired='0'), code=302)
+    if 'username' not in session:
+        return jsonify(dict(redirect=url_for('home', expired='1')))
     if request.method == 'POST':
-        varDictionary = {}
-        varDictionary['Comments2'] = request.form['Comments2']
-        varDictionary['Comments4'] = request.form['Comments4']
-        varDictionary['Attachments2'] = request.form['Attachments2']
-        varDictionary['Attachments4'] = request.form['Attachments4']
-        varDictionary['Date_created2'] = request.form['Date_created2']
-        varDictionary['Date_created4'] = request.form['Date_created4']
-        varDictionary['Date_resolved2'] = request.form['Date_resolved2']
-        varDictionary['Date_resolved4'] = request.form['Date_resolved4']
-        varDictionary['TTR2'] = request.form['TTR2']
-        varDictionary['TTR4'] = request.form['TTR4']
-        varDictionary['Issue_key'] = request.form['Issue_key']
-        varDictionary['Summary'] = request.form['summary']
-        varDictionary['Status'] = categorical(request.form.to_dict(flat=False), 'Status')
-        varDictionary['Project_name'] = categorical(request.form.to_dict(flat=False), 'Project_name')
-        varDictionary['Priority'] = categorical(request.form.to_dict(flat=False), 'Priority')
-        varDictionary['Resolution'] = categorical(request.form.to_dict(flat=False), 'Resolution')
-        varDictionary['Components'] = request.form['Components']
-        varDictionary['Labels'] = request.form['labels']
-        varDictionary['Description'] = request.form['description']
-        varDictionary['Version'] = request.form['Version']
-        varDictionary['DEV_resolution'] = categorical(request.form.to_dict(flat=False), 'DEV_resolution')
-        varDictionary['ReferringTo'] = request.args.get('ReferringTo', type=str)
-        categoricDict = categorical_json(newData, murkup)
-        clearDictionary = fields_for_filtration(varDictionary)
+        # fields with non-empty values
+        session['clearDictionary'] = {k: v[0] if len(v) == 1 else ','.join(v) for k, v in
+                                      request.form.to_dict(flat=False).items() if v != ['']}
+        session['clearDictionary']['ReferringTo'] = request.args.get('ReferringTo', type=str)
+        session['clearDictionary'].update({k: Decimal(v) for k, v in session['clearDictionary'].items() if k[:-1]
+                                           in [el for group in session['fields'] for el in session['fields'][group] if
+                                               session['fields'][group][el]['type'] == 'number']})
+        session['clearDictionary'].update({k: pandas.to_datetime(dt.strptime(v, '%d-%m-%Y')) for k, v in
+                                           session['clearDictionary'].items() if k[:-1]
+                                           in [el for group in session['fields'] for el in session['fields'][group] if
+                                               session['fields'][group][el]['type'] == 'date']})
+        session['clearDictionary'].update({k: True if v.lower() == 'yes' else False for k, v in session['clearDictionary'].items() if k
+                                           in [el for group in session['fields'] for el in session['fields'][group] if
+                                               session['fields'][group][el]['type'] == 'bool']})
+        checker = Checker()
+        charts = PlotChart()
+        stat_info = StatInfo()
+        filter = Filter()
+        # filtration process
+        for key in session['clearDictionary']:
+            filter.filtration(key,
+                              session['clearDictionary'][key],
+                              pandas.read_pickle(session['newData']),
+                              fields=session['fields'],
+                              store=session['newData'])
+            if pandas.read_pickle(session['newData']).empty:
+                filter.drop_filter(session)
 
-        dictForParseInt = {}
-        dictForParseDate = {}
-        for key in ['Comments2', 'Comments4', 'Attachments2', 'Attachments4', 'TTR2', 'TTR4']:
-            if key in clearDictionary:
-                dictForParseInt[key] = clearDictionary[key]
-        for key in ['Date_created2', 'Date_created4', 'Date_resolved2', 'Date_resolved4']:
-            if key in clearDictionary:
-                dictForParseDate[key] = clearDictionary[key]
-        result = merge_two_dicts(parseToIntFinal(dictForParseInt), parseToDateFinal(dictForParseDate))
-        dictForFiltration = merge_two_dicts(clearDictionary, result)
-        checkDict = checkLeftRigthWithoutSings(dictForFiltration)
+                session['categoricDict'] = checker.prepare_categorical(pandas.read_pickle(session['origFrame']),
+                                                                       fields_data=session['fields'],
+                                                                       ref_to_data=session['ref_to'])
+                
+                if session['categoricDict']['ReferringTo'] == ['null']:
+                    session['SignificanceTop'] = 'null'
+                    session['clearDictionary'].update({'SignificanceTop': session['SignificanceTop'],
+                                                       'ReferringTo': 'Priority '+session['categoricDict']['Priority'][0],
+                                                       'freqTop': session['origFreqTop']})
+                else:
+                    session['clearDictionary'].update({
+                        'SignificanceTop': session['SignificanceTop'][session['categoricDict']['ReferringTo'][0]],
+                        'ReferringTo': 'Priority '+session['categoricDict']['Priority'][0], 'freqTop': session['origFreqTop'],
+                        'freqTop': session['origFreqTop']})
 
-        for key in checkDict:
-            newData = filtration(key, checkDict[key], newData)
-            if(newData.empty):
-                clearDictionary = categorical_json(origFrame, murkup)
-                return jsonify({'message': 'there are no rows corresponding to the condition', 'statInfo': drop_filter(), 'categoric': categoricDict, 'plot': combine_charts(add_0(prepare_XY(origFrame, 'ttr', 'Relative Frequency', '', '')), dynamic_bug_chart(origFrame, 'W-SUN')), 'markup': str(murkup), 'freqTop': friquency_stat(origFrame)})
-        statInfo = get_statInfo(newData)
-        categoricDict = categorical_json(newData, murkup)
-        clearDictionary['freqTop'] = friquency_stat(newData)
-        clearDictionary['SignificanceTop'] = save_significanceTop(varDictionary['ReferringTo'], SignificanceTop)
-        return jsonify({'message': 'data filtered', 'statInfo': statInfo, 'categoric': categoricDict, 'attributes': clearDictionary, 'plot': combine_charts(add_0(prepare_XY(newData, 'ttr', 'Relative Frequency', '', '')), dynamic_bug_chart(newData, 'W-SUN')), 'markup': str(murkup)})
+                # convert date fields to str format for correct displaying on GUI
+                session['clearDictionary'].update({k: str(v.date()) for k, v in session['clearDictionary'].items() if k[:-1] in
+                    [field for group in session['fields'] for field in
+                    session['fields'][group] if session['fields'][group][field]['type'] == 'date']})
+                # convert decimal fields to str format for correct JSON serialisation
+                session['clearDictionary'].update({k: str(v) for k, v in session['clearDictionary'].items() if k[:-1] in 
+                                           [field for group in session['fields'] for field in
+                                            session['fields'][group] if session['fields'][group][field]['type'] == 'number']})
 
-@app.route('/resetFilter', methods = ['GET', 'POST'])
+                return jsonify({'username': session['username'],
+                                'message': 'there are no rows corresponding to the condition',
+                                'statInfo': stat_info.get_statInfo(pandas.read_pickle(session['newData']),
+                                                                   pandas.read_pickle(session['origFrame'])),
+                                'categoric': session.get('categoricDict'),
+                                'attributes': session.get('clearDictionary'),
+                                'plot': charts.combine_charts(charts.prepare_data(data=pandas.read_pickle(session['origFrame']), x='ttr', y='Relative Frequency', step_size='', period=''), charts.prepare_data(data=pandas.read_pickle(session['origFrame']), y='Dynamic', period='W-SUN')),
+                                'murkup': str(session['murkup']),
+                                'freqTop': stat_info.friquency_stat(pandas.read_pickle(session['origFrame']),
+                                                                    sw=text.ENGLISH_STOP_WORDS.union(session['asigneeReporter'], myStopWords)),
+                                'fields': session['fields'],
+                                'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                                'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)})
+        session['statInfo'] = stat_info.get_statInfo(pandas.read_pickle(session['newData']), pandas.read_pickle(session['origFrame']))
+        session['categoricDict'] = checker.prepare_categorical(pandas.read_pickle(session['newData']),
+                                                               fields_data=session['fields'],
+                                                               ref_to_data=session['ref_to'])
+        session['clearDictionary']['freqTop'] = stat_info.friquency_stat(pandas.read_pickle(session['newData']),
+                                                                         sw=text.ENGLISH_STOP_WORDS.union(session['asigneeReporter'], myStopWords))
+        # create list of categorical fields for GUI
+        session['clearDictionary'].update({k: v.split(',') for k, v in session['clearDictionary'].items() if k in
+                                           [field for group in session['fields'] for field in
+                                            session['fields'][group] if session['fields'][group][field]['type'] == 'categorical']})
+        # convert date fields to str format for correct displaying on GUI
+        session['clearDictionary'].update({k: str(v.date()) for k, v in session['clearDictionary'].items() if k[:-1] in
+                                           [field for group in session['fields'] for field in
+                                            session['fields'][group] if session['fields'][group][field]['type'] == 'date']})
+        # convert decimal fields to str format for correct JSON serialisation
+        session['clearDictionary'].update({k: str(v) for k, v in session['clearDictionary'].items() if k[:-1] in 
+                                           [field for group in session['fields'] for field in
+                                            session['fields'][group] if session['fields'][group][field]['type'] == 'number']})
+        if session['categoricDict']['ReferringTo'] == ['null']:
+            session['clearDictionary']['SignificanceTop'] = 'null'
+            return jsonify({'username': session.get('username'),
+                            'message': 'data filtered',
+                            'statInfo': session.get('statInfo'),
+                            'categoric': session.get('categoricDict'),
+                            'attributes': session.get('clearDictionary'),
+                            'plot': charts.combine_charts(charts.prepare_data(data=pandas.read_pickle(session['newData']), x='ttr', y='Relative Frequency', step_size='', period=''), charts.prepare_data(data=pandas.read_pickle(session['newData']), y='Dynamic', period='W-SUN')),
+                            'murkup': str(session.get('murkup')),
+                            'fields': session['fields'],
+                            'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                            'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)})
+        else:
+            session['clearDictionary']['SignificanceTop'] = stat_info.save_significanceTop(
+                pandas.read_pickle(session['newData']),
+                session['clearDictionary']['ReferringTo'],
+                session['SignificanceTop'],
+                sw=text.ENGLISH_STOP_WORDS.union(session['asigneeReporter'], myStopWords)
+                )
+            return jsonify({'username': session.get('username'),
+                            'message': 'data filtered',
+                            'statInfo': session.get('statInfo'),
+                            'categoric': session.get('categoricDict'),
+                            'attributes': session.get('clearDictionary'),
+                            'plot': charts.combine_charts(charts.prepare_data(data=pandas.read_pickle(session['newData']), x='ttr', y='Relative Frequency', step_size='', period=''), charts.prepare_data(data=pandas.read_pickle(session['newData']), y='Dynamic', period='W-SUN')),
+                            'murkup': str(session.get('murkup')),
+                            'fields': session['fields'],
+                            'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                            'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)})
+            
+
+
+@app.route('/resetFilter', methods=['GET', 'POST'])
 def resetFilter():
+    if request.method == 'GET':
+        session.clear()
+        return redirect(url_for('home', expired='0'), code=302)
+    if 'username' not in session:
+        return jsonify(dict(redirect=url_for('home', expired='1')))
     if request.method == 'POST':
-        return jsonify({'message': 'filter dropped', 'statInfo': drop_filter(), 'categoric': categoricDict, 'plot': combine_charts(add_0(prepare_XY(origFrame, 'ttr', 'Relative Frequency', '', '')), dynamic_bug_chart(origFrame, 'W-SUN')), 'markup': str(murkup), 'attributes': {'SignificanceTop': SignificanceTop[categoricDict['ReferringTo'][0]], 'ReferringTo': categoricDict['ReferringTo'][0], 'freqTop': origFreqTop}})
+        filter = Filter()
+        charts = PlotChart()
+        stat_info = StatInfo()
+        filter.drop_filter(session)
+        checker = Checker()
+        return jsonify({'username': session['username'],
+                        'message': 'filter dropped',
+                        'statInfo': stat_info.get_statInfo(pandas.read_pickle(session['newData']),
+                                                                                 pandas.read_pickle(session['origFrame'])),
+                        'categoric': session['categoricDict'],
+                        'plot': charts.combine_charts(charts.prepare_data(data=pandas.read_pickle(session['origFrame']), x='ttr', y='Relative Frequency', step_size='', period=''), charts.prepare_data(data=pandas.read_pickle(session['origFrame']), y='Dynamic', period='W-SUN')),
+                        'murkup': str(session['murkup']),
+                        'attributes': {'SignificanceTop': session['clearDictionary']['SignificanceTop'], 'ReferringTo': session['categoricDict']['ReferringTo'][0], 'freqTop': session['origFreqTop']},
+                        'fields': session['fields'],
+                        'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                        'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)})
 
-@app.route('/saveSubset', methods = ['GET', 'POST'])
+
+@app.route('/saveSubset', methods=['GET', 'POST'])
 def saveSubset():
-    global tempFiles
+    if request.method == 'GET':
+        session.clear()
+        return redirect(url_for('home', expired='0'), code=302)
+    if 'username' not in session:
+        return jsonify(dict(redirect=url_for('home', expired='1')))
     if request.method == 'POST':
-        fileName = request.form['fileName']
-        save_file(newData, fileName, murkup)
-        tempFiles.append(app.config['UPLOAD_FOLDER']+'/'+secure_filename(fileName))
-        return send_from_directory(app.config['UPLOAD_FOLDER'], fileName, as_attachment=True)
+        file = File()
+        checker = Checker()
+        session['fileName'] = request.form['fileName']
+        try:
+            file.save_file(pandas.read_pickle(session['newData']),
+                           session['fileName'],
+                           session['murkup'],
+                           file_info_store.upload_folder,
+                           session['fields'])
+        except Exception as e:
+            return render_template('filterPage.html', json=json.dumps({'username': session['username'],
+                                                                       'message': str(e),
+                                                                       'fields': session['fields'],
+                                                                       'inner': version_store.inner,
+                                                                       'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                                                                       'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)}))
+        # save path to file in order to delete after usage
+        session['tempFiles'].append(file_info_store.upload_folder+'/'+session['fileName'])
+        return send_from_directory(file_info_store.upload_folder, session['fileName'], as_attachment=True)
 
-@app.route('/delTempFiles', methods = ['GET', 'POST'])
+
+@app.route('/delTempFiles', methods=['GET', 'POST'])
 def delTempFiles():
-    global tempFiles
+    if request.method == 'GET':
+        session.clear()
+        return redirect(url_for('home', expired='0'), code=302)
+    if 'username' not in session:
+        return jsonify(dict(redirect=url_for('home', expired='1')))
     if request.method == 'POST':
-        for path in tempFiles:
-            os.remove(path)
-        tempFiles = []
+        for path in session['tempFiles']:
+            if os.path.isfile(path):
+                os.remove(path)
+        session['tempFiles'] = []
         return 'done'
 
-@app.route('/significanceTop', methods = ['GET', 'POST'])
+
+@app.route('/significanceTop', methods=['GET', 'POST'])
 def significanceTop():
+    if request.method == 'GET':
+        session.clear()
+        return redirect(url_for('home', expired='0'), code=302)
+    if 'username' not in session:
+        return jsonify(dict(redirect=url_for('home', expired='1')))
     if request.method == 'POST':
-        ReferringTo = request.form['ReferringTo']
-        return jsonify({'SignificanceTop': save_significanceTop(ReferringTo, SignificanceTop)})
+        stat_info = StatInfo()
+        checker = Checker()
+        session['ReferringTo'] = request.form['ReferringTo']
+        return jsonify({'SignificanceTop': stat_info.save_significanceTop(pandas.read_pickle(session['newData']),
+                                                                          session['ReferringTo'],
+                                                                          session['SignificanceTop'],
+                                                                          sw=text.ENGLISH_STOP_WORDS.union(session['asigneeReporter'], myStopWords)),
+                        'fields': session['fields'],
+                        'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                        'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)})
 
-@app.route('/singleMod',methods = ['POST', 'GET'])
+
+# model training
+@app.route('/training_model', methods=['GET', 'POST'])
+def training_model():
+    if request.method == 'GET':
+        session.clear()
+        return redirect(url_for('home', expired='0'), code=302)
+    if 'username' not in session:
+        return jsonify(dict(redirect=url_for('home', expired='1')))
+    if request.method == 'POST':
+        try:
+            # makes a backup of single_mode.ini file and all existing models
+            backup_models()
+
+            model = Model()
+            charts = PlotChart()
+            checker = Checker()
+            model.training_model(
+                                str(os.path.abspath(os.pardir))+'/model/',
+                                session['newData'],
+                                list(session['fields']['areas_fields'].keys()),
+                                session['resolution'],
+                                text.ENGLISH_STOP_WORDS.union(session['asigneeReporter'], myStopWords),
+                                log=file_info_store.log_train
+                                )
+            model.create_top_terms_file(pandas.read_pickle(session['newData']), session['resolution'])
+        except ValueError as e: 
+            print(e)
+            roll_back_models()
+            remove_backup()
+            return jsonify({'message': 'Error: the received file doesn\'t contain enough data to analyze. Model can\'t be trained.',
+                            'username': session['username'],
+                            'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                            'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)})
+        except KeyError as e: 
+            print(e)
+            roll_back_models()
+            remove_backup()
+            return jsonify({'message': 'Error: the received file doesn\'t contain enough data to analyze. Model can\'t be trained.',
+                            'username': session['username'],
+                            'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                            'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)})
+        except Exception as e: 
+            print(e)
+            roll_back_models()
+            remove_backup()
+            return jsonify({'message': 'Error: Model can\'t be trained. Please check single_mod.ini file.',
+                            'username': session['username'],
+                            'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                            'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)})
+        else:
+            remove_backup()
+            return jsonify({'message': 'model trained',
+                            'statInfo': session['statInfo'],
+                            'categoric': session['categoricDict'],
+                            'attributes': session['clearDictionary'],
+                            'plot': charts.combine_charts(charts.prepare_data(data=pandas.read_pickle(session['newData']), x='ttr', y='Relative Frequency', step_size='', period=''), charts.prepare_data(data=pandas.read_pickle(session['newData']), y='Dynamic', period='W-SUN')),
+                            'markup': str(session['murkup']),
+                            'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                            'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)})
+
+
+@app.route('/singleMod', methods=['POST', 'GET'])
 def singleMod():
-    global description1
-    return render_template('resultSinglePage.html', json=json.dumps({'description1': description1}))
+    if request.method == 'GET':
+        session.clear()
+        return redirect(url_for('home', expired='0'), code=302)
+    if 'username' not in session:
+        return redirect(url_for('home', expired='1'), code=302)
+    checker = Checker()
+    try:
+        config_reader = SettingProvider('single_mod.ini')
+        resol = []
+        categoric = {'Priority': config_reader.get_setting(section='single_mod',
+                                                           setting='prior_col_class', evaluate=False).split(','),
+                     'Resolution': checker.get_resolutions(session['resolution']),
+                     'Testing_areas': config_reader.get_setting(section='single_mod',
+                                                                setting='columns', evaluate=False).split(',')}
+        return render_template('resultSinglePage.html', json=json.dumps({'username': session['username'],
+                                                                         'description1': session['description1'],
+                                                                         'categoric': categoric,
+                                                                         'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                                                                         'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True),
+                                                                         'inner': version_store.inner}))
+    except FileNotFoundError as e:
+        return render_template('resultSinglePage.html', json=json.dumps({'username': session['username'],
+                                                                         'descr': str(e)}))
 
-@app.route('/result', methods = ['POST', 'GET'])
+# SINGLE DESCRIPTION MODE: description value processing
+@app.route('/result', methods=['POST', 'GET'])
 def result():
-    '''
-    prior_col_class = newData['Priority'].fillna('null').unique().tolist()
-    binary_col_class = [0, 1]
-    fix_col_class = ['Fix', 'Wont Fix']
-    rej_col_class = ['Not reject', 'Reject']
-    ttr_col_classTemp = pandas.qcut(newData['ttr'], 4,duplicates='drop').unique()
-    ttr_col_class = [str(ifZero(ttr_col_classTemp[0].left))+'-'+str(ifZero(ttr_col_classTemp[0].right)), str(ifZero(ttr_col_classTemp[1].left))+'-'+str(ifZero(ttr_col_classTemp[1].right)), str(ifZero(ttr_col_classTemp[2].left))+'-'+str(ifZero(ttr_col_classTemp[2].right)), '>'+str(ifZero(ttr_col_classTemp[2].right))]
-    '''
-    '''
-    descr = re.sub('/',' ', request.form['descr'])
-    priority_prob = proc_text(descr, prior_col_class, 'priority_svmImb_chi250_smt_timb')
-    ttr_prob = proc_text(descr, ttr_col_class, 'ttr_svmImb_chi250_smt_timb')
-    wontfix_prob = proc_text(descr, fix_col_class, "Resolution_Won't Fix_svmImb_chi250_smt_timb")
-    reject_prob = proc_text(descr, rej_col_class, 'Resolution_Rejected_svmImb_chi250_smt_timb')
-    '''
-    descr = re.sub('/',' ', request.form['descr'])
-    priority_prob = proc_text(descr, get_setting(path, 'SingleMod', 'prior_col_class').split(','), 'priority_svmImb_chi250_smt_timb')
-    ttr_prob = proc_text(descr, get_setting(path, 'SingleMod', 'ttr_col_class').split(','), 'ttr_svmImb_chi250_smt_timb')
-    wontfix_prob = proc_text(descr, get_setting(path, 'SingleMod', 'fix_col_class').split(','), "Resolution_Won't Fix_svmImb_chi250_smt_timb")
-    reject_prob = proc_text(descr, get_setting(path, 'SingleMod', 'rej_col_class').split(','), 'Resolution_Rejected_svmImb_chi250_smt_timb')
+    if request.method == 'GET':
+        session.clear()
+        return redirect(url_for('home', expired='0'), code=302)
+    if 'username' not in session:
+        return jsonify(dict(redirect=url_for('home', expired='1')))
+    try:
+        setting_provader = SettingProvider('single_mod.ini')
+        model = Model()
+        checker = Checker()
+        session['descr'] = re.sub('/', ' ', request.form['descr'])
+        if str(session['descr']).isspace():
+            raise ValueError
+        session['priority_prob'] = model.proc_text(session['descr'],
+                                                   setting_provader.get_setting('single_mod.ini'.split('.')[0], 'prior_col_class', False).split(','),
+                                                   'priority',
+                                                   str(os.path.abspath(os.pardir))+'/model/')
 
-    area_prob = {}
-    for column in get_setting(path, 'SingleMod', 'columns').split(','):
-        tmp = proc_text(descr, get_setting(path, 'SingleMod', 'binary_col_class').split(','), column+'_svmImb_chi2_smt_timb')
-        area_prob.update({column.split('_')[0]: float(tmp['1'])})
+        session['ttr_prob'] = model.proc_text(session['descr'],
+                                               setting_provader.get_setting('single_mod.ini'.split('.')[0], 'ttr_col_class', False).split(','),
+                                              'ttr',
+                                              str(os.path.abspath(os.pardir))+'/model/')
+        session['resolution_pie'] = {}
+        for el in checker.get_resolutions(session['resolution']):
+            session['resolution_pie'][el] = model.proc_text(session['descr'],
+                                                            setting_provader.get_setting('single_mod.ini'.split('.')[0], el+'_col_class', False).split(','),
+                                                            secure_filename(el),
+                                                            str(os.path.abspath(os.pardir))+'/model/')
 
-    t = tuple(key for key, value in area_prob.items() if value > 0.5)
-    s = ''
-    recom = ''
-    for i in range(len(t)):
-        s = s + t[i]+'    '
-    if s=='':
-        recom = "no idea"
-    else:
-        recom = s
+        session['area_prob'] = {}
+        for area in setting_provader.get_setting('single_mod.ini'.split('.')[0], 'columns', False).split(','):
+            tmp = model.proc_text(session['descr'],
+                                  setting_provader.get_setting('single_mod.ini'.split('.')[0], 'binary_col_class', False).split(','),
+                                  secure_filename(area),
+                                  str(os.path.abspath(os.pardir))+'/model/')
+            # session['area_prob'].update({area.split('_')[0]: float(tmp['1'])})
+            session['area_prob'].update({area: float(tmp['1'])})
 
-    return jsonify({'descr': descr, 'recom': recom, 'prio': priority_prob, 'ttr': ttr_prob, 'wontfix': wontfix_prob, 'reject': reject_prob, 'areas': area_prob})
+        session['t'] = tuple(key for key, value in session['area_prob'].items() if value > 0.5)
+        session['s'] = ''
+        session['recom'] = ''
+        for i in range(len(session['t'])):
+            session['s'] = session['s'] + session['t'][i]+'    '
+        if session['s']=='':
+            session['recom'] = "no idea"
+        else:
+            session['recom'] = session['s']
 
+        session['nastArea'] = {}
+        for el in session['area_prob']:
+            session['nastArea'][el] = session['area_prob'][el]
+
+        session['nastPrior'] = {}
+        for el in session['priority_prob']:
+            session['nastPrior'][el] = session['priority_prob'][el]
+
+        return jsonify({'descr': session['descr'],
+                        'recom': session['recom'],
+                        'prio': session['priority_prob'],
+                        'ttr': session['ttr_prob'],
+                        'resolution_pie': session['resolution_pie'],
+                        'areas': session['area_prob'],
+                        'user': session['username'],
+                        'inner': version_store.inner,
+                        'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                        'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)})
+    except ValueError:
+                    return jsonify({'username': session['username'],
+                                    'error': 'Description can\'t be analyzed. Please check the text.'})
+    except KeyError as e:
+        return jsonify({'username': session['username'],
+                        'error': str(e)})
+    except SyntaxError as e:
+        return jsonify({'username': session['username'],
+                        'error': str(e)})
+    except Exception:
+        return jsonify({'username': session['username'],
+                        'error': 'Please fill in the description field.'})
+
+
+
+@app.route('/ul_submit', methods=['POST', 'GET'])
+def ul_submit():
+    if request.method == 'GET':
+        session.clear()
+        return redirect(url_for('home', expired='0'), code=302)
+    if 'username' not in session:
+        return jsonify(dict(redirect=url_for('home', expired='1')))
+
+    session['userPrediction'] = {}
+    if request.method == 'POST':
+        try:
+            insert = Insert()
+            session['userPrediction']['description'] = request.form['descr']
+            session['userPrediction']['label'] = request.form['uslab']
+            session['userPrediction']['priority'] = request.form['uspriority']
+            session['userPrediction']['username'] = session['username']
+            session['nastArea']['description'] = request.form['descr']
+            session['nastArea']['critical'] = session['nastPrior']['Critical']
+            session['nastArea']['high'] = session['nastPrior']['High']
+            session['nastArea']['medium'] = session['nastPrior']['Medium']
+            session['nastArea']['low'] = session['nastPrior']['Low']
+            session['nastArea']['advice'] = request.form['predlab']
+            logger = logging.getLogger("ul_submit")
+            logger.setLevel(logging.INFO)
+            fh = logging.FileHandler("app.log")
+            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            fh.setFormatter(formatter)
+            logger.addHandler(fh)
+            logger.info("insert to predictions is started")
+            insert.insert_to_predictions(db_store.connection_parameters_insert_local,
+                                         '''INSERT INTO {} (date, nastradamusPrediction, userPrediction) VALUES ('{}', {}, {})'''.format('predictions',
+                                                                                                                                         datetime.datetime.now(),
+                                                                                                                                         Json(session['nastArea']),
+                                                                                                                                         Json(session['userPrediction'])))
+            logger.info("insert to predictions is finished")
+            session['description1'] = ''
+            return jsonify('done')
+        except Exception:
+             return jsonify({'username': session['username'],
+                             'description1': 'error of inserting data to database'})
+
+
+@app.route('/highlight_terms', methods=['POST', 'GET'])
+def highlight_terms():
+    if request.method == 'GET':
+        session.clear()
+        return redirect(url_for('home', expired='0'), code=302)
+    if 'username' not in session:
+        return jsonify(dict(redirect=url_for('home', expired='1')))
+    if request.method == 'POST':
+        data = request.form.to_dict(flat=False)
+        field = ''.join(data['field']).split('=')
+        descr = ' '.join(data['descr'])
+
+        with open('regularExpression.csv', 'r') as csv_data:
+            for i in [re.compile(el1) for el in csv.reader(csv_data, delimiter=',', quotechar='"') for el1 in el if el1]:
+                descr = re.sub(i, ' ', descr)
+
+        terms = []
+        # use persentage from single_mod to exclude field with percent less than 1,
+        priority_proc = session['priority_prob']
+        priority_proc.update({el1: session['resolution_pie'][el][el1] for el in session['resolution_pie']
+                              for el1 in session['resolution_pie'][el] if 'not' not in el1})
+        priority_proc.update(session['area_prob'])
+
+        if field[1]:
+            if priority_proc[field[1]] > 0.05:
+                try:
+                    tfidf = StemmedTfidfVectorizer(norm='l2', sublinear_tf=True, min_df=1, stop_words=text.ENGLISH_STOP_WORDS,
+                                                analyzer='word', max_features=1000)
+
+                    tfs = tfidf.fit_transform([descr])
+                
+                    top_terms = pandas.read_csv('top_terms.csv')[field[1]].dropna().tolist()
+                    for term in tfidf.get_feature_names():
+                        if term in top_terms:
+                            terms.append(term)
+                    return jsonify({'username': session['username'],
+                                    'highlight_terms': {'field': {'name': field[0], 'value': field[1]}, 'terms': terms}})
+                except FileNotFoundError as e:
+                    return jsonify({'username': session['username'],
+                                    'error': str(e)})
+                except ValueError as e:
+                    return jsonify({'username': session['username'],
+                                    'error': 'Description can\'t be analyzed. Please check the text.'})
+            else:
+                return jsonify({'username': session['username'],
+                                'highlight_terms': {'field': {'name': field[0], 'value': field[1]}, 'terms': terms}})
+        else:
+            return jsonify({'username': session['username'],
+                            'highlight_terms': {'field': {'name': field[0], 'value': field[1]}, 'terms': terms}})
+
+
+@app.route('/multipleMod', methods=['POST', 'GET'])
+def multipleMod():
+    if request.method == 'GET':
+        session.clear()
+        return redirect(url_for('home', expired='0'), code=302)
+    if 'username' not in session:
+        return redirect(url_for('home', expired='1'), code=302)
+    if request.method == 'POST':
+        checker = Checker()
+        return render_template('multiplePage.html', json=json.dumps({'username': session['username'],
+                                                                     'file_size': file_info_store.max_file_size,
+                                                                     'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                                                                     'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True),
+                                                                     'inner': version_store.inner}))
+
+
+@app.route('/uploaderMultiple', methods=['POST', 'GET'])
+def uploaderMultiple():
+    if request.method == 'GET':
+        session.clear()
+        return redirect(url_for('home', expired='0'), code=302)
+    if 'username' not in session:
+        file = request.files['file']
+        return redirect(url_for('home', expired='1'), code=302)
+    if request.method == 'POST':
+        checker = Checker()
+        stat_info = StatInfo()
+        chart = MultupleChart()
+        file = request.files['file']
+        if file and checker.allowed_file1(file.filename, file_info_store):
+            try:
+                session['asigneeReporter'] = []
+                file_switcher = FileSwitcher(file_info_store, file, session)
+                data = file_switcher.open_file(mandatory_fields=session['multiple_mod_fields'])
+            except Exception as e:
+                return render_template('multiplePage.html', json=json.dumps({'username': session['username'],
+                                                                             'message': str(e),
+                                                                             'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                                                                             'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)}))
+
+            session['frameMultiple'] = 'files/{0}/{1}_{2}.pkl'.format(version_store.session_id, frame_store.frame_multiple, version_store.session_id)
+            # for correct prediction processing fill in NaN values to Description
+            data['Description'] = data['Description'].fillna(value='default_value')
+            # reduce = ReduceFrame()
+            # data_reduce = reduce.reduce(data)
+            data.to_pickle(session['frameMultiple'])
+            if not checker.document_verification(pandas.read_pickle(session['frameMultiple']),
+                                                 session['multiple_mod_fields']):
+                return render_template('multiplePage.html', json=json.dumps({'username': session['username'],
+                                                                             'message': 'document is not valid. Please check that document have following fields:' + '\n' + '\'Issue_key\', \'Project_name\', \'Description\'',
+                                                                             'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                                                                             'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)}))
+            try:
+                data = pandas.read_pickle(session['frameMultiple'])
+                setting_provader = SettingProvider('single_mod.ini')
+                session['newDictionary'] = stat_info.max_data(data,
+                                                                setting_provader.get_setting('single_mod.ini'.split('.')[0], 'columns', False).split(','),
+                                                                checker.get_resolutions(session['resolution']))
+                if version_store.inner == '1':
+                    insert = Insert()
+                    for key in session['newDictionary']:
+                        insert.insert_to_predictions(db_store.connection_parameters_insert_local,
+                                                        '''INSERT INTO {} (issue_key, nastradamusPrediction) VALUES ('{}', {})'''.format('multiple_predictions',
+                                                                                                                                        key,
+                                                                                                                                        Json(session['newDictionary'][key])))
+            
+            except (psycopg2.DatabaseError, KeyboardInterrupt):
+                return render_template('multiplePage.html', json=json.dumps({'username': session['username'],
+                                                                             'message': 'database error',
+                                                                             'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                                                                             'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)}))
+            except FileNotFoundError as e:
+                return render_template('multiplePage.html', json=json.dumps({'username': session['username'],
+                                                                             'message': str(e),
+                                                                             'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                                                                             'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)}))
+            except Exception as e:
+                return render_template('multiplePage.html', json=json.dumps({'username': session['username'],
+                                                                             'message': str(e),
+                                                                             'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                                                                             'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)}))
+        
+            
+            try:
+                setting_provader = SettingProvider('single_mod.ini')
+                session['multiple_plot'] = {}
+                session['multiple_plot']['area_of_testing'] = {el: 0 for el in 
+                                                                setting_provader.get_setting('single_mod.ini'.split('.')[0], 'columns', False).split(',')}
+                session['multiple_plot']['area_of_testing'].update(chart.data_for_multiple_plot(session['newDictionary'], 'area_of_testing')['area_of_testing'])
+                session['multiple_plot']['ttr'] = {el: 0 for el in 
+                                                    setting_provader.get_setting('single_mod.ini'.split('.')[0], 'ttr_col_class', False).split(',')}
+                session['multiple_plot']['ttr'].update(chart.data_for_multiple_plot(session['newDictionary'], 'ttr')['ttr'])
+                
+                
+                session['multiple_plot']['resolution_pie'] = chart.data_for_multiple_plot(session['newDictionary'],
+                                                                            checker.get_resolutions(session['resolution']))
+            except FileNotFoundError as e:
+                return render_template('multiplePage.html', json=json.dumps({'username': session['username'],
+                                                                     'message': str(e),
+                                                                     'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                                                                     'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)}))
+
+            return render_template('multiplePage.html', json=json.dumps({'username': session['username'],
+                                                                         'table': session['newDictionary'],
+                                                                         'message': 'file uploaded successfully',
+                                                                         'plot': session['multiple_plot'],
+                                                                         'file_size': file_info_store.max_file_size,
+                                                                         'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                                                                         'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)}))
+        return render_template('multiplePage.html', json=json.dumps({'username': session['username'],
+                                                                     'message': 'incorrect file format. Please use only xml',
+                                                                     'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                                                                     'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)}))
+
+
+@app.route('/save_multiple_subset', methods=['GET', 'POST'])
+def save_multiple_subset():
+    if request.method == 'GET':
+        session.clear()
+        return redirect(url_for('home', expired='0'), code=302)
+    if 'username' not in session:
+        return jsonify(dict(redirect=url_for('home', expired='1')))
+    if request.method == 'POST':
+        file = File()
+        checker = Checker()
+        session['fileName'] = request.form['fileName']
+        try:
+            file.save_multiple_file1(session['newDictionary'], session['fileName'], file_info_store.upload_folder)
+        except Exception as e:
+            return render_template('filterPage.html', json=json.dumps({'username': session['username'],
+                                                                       'message': str(e),
+                                                                       'fields': session['fields'],
+                                                                       'inner': version_store.inner,
+                                                                       'single_mod': checker.unlock_single_mod(['ttr', 'priority']),
+                                                                       'multiple_mod': checker.unlock_single_mod(['ttr'], multiple=True)}))
+        # save path to file in order to delete after usage
+        session['tempFiles'].append(app.config['UPLOAD_FOLDER']+'/'+session['fileName'])
+        return send_from_directory(file_info_store.upload_folder, session['fileName'], as_attachment=True)
+
+# application startup
 if __name__ == "__main__":
-    app.secret_key = os.urandom(12)
-    app.run(debug=False)
+    # session data saved to redis. when we logout redis deletes data from session store but creates it again on login page 
+    # session timeout - 30min
+    try:
+        # config files parsing (all ini-files)
+        config_reader = SettingProvider('myconf.ini')
+        version_store.inner = config_reader.get_setting(section='Path', setting='inner', evaluate=False)
+        if int(version_store.inner) not in (0, 1):
+            raise IncorrectValueError('please use for inner parameter only 0 or 1')
+        # setting up session
+        if int(version_store.inner) == 1: # FOR COMPANY NEEDS ONLY (session stored to redis)
+            config = ConfigParser()
+            config.read('myconf.ini')
+            SESSION_TYPE = 'redis'
+            PERMANENT_SESSION_LIFETIME = timedelta(minutes=30)  # minutes=30 seconds=10
+            REDIS_PASSWORD = config['Path']['redis_password']
+            app.config['USE_SECRET_KEY'] = False
+        else:
+            SESSION_TYPE = 'filesystem' # FOR OPENSOURCE NEEDS (session stored to HDD)
+            app.config['SECRET_KEY'] = os.urandom(12)
+            
+        # Flask setting up
+        app.config.from_object(__name__)
+        RedisSession(app) if int(version_store.inner) == 1 else Session(app)
+        Bootstrap(app)
+
+    except (FileNotFoundError, KeyError, SyntaxError, ValueError, IncorrectValueError) as error:
+        print(str(error))
+
+    else:
+        if int(version_store.inner) == 1:
+            parallel = Multithreaded()
+            parallel.run_in_parallel(flask=start_server, redis_expire=start_expire)
+        else:
+            app.run(debug=False)
+

@@ -1,12 +1,12 @@
 /*******************************************************************************
-* Copyright 2016-2018 Exactpro (Exactpro Systems Limited)
-* 
+* Copyright 2016-2019 Exactpro (Exactpro Systems Limited)
+*
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
-* 
+*
 *     http://www.apache.org/licenses/LICENSE-2.0
-* 
+*
 * Unless required by applicable law or agreed to in writing, software
 * distributed under the License is distributed on an "AS IS" BASIS,
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,26 +14,287 @@
 * limitations under the License.
 ******************************************************************************/
 
+
+/*-- get data from HTML and parse this to dictionary --*/
 var jsonFromHTML = document.getElementById("json").innerHTML;
 var cleanJsonFromHTML1 = jsonFromHTML.replace(/"/g,'');
 var cleanJsonFromHTML = cleanJsonFromHTML1.replace(/&#34;/g,'"');
+// jsonDictionary is global variable which is used and overriding in many functions
 var jsonDictionary = JSON.parse(cleanJsonFromHTML);
+console.log(jsonDictionary);
 
-var successMas = [
-                 'file uploaded successfully',
+
+// set max file size
+sessionStorage['file_size'] = jsonDictionary['file_size']
+
+
+// makes button unavailable
+
+$("#Submit").prop("disabled",false);
+$("#Apply").prop("disabled",true);
+$("#Train").prop("disabled",true);
+$("#Save").prop("disabled",true);
+$("#Reset").prop("disabled",true);
+$("#Build").prop("disabled",true);
+$("#attributes-block").addClass("disabledfilter");
+$("#distrChart").addClass("disabledfilter");
+$("#distr-block").addClass("disabledfilter");
+$("#statInfoBlock").addClass("disabledfilter");
+$("#dynamicChartBlock").addClass("disabledfilter");
+$("#topTerm").addClass('disabledfilter');
+$("#load").removeAttr("style").hide();
+//$("#Choose").click(function () {
+    //$("#Submit").prop("disabled",false);
+    //$("#murkup").prop("disabled",false);
+   //});
+
+
+// unlock single mod and multiple mod for open source version
+function lock_mode(single_mad, multiple_mod){
+if(single_mad == true)
+    $("#menu-single-descr-mode").removeClass('disabled');
+
+if(multiple_mod == true)
+    $("#menu-multiple-descr-mode").removeClass('disabled');
+}
+lock_mode(jsonDictionary['single_mod'], jsonDictionary['multiple_mod'])
+
+/*-- put data from dictionary to HTML --*/
+if('undefined'.localeCompare(jsonDictionary['username']) == 0){
+    user.innerHTML = 'unknown user';
+}
+else{putUser()}
+function putUser(){
+    var user = document.getElementById('username');
+        user.innerHTML = jsonDictionary['username'];
+}
+
+
+// create fields on GUI, mandatory_fields, special_fields, areas_fields
+// and setting up this for any field_type_backend
+function addField(parent_div, div_class, label_class, inner_div_class, field_name, field_name_GUI, field_class, field_tag,
+                  field_type, field_type_backend){
+    // create div
+    var i_div = document.createElement('div');
+    i_div.className = div_class;
+    // create inner div
+    var i_inner_div = document.createElement('div');
+    i_inner_div.className = inner_div_class;
+    // create label
+    var i_label = document.createElement('label');
+    i_label.className = label_class;
+    i_label.innerHTML = field_name_GUI
+    // create field
+    var i_field = document.createElement(field_tag);
+    i_field.id = field_name
+    i_field.name = field_name
+    if(field_type_backend == 'categorical'){
+        i_field.multiple="multiple"
+        var newScript = document.createElement("script");
+        newScript.async = false;
+        // jquery doesn't work with # and id with spaces
+        var inlineScript = document.createTextNode("document.addEventListener('DOMContentLoaded',"+ "function categorical(e){$(\"[id='"+field_name+"']\").select2({width:'100%'});}, false);");
+        newScript.appendChild(inlineScript);
+        var test = document.getElementById('loadDiv')
+        test.appendChild(newScript)
+    }
+    if(field_type_backend == 'text'){
+        i_field.type = field_type
+        i_field.pattern = "[A-Z]{1,10}[\-][0-9]{1,10}"
+        i_field.className = field_class[0]
+        }
+    if(field_type_backend == 'text2'){
+        i_field.type = field_type
+        i_field.className = field_class[0];
+        }
+    if(field_type_backend == 'text1'){
+        i_field.type = field_type
+        i_field.className = field_class[0];
+    }
+    if(field_type_backend == 'number'){
+        i_field.className = field_class[1];
+        i_field.pattern = "[0-9]+"
+        i_field.min = 0
+        i_field.placeholder = '>=0'
+        i_field.id = field_name + '1'
+        i_field.name = field_name + '1'
+        i_span = document.createElement('span')
+        i_span.innerHTML = '&amp;'
+        i_field1 = i_field.cloneNode(false)
+        i_field1.className = field_class[0]
+        i_field1.id = field_name + '0'
+        i_field1.name = field_name + '0'
+        i_inner_div.appendChild(i_field1)
+        i_inner_div.appendChild(i_span)
+    }
+    if(field_type_backend == 'date'){
+        i_field.pattern = "^[0-9]{2}-[0-9]{2}-[0-9]{4}$"
+        i_field.type = 'text'
+        i_field.className = field_class[1]
+        i_field.autocomplete="on"
+        i_field.id = field_name + '1'
+        i_field.name = field_name + '1'
+        i_field.placeholder = 'to'
+        i_span = document.createElement('span')
+        i_span.innerHTML = '&amp;'
+        i_field1 = i_field.cloneNode(false)
+        i_field1.id = field_name + '0'
+        i_field1.name = field_name + '0'
+        i_field1.placeholder = 'from'
+        i_field1.className = field_class[0]
+        i_inner_div.appendChild(i_field1)
+        i_inner_div.appendChild(i_span)
+    }
+    if(field_type_backend == 'bool'){
+        i_field.className = field_class[0];
+        var masVal = ['', 'Yes', 'No']
+        for (var i = 0; i<masVal.length; i++){
+            var i_option = document.createElement('option')
+            i_option.value = masVal[i]
+            i_option.innerHTML = masVal[i]
+            i_field.appendChild(i_option)
+        }
+    }
+    // add label to div
+    parent_div.appendChild(i_div)
+    i_div.appendChild(i_label)
+    i_div.appendChild(i_inner_div)
+    i_inner_div.appendChild(i_field)
+    }
+
+
+function create_group_fields_div(parent_div, name){
+    var areas_div = document.createElement('div')
+    areas_div.id = name
+    parent_div.appendChild(areas_div)
+    var inner_areas_div = document.createElement('div')
+    inner_areas_div.className = 'headline'
+    inner_areas_div.innerHTML = name
+    areas_div.appendChild(inner_areas_div)
+    return areas_div
+}
+
+
+function field_factory(id){
+// get parent div
+for (var group in jsonDictionary['fields']){
+    var parent_div = document.getElementById(id);
+    // create group div for fields
+    if(group == 'areas_fields' && Object.keys(jsonDictionary['fields'][group]).length > 0){
+        parent_div = create_group_fields_div(parent_div, 'AREAS OF TESTING')
+    }
+    /*
+    if(group == 'special_fields' && Object.keys(jsonDictionary['fields'][group]).length > 0){
+        parent_div = create_group_fields_div(parent_div, 'SPECIAL FIELDS')
+    }
+    */
+    if(group == 'mondatory_fields' && Object.keys(jsonDictionary['fields'][group]).length > 0){
+        parent_div = create_group_fields_div(parent_div, 'MANDATORY FIELDS')
+    }
+    
+    for (var key in jsonDictionary['fields'][group]){
+        var div_class = 'form-group'
+        var label_class = 'col-sm-3 control-label'
+        var inner_div_class = 'col-sm-9'
+        var field_class = ['form-control input-custom']
+        var field_type = null
+        var field_tag = null
+        if(jsonDictionary['fields'][group][key]['type'] == 'categorical'){
+            field_tag = 'select'
+            field_type = null
+            inner_div_class = 'col-sm-9'
+            }
+        else{
+            field_tag = 'input'
+            if(['text', 'text1', 'text2'].includes(jsonDictionary['fields'][group][key]['type'])){
+                field_type = 'text'
+                div_class = 'form-group form-group-custom'
+                }
+            if(['number', 'date'].includes(jsonDictionary['fields'][group][key]['type'])){
+                field_type = 'number'
+                inner_div_class = "col-sm-9 input-interval"
+                if(jsonDictionary['fields'][group][key]['type'] == 'date')
+                    field_class = ['form-control input-custom req-selectCr1', "form-control input-custom req-selectCr3"]
+                if(jsonDictionary['fields'][group][key]['type'] == 'number')
+                    field_class = ['form-control input-custom req-selectCom1', "form-control input-custom req-selectCom3"]
+                    }
+            if(['bool'].includes(jsonDictionary['fields'][group][key]['type'])){
+                field_tag = 'select'
+                }
+            }
+        addField(parent_div, div_class, label_class, inner_div_class,
+             key,jsonDictionary['fields'][group][key]['name'], field_class, field_tag, field_type,
+             jsonDictionary['fields'][group][key]['type'])
+    }
+}
+}
+
+
+// ANALISYS & TRAINING page fields creation
+if('undefined'.localeCompare(jsonDictionary['fields']) != 0){
+    field_factory('fields');
+    }
+
+
+function set_placeholder(){
+    for(var field in jsonDictionary['placeholder'])
+        $('input[name="'+field+'"]').attr("placeholder", jsonDictionary['placeholder'][field])
+}
+
+
+if('undefined'.localeCompare(jsonDictionary['placeholder']) != 0){
+    set_placeholder();
+    }
+
+
+// setting up markup only if version == 0
+// disable settings module if version == 1
+if('undefined'.localeCompare(jsonDictionary['inner']) != 0){
+    if(jsonDictionary['inner'] == '1'){
+        $("#div_murkup").addClass('disabledfilter');
+        $("#areasDiv").addClass('disabledfilter');
+        $("#setting").addClass('disabledfilter');
+
+    }
+}
+
+// open train only if markup == 1
+if('undefined'.localeCompare(jsonDictionary['murkup']) != 0){
+    if(jsonDictionary['murkup'] == '1'){
+        $("#Train").prop("disabled",false);
+    }
+    else $("#Train").prop("disabled",true);
+}
+
+
+$('#murkup').change(function setAreas(){
+    if($('#murkup').val()=='yes'){
+        $("#areasDiv").removeClass('disabledfilter');
+        $("#areas").prop('required',true);
+        sessionStorage['murkup'] = $('#murkup').val();
+        }
+    else {
+        $("#areasDiv").addClass('disabledfilter');
+        $("#areas").prop('required',false);
+        sessionStorage['murkup'] = $('#murkup').val();
+    }
+})
+//---------------------------------------------------------------------------------------//
+
+
+var successMas = ['file uploaded successfully',
                  'data filtered',
                  'filter dropped',
                  'file saved',
                  'chart builded']
-
 function setMessage(){
     var idMessage = document.getElementById('message');
     idMessage.innerHTML = '';
     if('undefined'.localeCompare(jsonDictionary['message']) != 0)
-        idMessage.innerHTML = jsonDictionary['message'];
+        optimize_message(jsonDictionary['message']);
     if('undefined'.localeCompare(jsonDictionary['plot']) != 0)
         if(jsonDictionary['plot']['dynamic bugs'] == 'error'){
-            idMessage.innerHTML = 'CUMULATIVE CHART OF DEFECT SUBMISSION: dataset is small for this period ';
+            optimize_message('CUMULATIVE CHART OF DEFECT SUBMISSION: dataset is small for this period ');
             document.getElementById('period').value = '1 weak';
             $('html, body').animate({scrollTop: 0}, 600);
             }
@@ -43,38 +304,30 @@ function setMessage(){
     }
 setMessage();
 
-sessionStorage['markup'] = 'no';
-setTrain();
-$("#Submit").prop("disabled",false);
-$("#Apply").prop("disabled",true);
-$("#Train").prop("disabled",true);
-$("#Save").prop("disabled",true);
-$("#Reset").prop("disabled",true);
-$("#Build").prop("disabled",true);
-$("#murkup").prop("disabled",false);
-$("#attributes-block").addClass("disabledfilter");
-$("#distrChart").addClass("disabledfilter");
-$("#statInfoBlock").addClass("disabledfilter");
-$("#dynamicChartBlock").addClass("disabledfilter");
-$("#topTerm").addClass('disabledfilter');
-$("#load").removeAttr("style").hide();
-$("#areasDiv").addClass('disabledfilter');
 
-function checkSingleMod(){
-if(jsonDictionary['singleMod']==true){
-    $("#menu-single-descr-mode").removeClass('disabled');
-    }
-    }
-checkSingleMod();
+function optimize_message(message){
+    var array = message.split(" ");
+
+    var arrays = [], size = 6;
+    while (array.length > 0)
+        arrays.push(array.splice(0, size).join(" "));
+
+    var files = ''
+    for(var key in Object.keys(arrays))
+        files = files + arrays[key] + '\n'
+    var text = $("#message").text(files)
+    text.html(text.html().replace(/\n/g,'<br/>'));
+}
+
 
 function disableButtons(jsonDictionary){
     if('file uploaded successfully'.localeCompare(jsonDictionary['message']) == 0){
         $("#Apply").prop("disabled",false);
         $("#Build").prop("disabled",false);
         $("#Save").prop("disabled",false);
-        //$("#Train").prop("disabled",false);
         $("#attributes-block").removeClass("disabledfilter");
         $("#distrChart").removeClass("disabledfilter");
+        $("#distr-block").removeClass("disabledfilter");
         $("#statInfoBlock").removeClass("disabledfilter");
         $("#dynamicChartBlock").removeClass("disabledfilter");
         $("#topTerm").removeClass('disabledfilter');
@@ -84,9 +337,9 @@ function disableButtons(jsonDictionary){
         $("#Build").prop("disabled",false);
         $("#Save").prop("disabled",false);
         $("#Reset").prop("disabled",false);
-        //$("#Train").prop("disabled",false);
         $("#attributes-block").removeClass("disabledfilter");
         $("#distrChart").removeClass("disabledfilter");
+        $("#distr-block").removeClass("disabledfilter");
         $("#statInfoBlock").removeClass("disabledfilter");
         $("#dynamicChartBlock").removeClass("disabledfilter");
         $("#topTerm").removeClass('disabledfilter');
@@ -96,9 +349,9 @@ function disableButtons(jsonDictionary){
         $("#Build").prop("disabled",false);
         $("#Save").prop("disabled",false);
         $("#Reset").prop("disabled",true);
-        //$("#Train").prop("disabled",false);
         $("#attributes-block").removeClass("disabledfilter");
         $("#distrChart").removeClass("disabledfilter");
+        $("#distr-block").removeClass("disabledfilter");
         $("#statInfoBlock").removeClass("disabledfilter");
         $("#dynamicChartBlock").removeClass("disabledfilter");
         $("#topTerm").removeClass('disabledfilter');
@@ -106,11 +359,10 @@ function disableButtons(jsonDictionary){
     if('file saved'.localeCompare(jsonDictionary['message']) == 0){
         $("#Apply").prop("disabled",false);
         $("#Build").prop("disabled",false);
-        $("#Save").prop("disabled",false);
         $("#Reset").prop("disabled",false);
-        //$("#Train").prop("disabled",false);
         $("#attributes-block").removeClass("disabledfilter");
         $("#distrChart").removeClass("disabledfilter");
+        $("#distr-block").removeClass("disabledfilter");
         $("#statInfoBlock").removeClass("disabledfilter");
         $("#dynamicChartBlock").removeClass("disabledfilter");
         $("#topTerm").removeClass('disabledfilter');
@@ -120,9 +372,9 @@ function disableButtons(jsonDictionary){
         $("#Build").prop("disabled",false);
         $("#Save").prop("disabled",false);
         $("#Reset").prop("disabled",false);
-        //$("#Train").prop("disabled",false);
         $("#attributes-block").removeClass("disabledfilter");
         $("#distrChart").removeClass("disabledfilter");
+        $("#distr-block").removeClass("disabledfilter");
         $("#statInfoBlock").removeClass("disabledfilter");
         $("#dynamicChartBlock").removeClass("disabledfilter");
         $("#topTerm").removeClass('disabledfilter');
@@ -131,36 +383,38 @@ function disableButtons(jsonDictionary){
         $("#Apply").prop("disabled",false);
         $("#Build").prop("disabled",false);
         $("#Save").prop("disabled",false);
-        //$("#Train").prop("disabled",false);
         $("#attributes-block").removeClass("disabledfilter");
         $("#distrChart").removeClass("disabledfilter");
+        $("#distr-block").removeClass("disabledfilter");
         $("#statInfoBlock").removeClass("disabledfilter");
         $("#dynamicChartBlock").removeClass("disabledfilter");
         $("#topTerm").removeClass('disabledfilter');
-        $("#filterForm")[0].reset();
+        // reset all values in filter form
+        // $("#filterForm")[0].reset();
     }
     if('please use .csv file extension'.localeCompare(jsonDictionary['message']) == 0){
         $("#Apply").prop("disabled",false);
         $("#Build").prop("disabled",false);
         $("#Save").prop("disabled",false);
         $("#Reset").prop("disabled",false);
-        //$("#Train").prop("disabled",false);
         $("#attributes-block").removeClass("disabledfilter");
         $("#distrChart").removeClass("disabledfilter");
+        $("#distr-block").removeClass("disabledfilter");
         $("#statInfoBlock").removeClass("disabledfilter");
         $("#dynamicChartBlock").removeClass("disabledfilter");
         $("#topTerm").removeClass('disabledfilter');
     }
-    if('incorrect file format. Please use only xml'.localeCompare(jsonDictionary['message']) == 0){
+    if('incorrect file format. Please use only csv or xml'.localeCompare(jsonDictionary['message']) == 0){
         $("#Submit").prop("disabled",false);
         $("#Apply").prop("disabled",true);
+        $("#Train").prop("disabled",true);
         $("#Save").prop("disabled",true);
         $("#Reset").prop("disabled",true);
         $("#Build").prop("disabled",true);
         $("#murkup").prop("disabled",true);
-        //$("#Train").prop("disabled",true);
         $("#attributes-block").addClass("disabledfilter");
-        $("#distrChart").addClass("disabledfilter");
+        $("#distrChart").removeClass("disabledfilter");
+        $("#distr-block").addClass("disabledfilter");
         $("#statInfoBlock").addClass("disabledfilter");
         $("#dynamicChartBlock").addClass("disabledfilter");
         $("#topTerm").addClass('disabledfilter');
@@ -170,9 +424,9 @@ function disableButtons(jsonDictionary){
         $("#Build").prop("disabled",false);
         $("#Save").prop("disabled",false);
         $("#Reset").prop("disabled",false);
-        //$("#Train").prop("disabled",false);
         $("#attributes-block").removeClass("disabledfilter");
         $("#distrChart").removeClass("disabledfilter");
+        $("#distr-block").removeClass("disabledfilter");
         $("#statInfoBlock").removeClass("disabledfilter");
         $("#dynamicChartBlock").removeClass("disabledfilter");
         $("#topTerm").removeClass('disabledfilter');
@@ -182,9 +436,9 @@ function disableButtons(jsonDictionary){
         $("#Build").prop("disabled",false);
         $("#Save").prop("disabled",false);
         $("#Reset").prop("disabled",false);
-        //$("#Train").prop("disabled",false);
         $("#attributes-block").removeClass("disabledfilter");
         $("#distrChart").removeClass("disabledfilter");
+        $("#distr-block").removeClass("disabledfilter");
         $("#statInfoBlock").removeClass("disabledfilter");
         $("#dynamicChartBlock").removeClass("disabledfilter");
         $("#topTerm").removeClass('disabledfilter');
@@ -194,16 +448,37 @@ function disableButtons(jsonDictionary){
         $("#Build").prop("disabled",false);
         $("#Save").prop("disabled",false);
         $("#Reset").prop("disabled",false);
-        //$("#Train").prop("disabled",false);
         $("#attributes-block").removeClass("disabledfilter");
         $("#distrChart").removeClass("disabledfilter");
+        $("#distr-block").removeClass("disabledfilter");
         $("#statInfoBlock").removeClass("disabledfilter");
         $("#dynamicChartBlock").removeClass("disabledfilter");
         $("#topTerm").removeClass('disabledfilter');
     }
+    if('not find regularExpression.csv'.localeCompare(jsonDictionary['message']) == 0){
+        $("#Submit").prop("disabled",false);
+        $("#Apply").prop("disabled",true);
+        $("#Train").prop("disabled",true);
+        $("#Save").prop("disabled",true);
+        $("#Reset").prop("disabled",true);
+        $("#Build").prop("disabled",true);
+        $("#murkup").prop("disabled",true);
+        $("#attributes-block").addClass("disabledfilter");
+        $("#distrChart").removeClass("disabledfilter");
+        $("#distr-block").addClass("disabledfilter");
+        $("#statInfoBlock").addClass("disabledfilter");
+        $("#dynamicChartBlock").addClass("disabledfilter");
+        $("#topTerm").addClass('disabledfilter');
+        }
+
 }
 disableButtons(jsonDictionary);
 
+//---------------------------------------------------------------------------------//
+
+/*-- CHARTS CREATION --*/
+
+// coordinates processing
 function plot(x,y){
     var dictGraph = {};
     var masGraph = [];
@@ -216,6 +491,8 @@ function plot(x,y){
     return masGraph;
 
 }
+
+// getting max value for X axis
 function findMax(xLine, xHist, scale){
     var finalX = xLine.concat(xHist);
     var max = 0;
@@ -232,6 +509,7 @@ function findMax(xLine, xHist, scale){
     else return parseInt(scale);
 }
 
+// setting up step size
 function setStepSize(stepSize){
     if(stepSize == ''){
         return null;
@@ -239,6 +517,7 @@ function setStepSize(stepSize){
     else return parseInt(stepSize);
 }
 
+// setting up step size for Y axis (to avoid incorrect behavior when small value received)
 function setStepSizeY(yLine, yHist){
     var max = findMax(yLine, yHist, 0);
     if(max <= 0.0001) return 0.00001;
@@ -265,6 +544,7 @@ function setStepSizeY(yLine, yHist){
     if(max <= 1000000) return 100000;
 }
 
+// setting up default charts value
 function defaultChart(){
                 var ctx = $("#DistrLine");
                 var myChart = new Chart(ctx, {
@@ -288,11 +568,22 @@ function defaultChart(){
                                  },
                 scales:{
                             xAxes:[{
+                            scaleLabel: {
+                                  display: true,
+                                  labelString: 'number of days'
+                                        },
                             type:'linear',
                             position:'bottom',
 
                             }
-                           ]
+                           ],
+                           yAxes:[{
+                               scaleLabel: {
+                                  display: true,
+                                  labelString: 'relative frequency'
+                                        }
+                           }
+                                 ]
                         },
                           elements: { point: { radius: 1 } }
                     }
@@ -323,24 +614,38 @@ function defaultDynamicChart(){
                                                                },
                                               scales:{
                                                           xAxes:[{
-                                                          type:'linear',
-                                                          position:'bottom',
+                                                              scaleLabel: {
+                                                                          display: true,
+                                                                          labelString: 'date'
+                                                                        },
+                                                              type:'linear',
+                                                              position:'bottom'
 
-                                                          }
-                                                         ]
+                                                              }
+                                                         ],
+                                                          yAxes:[{
+                                                              scaleLabel: {
+                                                                         display: true,
+                                                                          labelString: 'count of defects'
+                                                                        },
+                                                                    }
+                                                              ]
                                                       },
                                                         elements: { point: { radius: 1 } }
                                                   }
                                               });
                                               return myChart;
                               }
+//----------------------------------------------------------------------------------------------------------------------
 
 function chooseThickness(type){
-    if('undefined'.localeCompare(sessionStorage[type]) == 0 || sessionStorage[type] == '')
+    if('undefined'.localeCompare(sessionStorage[type]) == 0 || sessionStorage[type] == ''){
         return 1;
+        }
     else return sessionStorage[type];
 }
 
+// Frequency top chart
 function relative_frequency(data){
                 var relFreq = data['Relative Frequency']
                 var xLine = relFreq[0];
@@ -358,7 +663,7 @@ function relative_frequency(data){
                                 backgroundColor:["rgba(54, 162, 235, 0.3)"],
                                 borderColor:["rgb(54, 162, 235)"]
 
-                            },{}
+                            }
                             ]
                     },
                     options: {
@@ -370,15 +675,25 @@ function relative_frequency(data){
                                           }
                                  },
                     scales:{    yAxes:[{
+                                    scaleLabel: {
+                                              display: true,
+                                              labelString: 'relative frequency'
+                                                    },
                                     ticks:{
                                            stepSize: setStepSizeY(yLine, 0),
                                            beginAtZero:true
                                            }
                                     }],
                             xAxes:[{
+                            scaleLabel: {
+                                      display: true,
+                                      labelString: 'number of days'
+                                            },
                             type:'linear',
                             position:'bottom',
                                 ticks:{
+                                    autoSkip: false,
+                                    autoSkipPadding: 20,
                                     display:true,
                                     max: findMax(xLine, 0, data['scale']),
                                     stepSize: setStepSize(data['stepSize']),
@@ -396,6 +711,7 @@ function relative_frequency(data){
                 return myChart;
 }
 
+// Dynamic chart
 function dynamic_bugs(data){
                 var relFreq = data['dynamic bugs'];
                 var xLine = relFreq[0];
@@ -423,12 +739,25 @@ function dynamic_bugs(data){
                                         }
                         },
                         scales:{
+                            xAxes:[{
+                                  scaleLabel: {
+                                              display: true,
+                                              labelString: 'date'
+                                            }
+                                  }],
+
                             yAxes:[{
+                                    scaleLabel: {
+                                                  display: true,
+                                                  labelString: 'count of defects'
+                                                },
                                     ticks:{
+
                                            stepSize: setStepSizeY(yLine, 0),
                                            beginAtZero:true
                                            }
                                     }]
+
                         },
                           elements: { point: { radius: 1 } }
                     }
@@ -472,44 +801,28 @@ var chartDict = choosePlot(jsonDictionary);
 var distributionChart = chartDict['distribution'];
 var dynamicChart = chartDict['dynamic'];
 
-function get_line_thickness(){
-    if($("#y").find(":selected").text() == 'Relative Frequency'){
-        if($("#DistributionThickness").val() == ''){
-            sessionStorage["relative"] = '';
-        }else{
-            sessionStorage["relative"] = $("#DistributionThickness").val();
-        }
-    }
-    if($("#y").find(":selected").text() == 'Frequency density'){
-            if($("#DistributionThickness").val() == ''){
-                sessionStorage["density"] = '';
-            }else{
-                sessionStorage["density"] = $("#DistributionThickness").val();
-            }
-        }
-    if($("#LineWidthPeriod").val() == ''){
-                    sessionStorage["dynamic"] = '';
-                }
-    else{
-        sessionStorage["dynamic"] = $("#LineWidthPeriod").val();
-        }
-}
 
+// on change dynamic chart creation
 $('#period').change(function ajaxDynamic() {
     $.ajax({
             type: "POST",
             url: get_periodAJAX('/buildChart/onlyDynamic/'),
             beforeSend: setLoad(),
             success: function(response, status, xhr){
-                var ct = xhr.getResponseHeader("content-type") || "";
-                if (ct.indexOf('html') > -1)
-                    document.write(response);
-                else {
-                     jsonDictionary = response;
-                     setMessage();
-                     dynamicChart = updateDynamicPlot(dynamicChart, jsonDictionary['plot']['dynamic bugs']);
-                     hideLoad();
-                     setFileName();
+                if (response.redirect) {
+                     window.location.href = response.redirect;
+                   }
+                else{
+                    var ct = xhr.getResponseHeader("content-type") || "";
+                    if (ct.indexOf('html') > -1)
+                        document.write(response);
+                    else {
+                         jsonDictionary = response;
+                         setMessage();
+                         dynamicChart = updateDynamicPlot(dynamicChart, jsonDictionary['plot']['dynamic bugs']);
+                         hideLoad();
+                         setFileName();
+                         }
                      }
                     },
             error: function(error) {
@@ -520,6 +833,7 @@ $('#period').change(function ajaxDynamic() {
             });
                     })
 
+// on change distribution chart creation
 function ajaxXDistribution() {
     $.ajax({
             type: "POST",
@@ -527,15 +841,20 @@ function ajaxXDistribution() {
             data: $('#distrChart').serialize(),
             beforeSend: setLoad(),
             success: function(response, status, xhr){
-                var ct = xhr.getResponseHeader("content-type") || "";
-                if (ct.indexOf('html') > -1)
-                    document.write(response);
-                else {
-                     jsonDictionary = response;
-                     setMessage();
-                     distributionChart = updateDistributionPlot(distributionChart, jsonDictionary);
-                     hideLoad();
-                     setFileName();
+                if (response.redirect) {
+                     window.location.href = response.redirect;
+                   }
+                else{
+                    var ct = xhr.getResponseHeader("content-type") || "";
+                    if (ct.indexOf('html') > -1)
+                        document.write(response);
+                    else {
+                         jsonDictionary = response;
+                         setMessage();
+                         distributionChart = updateDistributionPlot(distributionChart, jsonDictionary);
+                         hideLoad();
+                         setFileName();
+                         }
                      }
                     },
             error: function(error) {
@@ -546,8 +865,19 @@ function ajaxXDistribution() {
             });
                     }
 
-$('#x').change(function(){ajaxXDistribution()})
-$('#y').change(function(){ajaxXDistribution()})
+$('#x').change(function(){
+                            ajaxXDistribution();
+                            if($('#x').val() == 'ttr')
+                                distributionChart.options.scales.xAxes[0].scaleLabel.labelString = 'number of days'
+                            else
+                                distributionChart.options.scales.xAxes[0].scaleLabel.labelString = 'number of '+$('#x').val()
+                            distributionChart.update()
+                          })
+$('#y').change(function(){
+                            ajaxXDistribution();
+                            distributionChart.options.scales.yAxes[0].scaleLabel.labelString = $('#y').val()
+                            distributionChart.update()
+                         })
 $('#scale').change(function(){ajaxXDistribution()})
 $('#stepSize').change(function(){ajaxXDistribution()})
 
@@ -557,16 +887,17 @@ function redraw(block,id){
 }
 
 function updateDynamicPlot(dynamicChart, jsonDictionary){
-    get_line_thickness();
     dynamicChart.data.labels = jsonDictionary[0];
     dynamicChart.data.datasets[0].data = jsonDictionary[1];
+    dynamicChart.data.datasets[0].borderWidth = chooseThickness('dynamic');
     dynamicChart.options.scales.yAxes[0].ticks.stepSize = setStepSizeY(jsonDictionary[1], 0);
     dynamicChart.update();
     return dynamicChart;
 }
 
+
 function updateDistributionPlot(distributionChart, jsonDictionary){
-    get_line_thickness();
+    // get_line_thickness();
     for(key in jsonDictionary['plot']){
         if(key == 'Relative Frequency'){
             distributionChart.data.datasets[0].labels = jsonDictionary['plot']['Relative Frequency'][0];
@@ -581,6 +912,7 @@ function updateDistributionPlot(distributionChart, jsonDictionary){
             distributionChart.options.scales.xAxes[0].ticks.stepSize = setStepSize(jsonDictionary['plot']['stepSize']);
             distributionChart.options.elements.point.radius = 0.5;
             distributionChart.update();
+            //distributionChart = relative_frequency(jsonDictionary['plot']);
             return distributionChart;
           }
         if(key == 'Frequency density'){
@@ -605,8 +937,9 @@ function updateDistributionPlot(distributionChart, jsonDictionary){
             distributionChart.data.datasets[0].borderColor = ["rgb(255, 99, 132)"];
             distributionChart.data.datasets[0].backgroundColor = ["rgba(255, 255, 255, 0.0)"];
             distributionChart.data.datasets[0].borderWidth = chooseThickness('density');
-            distributionChart.data.datasets[1].labels = jsonDictionary['plot']['Frequency density']['histogram'][0];
+            distributionChart.data.datasets[1] = {};
             distributionChart.data.datasets[1].data = plot(jsonDictionary['plot']['Frequency density']['histogram'][0],jsonDictionary['plot']['Frequency density']['histogram'][1]);
+            distributionChart.data.datasets[1].labels = jsonDictionary['plot']['Frequency density']['histogram'][0];
             distributionChart.data.datasets[1].steppedLine = true;
             distributionChart.data.datasets[1].borderColor = ["rgb(54, 162, 235)"];
             distributionChart.data.datasets[1].backgroundColor = ["rgba(54, 162, 235, 0.3)"];
@@ -616,34 +949,46 @@ function updateDistributionPlot(distributionChart, jsonDictionary){
             distributionChart.options.scales.xAxes[0].ticks.stepSize = setStepSize(jsonDictionary['plot']['stepSize']);
             distributionChart.options.elements.point.radius = 0.5;
             distributionChart.update();
+            //distributionChart = frequency_density(jsonDictionary['plot']);
             return distributionChart;
         }
         }
 }
 
-$('#LineWidthPeriod').change(function(){
-    if($('#LineWidthPeriod')[0].checkValidity() == false){
-        $('#dynamicChart').find(':submit').click();}
-    else{
-        get_line_thickness();
+
+// dynamically change line thickness
+// dynamic plot
+$('#dynamic_dropdownMenu2 li').click(function(){
+        //get_line_thickness();
+        sessionStorage["dynamic"] = $(this).attr("value")
         dynamicChart.data.datasets[0].borderWidth = chooseThickness('dynamic');
         dynamicChart.update();
-    }})
-$('#DistributionThickness').change(function(){
-    if($('#DistributionThickness')[0].checkValidity() == false){
-        $('#distrChart').find(':submit').click();}
-    else{
-        get_line_thickness();
-        if($("#y").find(":selected").text() == 'Relative Frequency'){
-            distributionChart.data.datasets[0].borderWidth = chooseThickness('relative');
-            distributionChart.update();}
-        else {
-            distributionChart.data.datasets[0].borderWidth = chooseThickness('density');
-            distributionChart.data.datasets[1].borderWidth = chooseThickness('density');
-            distributionChart.update();
-            }
-        }
+        // use return false to prevent page autoscrolling
+        return false;
     })
+
+
+// Distribution chart
+$('#destr_dropdownMenu2 li').click(function(){
+    // get_line_thickness();
+    if($("#y").find(":selected").text() == 'Relative Frequency'){
+        sessionStorage['relative'] = $(this).attr("value")
+        distributionChart.data.datasets[0].borderWidth = chooseThickness('relative');
+        distributionChart.update();
+        return false
+        }
+    else {
+        sessionStorage['density'] = $(this).attr("value")
+        distributionChart.data.datasets[0].borderWidth = chooseThickness('density');
+        distributionChart.data.datasets[1].borderWidth = chooseThickness('density');
+        distributionChart.update();
+        return false
+        }
+})
+
+
+//-------------------------------------------------------------------------------------------//
+
 
 function get_period(action){
     if(action == '/buildChart/frequency/')
@@ -668,6 +1013,10 @@ function get_periodAJAX(action){
     if(action == '/saveSubset')
         return action+'?period='+$('#period').val();
 }
+
+//------------------------------------
+
+/*-- STAT INFO --*/
 
 function statInfo(jsonDictionary){
     var statInfo = jsonDictionary;
@@ -710,22 +1059,22 @@ function statInfo(jsonDictionary){
 if('undefined'.localeCompare(jsonDictionary['statInfo']) != 0)
         statInfo(jsonDictionary['statInfo']);
 
+//-----------------------------------------------------------------//
+
+// categorical fields
 function addOption(name, mas){
-    var trigger = 0;
-    for(i=0;i<mas.length;i++){
-        if(mas[i] != 'null'){
-            trigger = 1;
-            $(name).append($("<option></option>").attr("value",(replaceForCategoric(mas[i]))).text((replaceForCategoric(mas[i]))));
-            }
+    if(mas.length == 1 && mas[0] == 'null'){
+     $(name).prop("disabled",true);
     }
-    if(trigger == 0){
-        document.getElementById('DEV_resolution').style.display = 'none';
-    }
+    else
+        for(i=0;i<mas.length;i++){
+            $(name).append($("<option></option>").attr("value",replaceForCategoric(mas[i])).text(replaceForCategoric(mas[i])));
+        }
 }
 
 function forEach(mas){
     for(key in mas){
-        addOption('#'+key,mas[key]);
+        addOption("[id='"+key+"']",mas[key]);
     }
 }
 
@@ -734,28 +1083,32 @@ function categoricFields(jsonDictionary){
     forEach(categorical);
 }
 
-if('undefined'.localeCompare(jsonDictionary['categoric']) != 0)
+//  categorical fields processing
+if('undefined'.localeCompare(jsonDictionary['categoric']) != 0){
         categoricFields(jsonDictionary['categoric']);
+        }
+
+//---------------------------------------------------------------------------//
 
 function addOptionAJAX(name, mas){
-    var trigger = 0;
-    for(i=0;i<mas.length;i++){
-        if(mas[i] != 'null'){
-            trigger = 1;
-            $(name).append($("<option></option>").attr("value",(replaceForCategoric(mas[i]))).text((replaceForCategoric(mas[i]))));
-            }
+    if(mas.length == 1 && mas[0] == 'null'){
+        $(name).prop("disabled",true);
     }
-    if(trigger == 0){
-        document.getElementById('DEV_resolution').style.display = 'none';
+    else{
+        for(i=0;i<mas.length;i++){
+            $(name).append($("<option></option>").attr("value",replaceForCategoric(mas[i])).text(replaceForCategoric(mas[i])));
+        }
     }
 }
 
 function forEachAJAX(mas){
     for(key in mas){
+        //   неактуальная часть кода
         if(key == 'ReferringTo')
             $('#ReferringTo').find('option').remove().end();
+        // до этого момента
         else removeOptionsAJAX(document.getElementById(key));
-        addOptionAJAX('#'+key,mas[key]);
+        addOptionAJAX("[id='"+key+"']",mas[key]);
     }
 }
 
@@ -771,6 +1124,9 @@ function removeOptionsAJAX(selectbox)
         selectbox.remove(i);
     }
 }
+
+//---------------------------------------------------------------------------//
+
 
 function replace(val){
     if(val == "&gt;")
@@ -791,129 +1147,90 @@ function replace(val){
 }
 
 function replaceForCategoric(val){
-    return val.replace('&gt;','>').replace('&lt;','<').replace('&lt;=','<=').replace('&gt;=','>=').replace('&gt;=','>=').replace("&#39;","'");
+    if(Array.isArray(val))
+            var val = val.join()
+    //use toString() for case when val not str
+    if(val === null)
+        return val 
+    return val.toString().replace(new RegExp('&amp;', 'g'),'&').replace(new RegExp('&gt;', 'g'),'>').replace(new RegExp('&lt;', 'g'),'<').replace(new RegExp('&lt;=', 'g'),'<=').replace(new RegExp('&gt;=', 'g'),'>=').replace(new RegExp('&gt;=', 'g'),'>=').replace(new RegExp("&#39;", 'g'),"'");
 }
+
 
 function attributes(attrib){
-    var attributes = attrib;
-    for(key in attributes){
-          if(key == 'Issue_key')
-            var issue_key = document.getElementById('Issue_key1').value = attributes[key]
-          if(key == 'Summary')
-            var issue_key = document.getElementById('Summary').value = attributes[key]
-          if(key == 'Components')
-                  var issue_key = document.getElementById('Components').value = attributes[key]
-          if(key == 'Labels')
-            var issue_key = document.getElementById('Labels').value = attributes[key]
-          if(key == 'Description')
-            var issue_key = document.getElementById('Description').value = attributes[key]
-          if(key == 'Status'){
-            var issue_key = document.getElementById('Status').value = attributes[key]
-            }
-          if(key == 'Project_name')
-            var issue_key = document.getElementById('Project_name').value = attributes[key]
-          if(key == 'Priority')
-            var issue_key = document.getElementById('Priority').value = attributes[key]
-          if(key == 'Resolution')
-            var issue_key = document.getElementById('Resolution').value = attributes[key]
-          if(key == 'Comments1')
-            var issue_key = document.getElementById('Comments1').value = replace(attributes[key])
-          if(key == 'Comments2')
-            var issue_key = document.getElementById('Comments_start').value = attributes[key]
-          if(key == 'Comments3')
-            var issue_key = document.getElementById('Comments3').value = replace(attributes[key])
-          if(key == 'Comments4')
-            var issue_key = document.getElementById('Comments_end').value = attributes[key]
-          if(key == 'Attachments1')
-            var issue_key = document.getElementById('Attachments1').value = replace(attributes[key])
-          if(key == 'Attachments2')
-            var issue_key = document.getElementById('Attachments_start').value = attributes[key]
-          if(key == 'Attachments3')
-            var issue_key = document.getElementById('Attachments3').value = replace(attributes[key])
-          if(key == 'Attachments4')
-            var issue_key = document.getElementById('Attachments_end').value = attributes[key]
-          if(key == 'DEV_resolution')
-            var issue_key = document.getElementById('DEV_resolution').value = attributes[key]
-          if(key == 'Date_created1')
-            var issue_key = document.getElementById('Date_created1').value = replace(attributes[key])
-          if(key == 'Date_created2')
-            var issue_key = document.getElementById('Date_created_start').value = attributes[key]
-          if(key == 'Date_created3')
-            var issue_key = document.getElementById('Date_created3').value = replace(attributes[key])
-          if(key == 'Date_created4')
-            var issue_key = document.getElementById('Date_created_end').value = attributes[key]
-          if(key == 'Date_resolved1')
-            var issue_key = document.getElementById('Date_resolved1').value = replace(attributes[key])
-          if(key == 'Date_resolved2')
-            var issue_key = document.getElementById('Date_resolved_start').value = attributes[key]
-          if(key == 'Date_resolved3')
-            var issue_key = document.getElementById('Date_resolved3').value = replace(attributes[key])
-          if(key == 'Date_resolved4')
-            var issue_key = document.getElementById('Date_resolved_end').value = attributes[key]
-          if(key == 'TTR1')
-            var issue_key = document.getElementById('TTR1').value = replace(attributes[key])
-          if(key == 'TTR2')
-            var issue_key = document.getElementById('TTR_start').value = attributes[key]
-          if(key == 'TTR3')
-            var issue_key = document.getElementById('TTR3').value = replace(attributes[key])
-          if(key == 'TTR4')
-            var issue_key = document.getElementById('TTR_end').value = attributes[key]
-          if(key == 'Version')
-            var issue_key = document.getElementById('Version').value = attributes[key]
-          if(key == 'SignificanceTop')
-            $("#significanceTop").html(attributes[key].join());
-          if(key == 'ReferringTo')
-            $('#ReferringTo').val((replaceForCategoric(attrib[key])));
-          if(key == 'freqTop'){
-            sessionStorage['moreFreq'] = 0;
-            $('#moreFreq').prop('disabled', false);
-            setTopFreq();
-          }
-          }
-    if($("#y").find(":selected").text() == 'Relative Frequency'){
-        if('undefined'.localeCompare(sessionStorage["relative"]) == 0)
-            document.getElementById('DistributionThickness').value = '1'
-        else
-            document.getElementById('DistributionThickness').value = sessionStorage["relative"];}
-    else{
-        if('undefined'.localeCompare(sessionStorage["density"]) == 0)
-            document.getElementById('DistributionThickness').value = '1'
-        else
-            document.getElementById('DistributionThickness').value = sessionStorage["density"];
-    }
-    if('undefined'.localeCompare(sessionStorage["dynamic"]) == 0)
-        $("#LineWidthPeriod").val("1").change();
-    else
-        $("#LineWidthPeriod").val(sessionStorage["dynamic"]).change();
-}
-
-function attributesAJAX(attrib){
     for(key in attrib){
-        if(key == 'Status')
-            $('#Status').val(attrib[key]);
-        if(key == 'Project_name')
-            $('#Project_name').val(attrib[key]);
-        if(key == 'Priority')
-            $('#Priority').val((attrib[key]));
-        if(key == 'Resolution')
-            $('#Resolution').val(attrib[key]);
-        if(key == 'SignificanceTop')
-            $('#SignificanceTop').val(attrib[key]);
-        if(key == 'ReferringTo'){
-            $('#ReferringTo').val((replaceForCategoric(attrib[key])));
-            }
+        if(!attrib[key]){
+            $("[id^="+"'"+key+"'"+"]").prop("disabled",true);
+           }
+        else{
+        if(key == 'SignificanceTop'){
+          if(typeof attrib[key] != 'object')
+              $('#significanceTop').prop("disabled",true);
+          else{
+                // for correct hyphenation add space for any world
+                attrib[key] = attrib[key].map(function(field){return " "+field})
+                $("#significanceTop").html(attrib[key].join());
+          }
+          }
+        if(key == 'ReferringTo')
+          $('#ReferringTo').val(replaceForCategoric(attrib[key]));
         if(key == 'freqTop'){
           sessionStorage['moreFreq'] = 0;
           $('#moreFreq').prop('disabled', false);
           setTopFreq();
-                  }}
+        }
+        $("[id='"+key+"']").val(replaceForCategoric(attrib[key]));
+    }
+    }
+}
+
+
+// use this function in cases when we need to convert boolean to Yes/No
+function from_bool(val){
+    if (typeof val === "boolean")
+        if (val==true)
+            return 'Yes'
+        else return 'No'
+    else
+        return val
+}
+
+
+function attributesAJAX(attrib, keys){
+    // use keys to put categorical fields only
+    for(var key in keys){
+            if(keys[key] in attrib){
+                // put values of significance top
+                if(keys[key] == 'ReferringTo'){
+                    $('#ReferringTo').val(replaceForCategoric(attrib[keys[key]]));
+                    }
+                if(keys[key] == 'freqTop'){
+                // reset counter
+                sessionStorage['moreFreq'] = 0;
+                $('#moreFreq').prop('disabled', false);
+                setTopFreq();
+                        }
+                // if field is select2 that he have massive of values
+                if(Array.isArray(attrib[keys[key]])){
+                    $("[id='"+keys[key]+"']").val(attrib[keys[key]]).trigger('change');
+                }
+                else{
+                    $("[id='"+keys[key]+"']").val(replaceForCategoric(from_bool(attrib[keys[key]])))
+                }
+            }
+    }
+    // reset values to default
     $("#period").val('1 week');
-    $("#LineWidthPeriod").val('1');
-    $("#DistributionThickness").val('1');
+    //$("#LineWidthPeriod").val('1');
+    //$("#DistributionThickness").val('1');
+    sessionStorage['relative'] = 1;
+    sessionStorage['density'] = 1;
+    sessionStorage['dynamic'] = 1
     $("#y").val('Relative Frequency');
     $("#x").val('ttr');
-
+    $("#stepSize").val('');
+    $("#scale").val('')
 }
+
 
 function getPoeriods(period){
     if(period == '10D')
@@ -931,7 +1248,10 @@ function getPoeriods(period){
 if('undefined'.localeCompare(jsonDictionary['attributes']) != 0)
     attributes(jsonDictionary['attributes']);
 
+// top of the words displaying
 function setTopFreq(){
+    // for correct hyphenation add space for each world
+    jsonDictionary['attributes']['freqTop'] = jsonDictionary['attributes']['freqTop'].map(function(field){return " "+field})
     $("#freqTop").html((jsonDictionary['attributes']['freqTop'].slice(0, parseInt(sessionStorage['moreFreq'], 10)+20).join()));
     sessionStorage['moreFreq'] = parseInt(sessionStorage['moreFreq'], 10) + 20;
     if(parseInt(sessionStorage['moreFreq'], 10) == 100){
@@ -940,49 +1260,63 @@ function setTopFreq(){
         }
 }
 
+
+//---------------------------form closing---------------------------//
+
 function closeSave() {
        document.getElementById('Close').click();
    };
 
-      $( function() {
-        $( "#Date_created_start" ).datepicker({
-            dateFormat:"dd-mm-yy",
-            beforeShow:function(input,inst) {
-                $('#'+inst.id).datepicker("option","maxDate",$("#Date_created_end").val());
-            }
-        });
-          $( "#Date_created_end" ).datepicker({
-              dateFormat:"dd-mm-yy",
-              beforeShow:function(input,inst) {
-                $('#'+inst.id).datepicker("option","minDate",$("#Date_created_start").val());
-            }
-          });
-          $( "#Date_resolved_start" ).datepicker({
-            dateFormat:"dd-mm-yy",
-             beforeShow:function(input,inst) {
-                  $('#'+inst.id).datepicker("option","maxDate",$("#Date_resolved_end").val());
-            }
-        });
-          $( "#Date_resolved_end" ).datepicker({
-            dateFormat:"dd-mm-yy",
-              beforeShow:function(input,inst) {
-                      $('#'+inst.id).datepicker("option","minDate",$("#Date_resolved_start").val());
-            }
-        });
-          $("#Choose").change(function () {
-              var fPath = $(this).val();
-              var slashPos = fPath.lastIndexOf("\\");
-              sessionStorage["fName"] = fPath.slice(slashPos+1);
-              $("#file-name").html(sessionStorage["fName"]);
-              $("#message").html('');
-          })
-      } );
+//-------------------------fields validation-------------------------//
+
+$(function(){
+    for(var group in jsonDictionary['fields'])
+        for(var el in jsonDictionary['fields'][group])
+            if(jsonDictionary['fields'][group][el]['type'] == 'date'){
+                $("[id='"+el+0+"']").datepicker({
+                  dateFormat:"dd-mm-yy",
+                  beforeShow:function(input,inst) {
+                      $('#'+inst.id).datepicker("option","maxDate",$("[id='"+el+1+"']").val());
+                  }
+                  });
+                $("[id='"+el+1+"']").datepicker({
+                    dateFormat:"dd-mm-yy",
+                    beforeShow:function(input,inst) {
+                      $("[id='"+inst.id+"']").datepicker("option","minDate",$("[id='"+el+0+"']").val());
+                  }
+                });
+          }
+
+
+$("#Choose").change(function () {
+      //var fPath = $(this).val();
+      //var slashPos = fPath.lastIndexOf("\\");
+      //sessionStorage["fName"] = fPath.slice(slashPos+1);
+
+      var inputFile = document.getElementById('Choose').files;
+      var files = ''
+      for(var key in Object.keys(inputFile))
+          files = files + inputFile[key]['name'] + '\n'
+      var text = $("#file-name").text(files)
+      text.html(text.html().replace(/\n/g,'<br/>'));
+      sessionStorage["fName"] = files
+
+      //$("#file-name").html(sessionStorage["fName"]);
+      $("#message").html('');
+})
+});
 
 function setFileName(){
     if(sessionStorage["finalName"] != ''){
-        $("#file-name").html(sessionStorage["finalName"]);
+        //$("#file-name").html(sessionStorage["finalName"]);
+        var text = $("#file-name").text(sessionStorage["finalName"])
+        text.html(text.html().replace(/\n/g,'<br/>'));
     }
-    else $("#file-name").html(sessionStorage["fName"]);
+    else {
+        //$("#file-name").html(sessionStorage["fName"]);
+        var text = $("#file-name").text(sessionStorage["fName"])
+        text.html(text.html().replace(/\n/g,'<br/>'));
+    }
     $('#Choose').val('');
 }
 setFileName();
@@ -991,14 +1325,14 @@ function setFinalFileNameLocalStorage() {
             sessionStorage["finalName"] =  sessionStorage["fName"]
           };
 
-function clearFileNameLocalStorage() {
+function clearFileNameLocalStorage() { // удаляем после логаута значения из стореджа
             sessionStorage.removeItem("fName");
             sessionStorage.removeItem("finalName");
             sessionStorage.removeItem("relative");
             sessionStorage.removeItem("density");
             sessionStorage.removeItem("dynamic");
           };
-function clearChartStorage() {
+function clearChartStorage() { // удаляем после толщину у графиков после ресета фильтра
             sessionStorage.removeItem("density");
             sessionStorage.removeItem("relative");
             sessionStorage.removeItem("dynamic");
@@ -1015,17 +1349,24 @@ function saveFile() {
             beforeSend: setLoad(),
             success:
                function(response, status, xhr){
-                         var ct = xhr.getResponseHeader("content-type") || "";
-                         if (ct.indexOf('html') > -1){
-                            document.write(response);
+                         if (response.redirect) {
+                              window.location.href = response.redirect;
                             }
                          else{
-                            var blob = new Blob([response]);
-                            var link = document.createElement('a');
-                            link.href = window.URL.createObjectURL(blob);
-                            link.download = $('#FileName').val();
-                            link.click();
-                           }
+                             $('#Close').click();
+                             var ct = xhr.getResponseHeader("content-type") || "";
+                             if (ct.indexOf('html') > -1){
+                                document.write(response);
+                                }
+                             else{
+                                //download.bind(true, "csv", $('#FileName').val());
+                                var blob = new Blob([response]);
+                                var link = document.createElement('a');
+                                link.href = window.URL.createObjectURL(blob);
+                                link.download = $('#FileName').val();
+                                link.click();
+                               }
+                         }
                          },
             complete:
                 function(jqXHR, textStatus){
@@ -1063,13 +1404,28 @@ $('#ReferringTo').change(function significanceTop() {
                                  data: $('#topTermsForm').serialize(),
                                  beforeSend: setLoad(),
                                  success: function(response, status, xhr){
-                                     var ct = xhr.getResponseHeader("content-type") || "";
-                                     if (ct.indexOf('html') > -1)
-                                        document.write(response);
-                                     else {
-                                       $("#significanceTop").html(response['SignificanceTop'].join());
-                                       hideLoad();
-                                       setFileName();
+                                     if (response.redirect) {
+                                          window.location.href = response.redirect;
+                                        }
+                                     else{
+                                         var ct = xhr.getResponseHeader("content-type") || "";
+                                         if (ct.indexOf('html') > -1)
+                                            document.write(response);
+                                         else {
+                                           if(response['SignificanceTop'] == 'error'){
+                                                document.getElementById('message').innerHTML = 'not find regularExpression.csv';
+                                                $('html, body').animate({scrollTop: 0}, 600);
+                                                disableButtons({'message': 'not find regularExpression.csv'})
+                                                hideLoad()
+                                           }
+                                           else{
+                                               // for correct hyphenation add space for each world
+                                               response['SignificanceTop'] = response['SignificanceTop'].map(function(field){return " "+field})
+                                               $("#significanceTop").html(response['SignificanceTop'].join());
+                                               hideLoad();
+                                               setFileName();
+                                           }
+                                           }
                                        }
                                      },
                                  error: function(error) {
@@ -1080,9 +1436,22 @@ $('#ReferringTo').change(function significanceTop() {
                                  });
                                          })
 
+
+function sleep(ms) {
+    ms += new Date().getTime();
+    while (new Date() < ms){}
+}
+
+
 function filtering() {
-    if(!(checkComAtTt() && checkValidation())){
+    var com = checkComAtTt(jsonDictionary)
+    //console.log(com)
+    if(!(com[0] && checkValidation(jsonDictionary))){
+        //$('#'+com[1]).val('error')
         $('#filterForm').find(':submit').click();
+        //sleep(1000)
+        //console.log('in')
+        //$('#'+com[1]).val(com[2])
         return;
         }
     $.ajax({
@@ -1091,22 +1460,34 @@ function filtering() {
          beforeSend: setLoad(),
          data: $('#filterForm').serialize(),
          success: function(response, status, xhr){
-             var ct = xhr.getResponseHeader("content-type") || "";
-             if (ct.indexOf('html') > -1)
-                document.write(response);
-             else {
-               jsonDictionary = response;
-               console.log(jsonDictionary);
-               setMessage();
-               disableButtons(jsonDictionary);
-               statInfo(jsonDictionary['statInfo']);
-               categoricFieldsAJAX(jsonDictionary['categoric']);
-               attributesAJAX(jsonDictionary['attributes']);
-               dynamicChart = updateDynamicPlot(dynamicChart, jsonDictionary['plot']['dynamic bugs']['dynamic bugs']);
-               distributionChart = updateDistributionPlot(distributionChart, jsonDictionary);
-               $("#Reset").prop("disabled",false);
-               hideLoad();
-               setFileName();
+             if (response.redirect) {
+                 window.location.href = response.redirect;
+               }
+             else{
+                 var ct = xhr.getResponseHeader("content-type") || "";
+                 if (ct.indexOf('html') > -1)
+                    document.write(response);
+                 else {
+                   jsonDictionary = response;
+                   if (jsonDictionary['attributes']['freqTop'] == 'error' || jsonDictionary['attributes']['SignificanceTop'] == 'error' || jsonDictionary['freqTop'] == 'error'){
+                       document.getElementById('message').innerHTML = 'not find regularExpression.csv';
+                       $('html, body').animate({scrollTop: 0}, 600);
+                       disableButtons({'message': 'not find regularExpression.csv'})
+                       hideLoad();
+                   }
+                   else{
+                        setMessage();
+                        disableButtons(jsonDictionary);
+                        statInfo(jsonDictionary['statInfo']);
+                        categoricFieldsAJAX(jsonDictionary['categoric']);
+                        attributesAJAX(jsonDictionary['attributes'], Object.keys(jsonDictionary['categoric']));
+                        dynamicChart = updateDynamicPlot(dynamicChart, jsonDictionary['plot']['dynamic bugs']['dynamic bugs']);
+                        distributionChart = updateDistributionPlot(distributionChart, jsonDictionary);
+                        $("#Reset").prop("disabled",false);
+                        hideLoad();
+                        setFileName();
+                   }
+                  }
               }
              },
          error: function(error) {
@@ -1123,20 +1504,28 @@ function reset1() {
          url: '/resetFilter',
          beforeSend: function resetForm(){ setLoad(); $("#filterForm")[0].reset();},
          success: function(response, status, xhr){
-             var ct = xhr.getResponseHeader("content-type") || "";
-             if (ct.indexOf('html') > -1)
-                document.write(response);
-             else {
-               jsonDictionary = response;
-               setMessage();
-               disableButtons(jsonDictionary);
-               statInfo(jsonDictionary['statInfo']);
-               categoricFieldsAJAX(jsonDictionary['categoric']);
-               attributesAJAX(jsonDictionary['attributes']);
-               dynamicChart = updateDynamicPlot(dynamicChart, jsonDictionary['plot']['dynamic bugs']['dynamic bugs']);
-               distributionChart = updateDistributionPlot(distributionChart, jsonDictionary);
-               hideLoad();
-               setFileName();
+             if (response.redirect) {
+                  window.location.href = response.redirect;
+                }
+             else{
+                 var ct = xhr.getResponseHeader("content-type") || "";
+                 if (ct.indexOf('html') > -1)
+                    document.write(response);
+                 else {
+                   jsonDictionary = response;
+                   setMessage();
+                   disableButtons(jsonDictionary);
+                   statInfo(jsonDictionary['statInfo']);
+                   categoricFieldsAJAX(jsonDictionary['categoric']);
+                   attributesAJAX(jsonDictionary['attributes'], Object.keys(jsonDictionary['categoric']));
+                   dynamicChart = updateDynamicPlot(dynamicChart, jsonDictionary['plot']['dynamic bugs']['dynamic bugs']);
+                   distributionChart = updateDistributionPlot(distributionChart, jsonDictionary);
+                   //$("#Reset").prop("disabled",true);
+                   hideLoad();
+                   setFileName();
+                   clearChartStorage();
+                   filtering();
+                 }
              }
                  },
          error: function(error) {
@@ -1147,6 +1536,7 @@ function reset1() {
          });
                  }
 
+// processing animation
 function hideLoad() {
          $("#load").removeAttr("style").hide();
          $('#loadDiv').removeClass("disabledfilter");
@@ -1156,56 +1546,85 @@ function setLoad() {
          $('#loadDiv').addClass('disabledfilter');
          }
 
-function checkValidation(){
-    return ($('#Issue_key1')[0].checkValidity() && $('#Components')[0].checkValidity() && $('#Labels')[0].checkValidity() && $('#Version')[0].checkValidity() && $('#Date_created_start')[0].checkValidity() && $('#Date_created_end')[0].checkValidity() && $('#Date_resolved_start')[0].checkValidity() && $('#Date_resolved_end')[0].checkValidity());
+// date fields validation
+function checkValidation(jsonDictionary){
+    var fields = [];
+    for( var group in jsonDictionary['fields'])
+        for(var el in jsonDictionary['fields'][group])
+                if(['text', 'text2', 'date'].includes(jsonDictionary['fields'][group][el]['type']))
+                    if(jsonDictionary['fields'][group][el]['type'] == 'date'){
+                        // check that left hand less than right hand
+                        if($("[id='"+el+0+"']").val() != '' && $("[id='"+el+1+"']").val() != ''){
+                            if($("[id='"+el+0+"']").val() > $("[id='"+el+1+"']").val()){
+                            // for get boostrap message we insert text to number field
+                            $("[id='"+el+0+"']").val('error')
+                        }
+                    }
+                        fields.push(el+0, el+1);
+                }
+                    else
+                        fields.push(el);
+    var bool_fields = fields.map(function(field){return $("[id='"+field+"']")[0].checkValidity()})
+    return bool_fields.reduce(function(sum, current){return sum && current}, true)
 }
+
 
 function validateForLoadFile(){
-    if($('#Choose')[0].checkValidity() == false || $('#areas')[0].checkValidity() == false)return;
-    setLoad();
-}
-
-function checkComAtTt(){
-    if($('#Comments_start').val() != '' && ($('#Comments_start').val() > 1000 || $('#Comments_start').val() < 0)) return false;
-    if($('#Comments_end').val() != '' && ($('#Comments_end').val() > 1000 || $('#Comments_end').val() < 0)) return false;
-    if($('#Attachments_start').val() != '' && ($('#Attachments_start').val() > 1000 || $('#Attachments_start').val() < 0)) return false;
-    if($('#Attachments_end').val() != '' && ($('#Attachments_end').val() > 1000 || $('#Attachments_end').val() < 0)) return false;
-    if($('#TTR_start').val() != '' && ($('#TTR_start').val() > 4000 || $('#TTR_start').val() < 0)) return false;
-    if($('#TTR_end').val() != '' && ($('#TTR_end').val() > 4000 || $('#TTR_end').val() < 0)) return false;
-    return true;
-}
-
-$('#murkup').change(function setAreas(){
-    if($('#murkup').val()=='yes'){
-        $("#areasDiv").removeClass('disabledfilter');
-        $("#areas").prop('required',true);
-        sessionStorage['markup'] = $('#murkup').val();
-        setTrain();
+    if($('#Choose')[0].checkValidity() == false || $('#areas')[0].checkValidity() == false){
+        hideLoad()
+        return
         }
-    else {
-        $("#areasDiv").addClass('disabledfilter');
-        $("#areas").prop('required',false);
-        sessionStorage['markup'] = $('#murkup').val();
-        setTrain();
-    }
-})
-
-function setTrain(){
-    if(sessionStorage['markup'] == 'yes')
-        $("#Train").prop("disabled",false);
-    else $("#Train").prop("disabled",true);
 }
 
-function trainingModel(){
+function checkComAtTt(jsonDictionary){
+    var fields = [];
+    var final = []
+    var f = false
+    var id = false
+    for( var group in jsonDictionary['fields'])
+        for(var el in jsonDictionary['fields'][group])
+                if(jsonDictionary['fields'][group][el]['type'] == 'number'){
+                    // check that left value less than right value
+                    if($("[id='"+el+0+"']").val() != '' && $("[id='"+el+1+"']").val() != ''){
+                        if(Number($("[id='"+el+0+"']").val()) > Number($("[id='"+el+1+"']").val())){
+                            if(f == false){
+                                f = $("[id='"+el+0+"']").val()
+                                id = el+0
+                            }
+                            // to get boostrap message we need to insert text to number field
+                            $("[id='"+el+0+"']").val('error')
+                            // set error message for tooltip
+                            document.getElementById(el+0).setAttribute("title", 'Start value should be less than end value')
+                            //console.log($("[id='"+el+0+"']")[0])
+                        }
+                    }
+                    
+                    fields.push(el+0, el+1)
+                }
+    var bool_fields = fields.map(function(field){return $("[id='"+field+"']").val() >= 0})
+    final.push(bool_fields.reduce(function(sum, current){return sum && current}, true))
+    final.push(id)
+    final.push(f)
+    return final
+}
+
+
+function training_model(){
     $.ajax({
         type: "POST",
-        url: '/trainingModel',
+        url: '/training_model',
         beforeSend: setLoad(),
         success: function(response, status, xhr){
-            jsonDictionary = response;
-            setMessage();
-            hideLoad();
-            checkSingleMod();
+            if (response.redirect) {
+                 window.location.href = response.redirect;
+               }
+            else{
+                jsonDictionary = response;
+                setMessage();
+                lock_mode(jsonDictionary['single_mod'], jsonDictionary['multiple_mod']);
+                hideLoad();
+                $("#menu-single-descr-mode").removeClass('disabled');
+            }
         },
         error: function(error) {
             document.getElementById('message').innerHTML =  'error of training model';
@@ -1214,3 +1633,29 @@ function trainingModel(){
                 }
     })
 }
+
+
+function multiple_files(){
+    var inputFile = document.getElementById('Choose').files;
+    var mas = []
+    for(var key in inputFile)
+        mas.push(inputFile[key]['name'])
+    $("#file-name").html(mas)
+    }
+
+
+function check_size_files(){
+    var inputFile = document.getElementById('Choose').files;
+    for(var key in inputFile){
+        if(inputFile[key]['size'] > sessionStorage['file_size']){
+            $("#file-name").html(inputFile[key]['name'] + ' size is bigger than maximum file size, maximum size is equal to '+sessionStorage['file_size']/(1000*1000)+' mb')
+            hideLoad()
+            return false
+        }
+    }
+    /*
+    if(inputFile['length'] > 0)
+        setLoad();
+    */
+    }
+    
