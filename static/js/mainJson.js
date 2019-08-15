@@ -1562,7 +1562,7 @@ function checkValidation(jsonDictionary){
                         $("[id='"+el+1+"']").val($("[id='"+el+1+"']").val().trim())
                         if($("[id='"+el+0+"']").val() != '' && $("[id='"+el+1+"']").val() != ''){
                             if((new Date($("[id='"+el+0+"']").val().split("-")[2], $("[id='"+el+0+"']").val().split("-")[1], $("[id='"+el+0+"']").val().split("-")[0])).isDate() && 
-                            (new Date($("[id='"+el+1+"']").val().split("-")[2], $("[id='"+el+1+"']").val().split("-")[1], ("[id='"+el+1+"']").val().split("-")[0])).isDate()){
+                            (new Date($("[id='"+el+1+"']").val().split("-")[2], $("[id='"+el+1+"']").val().split("-")[1], $("[id='"+el+1+"']").val().split("-")[0])).isDate()){
                                 if($("[id='"+el+0+"']").val() > $("[id='"+el+1+"']").val()){
                                     // for get boostrap message we insert text to number field
                                     //$("[id='"+el+0+"']").val('error')

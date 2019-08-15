@@ -76,12 +76,15 @@ class ReduceFrame:
 # cleans up model/ folder
 def remove_models():
     try:
+        main_dir = list(os.getcwd().split('/'))[-1:]
         os.chdir('../model/')
         models_dest_dir = os.getcwd()
         models = [ file for file in os.listdir(models_dest_dir) if file.endswith('.sav') ]
         for model in models:
             os.remove(os.path.join(models_dest_dir, model))
-        os.chdir('../nostradamus/')
+        os.chdir('../' + main_dir[0])
     except Exception:
         print('Error: can\'t clean up model/ folder.')
 
+if __name__ == "__main__":
+    remove_models()

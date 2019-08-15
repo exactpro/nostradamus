@@ -1327,7 +1327,12 @@ def training_model():
         try:
             checker = Checker()
             stat_info = StatInfo()
-            defect_attributes = load_defect_attributes()
+            config_reader = SettingProvider('defect_attributes.ini')
+            session['ref_to'] = config_reader.get_fields(
+                                                section='defect_attributes',
+                                                categories='referring_to',
+                                                evaluate=True
+                                                )
             session['categoricDict'] = checker.prepare_categorical(pandas.read_pickle(session['origFrame']),    
                                                                    fields_data=session['defect_attributes'],
                                                                    ref_to_data=session['ref_to'])
@@ -1348,6 +1353,13 @@ def training_model():
             # blocking empty fields on gui
             data_frame = pandas.read_pickle(session['origFrame'])
             attr.update({el: None for el in list(data_frame) if len(data_frame[el].dropna().unique().tolist()) == 0})
+
+            session['clearDictionary'] = {
+                                            'SignificanceTop': session['SignificanceTop'][session['categoricDict']['ReferringTo'][0]], 
+                                            'ReferringTo': 'Resolution '+session['categoricDict']['Resolution'][0], 
+                                            'freqTop': session['origFreqTop']
+                                            }
+            print()
             return jsonify({
                         'username': session['username'],
                         'message': 'Model has been successfully trained.',
@@ -1672,8 +1684,8 @@ def uploaderMultiple():
                 return render_template('multiplePage.html', json=json.dumps({'username': session['username'],
                                                                              'message': str(e),
                                                                              'single_mod': signle_mode_status,
-                                                                             'multiple_mod': multiple_mode_status
-                                                                             }))
+                                                                             'multiple_mod': multiple_mode_status,
+                                                                             'inner': version_store.inner}))
 
             session['frameMultiple'] = 'files/{0}/{1}_{2}.pkl'.format(version_store.session_id, frame_store.frame_multiple, version_store.session_id)
             # for correct prediction processing fill in NaN values to Description
@@ -1686,7 +1698,8 @@ def uploaderMultiple():
                 return render_template('multiplePage.html', json=json.dumps({'username': session['username'],
                                                                              'message': 'document is not valid. Please check that document have following fields:' + '\n' + '\'Issue_key\', \'Project_name\', \'Description\'',
                                                                              'single_mod': signle_mode_status,
-                                                                             'multiple_mod': multiple_mode_status}))
+                                                                             'multiple_mod': multiple_mode_status,
+                                                                             'inner': version_store.inner}))
             try:
                 data = pandas.read_pickle(session['frameMultiple'])
                 setting_provader = SettingProvider('predictions_parameters.ini')
@@ -1705,20 +1718,20 @@ def uploaderMultiple():
                 return render_template('multiplePage.html', json=json.dumps({'username': session['username'],
                                                                              'message': 'database error',
                                                                              'single_mod': signle_mode_status,
-                                                                             'multiple_mod': multiple_mode_status
-                                                                             }))
+                                                                             'multiple_mod': multiple_mode_status,
+                                                                             'inner': version_store.inner}))
             except FileNotFoundError as e:
                 return render_template('multiplePage.html', json=json.dumps({'username': session['username'],
                                                                              'message': str(e),
                                                                              'single_mod': signle_mode_status,
-                                                                             'multiple_mod': multiple_mode_status
-                                                                             }))
+                                                                             'multiple_mod': multiple_mode_status,
+                                                                             'inner': version_store.inner}))
             except Exception as e:
                 return render_template('multiplePage.html', json=json.dumps({'username': session['username'],
                                                                              'message': str(e),
                                                                              'single_mod': signle_mode_status,
-                                                                             'multiple_mod': multiple_mode_status
-                                                                             }))
+                                                                             'multiple_mod': multiple_mode_status,
+                                                                             'inner': version_store.inner}))
             try:
                 setting_provader = SettingProvider('predictions_parameters.ini')
                 session['multiple_plot'] = {}
@@ -1738,7 +1751,8 @@ def uploaderMultiple():
                 return render_template('multiplePage.html', json=json.dumps({'username': session['username'],
                                                                              'message': str(e),
                                                                              'single_mod': signle_mode_status,
-                                                                             'multiple_mod': multiple_mode_status}))
+                                                                             'multiple_mod': multiple_mode_status,
+                                                                             'inner': version_store.inner}))
 
             return render_template('multiplePage.html', json=json.dumps({'username': session['username'],
                                                                          'table': session['newDictionary'],
@@ -1746,11 +1760,13 @@ def uploaderMultiple():
                                                                          'plot': session['multiple_plot'],
                                                                          'file_size': file_info_store.max_file_size,
                                                                          'single_mod': signle_mode_status,
-                                                                         'multiple_mod': multiple_mode_status}))
+                                                                         'multiple_mod': multiple_mode_status,
+                                                                         'inner': version_store.inner}))
         return render_template('multiplePage.html', json=json.dumps({'username': session['username'],
                                                                      'message': 'incorrect file format. Please use only xml',
                                                                      'single_mod': signle_mode_status,
-                                                                     'multiple_mod': multiple_mode_status}))
+                                                                     'multiple_mod': multiple_mode_status,
+                                                                     'inner': version_store.inner}))
 
 
 @app.route('/save_multiple_subset', methods=['GET', 'POST'])
