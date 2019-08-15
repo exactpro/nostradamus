@@ -1,20 +1,3 @@
-<!--
-/*******************************************************************************
-* Copyright 2016-2019 Exactpro (Exactpro Systems Limited)
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-******************************************************************************/
--->
 <!DOCTYPE html>
 <html>
 
@@ -32,22 +15,22 @@
     <!-- Menu styles -->
     <link rel="stylesheet" href="{{url_for('static',filename='style/sidenav.min.css')}}" type="text/css">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
-    <title>Results | Nostradamus</title>
+    <title>Single Description Mode | Nostradamus</title>
     <style>
         .hwt-container {
-            background-color: #f8f9fa;
+            background-color: #ffffff;
         }
 
         .hwt-content {
-            height: 100px;
+            height: 240px;
             padding: 20px;
             border: 1px solid #adb5bd;
             color: inherit;
             font: 14px 'Droid Sans Mono', sans-serif;
             line-height: 200%;
-            max-width: 700px;
-            min-width: 700px;
-            min-height: 150px;
+            max-width: 703.33px;
+            min-width: 703.33px;
+            min-height: 240px;
         }
 
         .hwt-input:focus {
@@ -85,7 +68,7 @@
                 <div class="row">
                     <div class="col-md-7 logo-block-header">
                         <img src="{{url_for('static',filename='img/logo_dark.png')}}" />
-                        <span class="version">6.0</span>
+                        <span class="version">6.1</span>
                     </div>
                     <div class="col-md-4 user-info-block">
                         <div id='username'></div>
@@ -134,8 +117,7 @@
                     </a>
 
                     <ul class="sidenav-dropdown ul-dropdown" data-sidenav-dropdown>
-                        <li data-toggle="tooltip" data-placement="top"
-                            title="Multiple description mode page is under construction">
+                        <li data-toggle="tooltip" data-placement="top">
                             <form id="multiple descriptions mode" class="form-content form-horizontal"
                                 action="/multipleMod" method="POST">
                                 <a id="menu-multiple-descr-mode" href="#"
@@ -174,10 +156,16 @@
                             <div id="warning" class="error_message"></div>
                         </div>
                         <div class="col-md-8">
+                            <div class="col-md-12" style="padding:0;">
                             <!--class="form-control descr hwt-content hwt-input"-->
-                            <textarea required type="text" id="descr" name="descr"
-                                placeholder="Your bug report description" class="textarea-prediction-form" onchange="ResetFilters();"></textarea>
-
+                                <textarea required type="text" id="descr" name="descr"
+                                    placeholder="Your bug report description" class="textarea-prediction-form" style="padding:20px;"></textarea>
+                                <div class="col-md-8"></div>
+                                    <button id='predict_button' class="btn btn-main-style btn-turquoise col-md-6" type="button"
+                                        onclick="predict();">Predict</button>
+                                    <button id='clear_button' class="btn btn-main-style btn-turquoise-reset col-md-6" type="button"
+                                        onclick="clearSingleDescriptionModePage();">Clear</button>
+                                </div>
                         </div>
                         <div id="highlight_div" class="col-md-4">
                             <div class="form-group">

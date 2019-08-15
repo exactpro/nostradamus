@@ -1,20 +1,3 @@
-<!--
-/*******************************************************************************
-* Copyright 2016-2019 Exactpro (Exactpro Systems Limited)
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-******************************************************************************/
--->
 <!DOCTYPE html>
 <html lang="en">
 
@@ -31,6 +14,7 @@
     <!-- Menu styles -->
     <link rel="stylesheet" href="{{url_for('static',filename='style/sidenav.min.css')}}" type="text/css">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+    <title>Multiple Description Mode | Nostradamus</title>
 </head>
 
 <body>
@@ -45,7 +29,7 @@
                 <div class="row">
                     <div class="col-md-7 logo-block-header">
                         <img src="{{url_for('static',filename='img/logo_dark.png')}}" />
-                        <span class="version">6.0</span>
+                        <span class="version">6.1</span>
                     </div>
                     <div class="col-md-4 user-info-block">
                         <div id='username'></div>
@@ -94,8 +78,7 @@
                     </a>
 
                     <ul class="sidenav-dropdown ul-dropdown" data-sidenav-dropdown>
-                        <li data-toggle="tooltip" data-placement="top"
-                            title="Multiple description mode page is under construction">
+                        <li data-toggle="tooltip" data-placement="top">
                             <form id="multiple descriptions mode" class="form-content form-horizontal"
                                 action="/multipleMod" method="POST">
                                 <a id="menu-multiple-descr-mode" href="#" class="active not-dropdown"
@@ -223,6 +206,14 @@
                             <button type="submit" id="submitSaveSubset" hidden="hidden"></button>
                         </div>
                     </form>
+                    <script>
+                        // Disable default action on ENTER keypress
+                        document.getElementById('FileName').addEventListener('keypress', function(event) {
+                            if (event.keyCode == 13) {
+                                event.preventDefault();
+                            }
+                        });
+                    </script>
                 </div>
             </div>
         </div>

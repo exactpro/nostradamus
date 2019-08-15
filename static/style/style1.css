@@ -1,20 +1,3 @@
-/*******************************************************************************
-* Copyright 2016-2019 Exactpro (Exactpro Systems Limited)
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-******************************************************************************/
-
-
 /* stylesheet */
 
 body {
@@ -61,6 +44,9 @@ color: #888 !important;
 .btn-big {
   width: 100%;
 }
+.btn-big-settings {
+  width: 50%;
+}
 .big-btn-wrap {
     margin: 25px -55px -10px -55px;
 }
@@ -78,6 +64,14 @@ color: #888 !important;
 .btn-turquoise:focus{
     background-color: #3f979f;
 }
+.btn-turquoise-reset {
+    background-color: #cd5c5c;
+}
+.btn-turquoise-reset:hover,
+.btn-turquoise-reset:active,
+.btn-turquoise-reset:focus{
+    background-color: #cd5c5c;
+}
 .btn[disabled] {
     opacity: 0.3;
 }
@@ -87,6 +81,9 @@ color: #888 !important;
 }
 .form-control {
     height: 30px;
+}
+.floated {
+    float:left;
 }
 
 /*Header*/
@@ -421,6 +418,17 @@ nav.sidenav form {
 .referring-to-form {
     padding-bottom: 30px;
 }
+.error_field{
+    box-shadow: none;
+    border-radius: 0;
+    border: none;
+    border-bottom: 2px solid red;
+}
+.error_field:focus{
+    box-shadow: none;
+    border-bottom: 2px solid red;
+}
+
 /* Filter Form */
 .form-inner-block {
     padding-right: 16px;
@@ -673,10 +681,11 @@ div.form-btn-block {
 }
 .textarea-prediction-form {
     width: 100% !important;
-    overflow-y: hidden;
-    height: 120px;
+    overflow-y: auto;
+    height: 240px;
     outline: none !important;
     line-height: 200%;
+    resize: none;
 }
 /*topTerm block*/
 
@@ -876,7 +885,7 @@ select.empty-value {
 .tabulator-add-button:hover {
     text-decoration: none;
 }
-#add_row {
+#add_row, #add_row_areas {
     position: absolute;
     right: 15px;
     bottom: 42px;
@@ -893,11 +902,16 @@ select.empty-value {
 }
 #add_row:hover,
 #add_row:active,
-#add_row:focus
+#add_row:focus,
+#add_row_areas:hover,
+#add_row_areas:active,
+#add_row_areas:focus
 {
     text-decoration: none !important;
 }
-#add_row:hover {
+#add_row:hover,
+#add_row_areas:hover
+{
     background-color: rgba(63,151,159,0.9);
 }
 #mandatory_fields {
@@ -940,7 +954,7 @@ select.empty-value {
     font-size: 17px;
 }
 .settings-wrap>.title>.asterisk {
-    padding-left: 3px;
+    padding-left: 2px;
 }
 /*Devices*/
 

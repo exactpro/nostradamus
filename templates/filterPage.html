@@ -1,20 +1,3 @@
-<!--
-/*******************************************************************************
-* Copyright 2016-2019 Exactpro (Exactpro Systems Limited)
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-******************************************************************************/
--->
 <html>
 
 <head>
@@ -35,7 +18,7 @@
     <!-- Custom styles -->
     <link href="{{url_for('static',filename='style/style1.css')}}" rel="stylesheet">
     <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon.png') }}">
-    <title>Analysis &amp; Training Page | Nostradamus</title>
+    <title>Analysis &amp; Training | Nostradamus</title>
 </head>
 
 <body id="body">
@@ -50,7 +33,7 @@
                 <div class="row">
                     <div class="col-md-7 logo-block-header">
                         <img src="{{url_for('static',filename='img/logo_dark.png')}}" />
-                        <span class="version">6.0</span>
+                        <span class="version">6.1</span>
                     </div>
                     <div class="col-md-4 user-info-block">
                         <div id='username'></div>
@@ -98,8 +81,7 @@
                     </a>
 
                     <ul class="sidenav-dropdown ul-dropdown" data-sidenav-dropdown>
-                        <li data-toggle="tooltip" data-placement="top"
-                            title="Multiple description mode page is under construction">
+                        <li data-toggle="tooltip" data-placement="top">
                             <form id="multiple descriptions mode" class="form-content form-horizontal"
                                 action="/multipleMod" method="POST">
                                 <a id="menu-multiple-descr-mode" href="#"
@@ -147,27 +129,9 @@
                                     <div style="margin-bottom: 15px;" id="file-name"></div>
                                     <div id="message" data-model-name="test"></div>
                                 </div>
-                                <div id="div_murkup" class="col-xs-3">
-                                    <label>Marking Test Areas</label>
-                                    <select class="select-sign form-control input-custom" id="murkup" name="murkup">
-                                        <option>yes</option>
-                                        <option selected>no</option>
-                                    </select>
-                                </div>
                                 <div class="col-xs-3">
                                     <button id="Submit" class="btn btn-main-style btn-turquoise" type="submit"
                                         onclick="setLoad();clearChartStorage();setFinalFileNameLocalStorage();validateForLoadFile();return check_size_files();">Submit</button>
-                                </div>
-
-                            </div>
-                            <div class="row disabledfilter" id="areasDiv">
-                                <div class="col-md-offset-1 col-md-10">
-                                    <label class="col-sm-3 control-label">Areas of testing</label>
-                                    <div class="col-sm-9">
-                                        <input class="form-control descr" type="text" id="areas" name="areas"
-                                            placeholder="your expression for areas(e.g. JBPM=JBPM - standalone|JBPM - within SOA)"
-                                            pattern="^([a-zA-Z0-9_-]+=[a-zA-Z0-9\s\|_-]+,?){1,100}$">
-                                    </div>
                                 </div>
                             </div>
                         </form>

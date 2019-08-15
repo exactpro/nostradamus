@@ -1,27 +1,9 @@
-/*******************************************************************************
-* Copyright 2016-2019 Exactpro (Exactpro Systems Limited)
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-******************************************************************************/
-
-
 /*-- get data from HTML and parse this to dictionary --*/
 var jsonFromHTML = document.getElementById("json").innerHTML;
 var cleanJsonFromHTML1 = jsonFromHTML.replace(/"/g,'');
 var cleanJsonFromHTML = cleanJsonFromHTML1.replace(/&#34;/g,'"');
 // jsonDictionary is global variable which is used and overriding in many functions
 var jsonDictionary = JSON.parse(cleanJsonFromHTML);
-console.log(jsonDictionary);
 
 
 // set max file size
@@ -43,10 +25,6 @@ $("#statInfoBlock").addClass("disabledfilter");
 $("#dynamicChartBlock").addClass("disabledfilter");
 $("#topTerm").addClass('disabledfilter');
 $("#load").removeAttr("style").hide();
-//$("#Choose").click(function () {
-    //$("#Submit").prop("disabled",false);
-    //$("#murkup").prop("disabled",false);
-   //});
 
 
 // unlock single mod and multiple mod for open source version
@@ -72,8 +50,9 @@ function putUser(){
 
 // create fields on GUI, mandatory_fields, special_fields, areas_fields
 // and setting up this for any field_type_backend
-function addField(parent_div, div_class, label_class, inner_div_class, field_name, field_name_GUI, field_class, field_tag,
-                  field_type, field_type_backend){
+function addField(parent_div, div_class, label_class,
+                  inner_div_class, field_name, field_name_GUI,
+                  field_class, field_tag, field_type, field_type_backend){
     // create div
     var i_div = document.createElement('div');
     i_div.className = div_class;
@@ -180,7 +159,7 @@ function field_factory(id){
 for (var group in jsonDictionary['fields']){
     var parent_div = document.getElementById(id);
     // create group div for fields
-    if(group == 'areas_fields' && Object.keys(jsonDictionary['fields'][group]).length > 0){
+    if(group == 'area_of_testing_fields' && Object.keys(jsonDictionary['fields'][group]).length > 0){
         parent_div = create_group_fields_div(parent_div, 'AREAS OF TESTING')
     }
     /*
@@ -222,9 +201,17 @@ for (var group in jsonDictionary['fields']){
                 field_tag = 'select'
                 }
             }
-        addField(parent_div, div_class, label_class, inner_div_class,
-             key,jsonDictionary['fields'][group][key]['name'], field_class, field_tag, field_type,
-             jsonDictionary['fields'][group][key]['type'])
+            if (group == 'area_of_testing_fields'){
+                addField(parent_div, div_class, label_class, inner_div_class,
+                    key,jsonDictionary['fields'][group][key]['gui_name'], field_class, field_tag, field_type,
+                    'bool')
+            }
+            else{
+                addField(parent_div, div_class, label_class, inner_div_class,
+                    key,jsonDictionary['fields'][group][key]['name'], field_class, field_tag, field_type,
+                    jsonDictionary['fields'][group][key]['type'])
+            }
+        
     }
 }
 }
@@ -260,10 +247,10 @@ if('undefined'.localeCompare(jsonDictionary['inner']) != 0){
 
 // open train only if markup == 1
 if('undefined'.localeCompare(jsonDictionary['murkup']) != 0){
-    if(jsonDictionary['murkup'] == '1'){
-        $("#Train").prop("disabled",false);
+    if(!jsonDictionary['isTrain']){
+        $("#Train").prop("disabled",true);
     }
-    else $("#Train").prop("disabled",true);
+    else $("#Train").prop("disabled",false);
 }
 
 
@@ -317,6 +304,11 @@ function optimize_message(message){
         files = files + arrays[key] + '\n'
     var text = $("#message").text(files)
     text.html(text.html().replace(/\n/g,'<br/>'));
+    text.html(text.html().replace(/"/g, ''));
+    text.html(text.html().replace('&amp;#39;', "'"));
+    text.html(text.html().replace('&amp;#39;', "'"));
+    text.html(text.html().replace(/^(?:')/, ""));
+    text.html(text.html().replace(/(?:'<br>)$/, ""));
 }
 
 
@@ -470,6 +462,9 @@ function disableButtons(jsonDictionary){
         $("#dynamicChartBlock").addClass("disabledfilter");
         $("#topTerm").addClass('disabledfilter');
         }
+    if(!jsonDictionary['isTrain']){
+        $("#Train").prop("disabled",true);
+    }
 
 }
 disableButtons(jsonDictionary);
@@ -1103,10 +1098,8 @@ function addOptionAJAX(name, mas){
 
 function forEachAJAX(mas){
     for(key in mas){
-        //   неактуальная часть кода
         if(key == 'ReferringTo')
             $('#ReferringTo').find('option').remove().end();
-        // до этого момента
         else removeOptionsAJAX(document.getElementById(key));
         addOptionAJAX("[id='"+key+"']",mas[key]);
     }
@@ -1325,20 +1318,21 @@ function setFinalFileNameLocalStorage() {
             sessionStorage["finalName"] =  sessionStorage["fName"]
           };
 
-function clearFileNameLocalStorage() { // удаляем после логаута значения из стореджа
+function clearFileNameLocalStorage() {
             sessionStorage.removeItem("fName");
             sessionStorage.removeItem("finalName");
             sessionStorage.removeItem("relative");
             sessionStorage.removeItem("density");
             sessionStorage.removeItem("dynamic");
           };
-function clearChartStorage() { // удаляем после толщину у графиков после ресета фильтра
+function clearChartStorage() {
             sessionStorage.removeItem("density");
             sessionStorage.removeItem("relative");
             sessionStorage.removeItem("dynamic");
           };
 
 function saveFile() {
+    $('#FileName').val($('#FileName')[0].value.trim())
     if($('#FileName')[0].checkValidity() == false){
             $('#saveForm').find(':submit').click();}
     else{
@@ -1444,16 +1438,20 @@ function sleep(ms) {
 
 
 function filtering() {
+    $(':input').attr('title', '');
+    $(':input').attr('data-original-title', '');
     var com = checkComAtTt(jsonDictionary)
-    //console.log(com)
-    if(!(com[0] && checkValidation(jsonDictionary))){
+    var validate = checkValidation(jsonDictionary)
+    if(!validate || !com[0]){
         //$('#'+com[1]).val('error')
-        $('#filterForm').find(':submit').click();
+        //$('#filterForm').find(':submit').click();
+        $('.error_field:first').tooltip({placement: 'bottom'});
+        $('.error_field:not(:first)').tooltip({placement: 'top'});
+        $('.error_field:first').tooltip('show');
         //sleep(1000)
-        //console.log('in')
         //$('#'+com[1]).val(com[2])
         return;
-        }
+    }
     $.ajax({
          type: "POST",
          url: '/filtering?ReferringTo='+$('#ReferringTo').val(),
@@ -1468,25 +1466,26 @@ function filtering() {
                  if (ct.indexOf('html') > -1)
                     document.write(response);
                  else {
-                   jsonDictionary = response;
-                   if (jsonDictionary['attributes']['freqTop'] == 'error' || jsonDictionary['attributes']['SignificanceTop'] == 'error' || jsonDictionary['freqTop'] == 'error'){
-                       document.getElementById('message').innerHTML = 'not find regularExpression.csv';
-                       $('html, body').animate({scrollTop: 0}, 600);
-                       disableButtons({'message': 'not find regularExpression.csv'})
-                       hideLoad();
-                   }
-                   else{
-                        setMessage();
-                        disableButtons(jsonDictionary);
-                        statInfo(jsonDictionary['statInfo']);
-                        categoricFieldsAJAX(jsonDictionary['categoric']);
-                        attributesAJAX(jsonDictionary['attributes'], Object.keys(jsonDictionary['categoric']));
-                        dynamicChart = updateDynamicPlot(dynamicChart, jsonDictionary['plot']['dynamic bugs']['dynamic bugs']);
-                        distributionChart = updateDistributionPlot(distributionChart, jsonDictionary);
-                        $("#Reset").prop("disabled",false);
-                        hideLoad();
-                        setFileName();
-                   }
+                       jsonDictionary = response;
+                       if (jsonDictionary['attributes']['freqTop'] == 'error' || jsonDictionary['attributes']['SignificanceTop'] == 'error' || jsonDictionary['freqTop'] == 'error'){
+                           document.getElementById('message').innerHTML = 'not find regularExpression.csv';
+                           $('html, body').animate({scrollTop: 0}, 600);
+                           disableButtons({'message': 'not find regularExpression.csv'})
+                           hideLoad();
+                       }
+                       else{
+                            setMessage();
+                            disableButtons(jsonDictionary);
+                            statInfo(jsonDictionary['statInfo']);
+                            categoricFieldsAJAX(jsonDictionary['categoric']);
+                            attributesAJAX(jsonDictionary['attributes'], Object.keys(jsonDictionary['categoric']));
+                            dynamicChart = updateDynamicPlot(dynamicChart, jsonDictionary['plot']['dynamic bugs']['dynamic bugs']);
+                            distributionChart = updateDistributionPlot(distributionChart, jsonDictionary);
+                            $('html, body').animate({scrollTop: 0}, 600);
+                            $("#Reset").prop("disabled",false);
+                            setFileName();
+                            hideLoad();
+                       }
                   }
               }
              },
@@ -1500,44 +1499,47 @@ function filtering() {
 
 function reset1() {
     $.ajax({
-         type: "POST",
-         url: '/resetFilter',
-         beforeSend: function resetForm(){ setLoad(); $("#filterForm")[0].reset();},
-         success: function(response, status, xhr){
-             if (response.redirect) {
-                  window.location.href = response.redirect;
+            type: "POST",
+            url: '/resetFilter',
+            beforeSend: function resetForm(){ setLoad(); $("#filterForm")[0].reset();},
+            success: function(response, status, xhr){
+                if (response.redirect) {
+                    window.location.href = response.redirect;
                 }
-             else{
-                 var ct = xhr.getResponseHeader("content-type") || "";
-                 if (ct.indexOf('html') > -1)
+                else{
+                    var ct = xhr.getResponseHeader("content-type") || "";
+                    if (ct.indexOf('html') > -1)
                     document.write(response);
-                 else {
-                   jsonDictionary = response;
-                   setMessage();
-                   disableButtons(jsonDictionary);
-                   statInfo(jsonDictionary['statInfo']);
-                   categoricFieldsAJAX(jsonDictionary['categoric']);
-                   attributesAJAX(jsonDictionary['attributes'], Object.keys(jsonDictionary['categoric']));
-                   dynamicChart = updateDynamicPlot(dynamicChart, jsonDictionary['plot']['dynamic bugs']['dynamic bugs']);
-                   distributionChart = updateDistributionPlot(distributionChart, jsonDictionary);
-                   //$("#Reset").prop("disabled",true);
-                   hideLoad();
-                   setFileName();
-                   clearChartStorage();
-                   filtering();
-                 }
-             }
-                 },
-         error: function(error) {
-             document.getElementById('message').innerHTML = 'error of dynamic reset filter';
-             $('html, body').animate({scrollTop: 0}, 600);
-             hideLoad();
-                     }
-         });
-                 }
+                    else {
+                    jsonDictionary = response;
+                    setMessage();
+                    disableButtons(jsonDictionary);
+                    statInfo(jsonDictionary['statInfo']);
+                    categoricFieldsAJAX(jsonDictionary['categoric']);
+                    attributesAJAX(jsonDictionary['attributes'], Object.keys(jsonDictionary['categoric']));
+                    dynamicChart = updateDynamicPlot(dynamicChart, jsonDictionary['plot']['dynamic bugs']['dynamic bugs']);
+                    distributionChart = updateDistributionPlot(distributionChart, jsonDictionary);
+                    //$("#Reset").prop("disabled",true);
+                    hideLoad();
+                    setFileName();
+                    clearChartStorage();
+                    filtering();
+                    }
+                }
+                    },
+            error: function(error) {
+                document.getElementById('message').innerHTML = 'error of dynamic reset filter';
+                $('html, body').animate({scrollTop: 0}, 600);
+                hideLoad();
+                        }
+            });
+                    }
 
 // processing animation
 function hideLoad() {
+        if(!jsonDictionary['isTrain']){
+            $("#Train").prop("disabled",true);
+        }
          $("#load").removeAttr("style").hide();
          $('#loadDiv').removeClass("disabledfilter");
       }
@@ -1549,28 +1551,94 @@ function setLoad() {
 // date fields validation
 function checkValidation(jsonDictionary){
     var fields = [];
+    var invalid_values = [];
+    var datePattern = /^[0-9]{2}-[0-9]{2}-[0-9]{4}$/;
     for( var group in jsonDictionary['fields'])
         for(var el in jsonDictionary['fields'][group])
-                if(['text', 'text2', 'date'].includes(jsonDictionary['fields'][group][el]['type']))
+                if(['text', 'text2', 'text1', 'date'].includes(jsonDictionary['fields'][group][el]['type'])){
                     if(jsonDictionary['fields'][group][el]['type'] == 'date'){
                         // check that left hand less than right hand
+                        $("[id='"+el+0+"']").val($("[id='"+el+0+"']").val().trim())
+                        $("[id='"+el+1+"']").val($("[id='"+el+1+"']").val().trim())
                         if($("[id='"+el+0+"']").val() != '' && $("[id='"+el+1+"']").val() != ''){
-                            if($("[id='"+el+0+"']").val() > $("[id='"+el+1+"']").val()){
-                            // for get boostrap message we insert text to number field
-                            $("[id='"+el+0+"']").val('error')
+                            if((new Date($("[id='"+el+0+"']").val().split("-")[2], $("[id='"+el+0+"']").val().split("-")[1], $("[id='"+el+0+"']").val().split("-")[0])).isDate() && 
+                            (new Date($("[id='"+el+1+"']").val().split("-")[2], $("[id='"+el+1+"']").val().split("-")[1], ("[id='"+el+1+"']").val().split("-")[0])).isDate()){
+                                if($("[id='"+el+0+"']").val() > $("[id='"+el+1+"']").val()){
+                                    // for get boostrap message we insert text to number field
+                                    //$("[id='"+el+0+"']").val('error')
+                                    $("[id='"+el+0+"']").removeClass('input-custom').addClass('error_field')
+                                    $("[id='"+el+1+"']").removeClass('input-custom').addClass('error_field')
+                                    document.getElementById(el+0).setAttribute('data-original-title', 'Start value should be less than end value');
+                                    document.getElementById(el+1).setAttribute('data-original-title', 'Start value should be less than end value');
+                                    invalid_values.push(el+0, el+1);
+                                }
+                                else{
+                                    $("[id='"+el+0+"']").removeClass('error_field').addClass('input-custom');
+                                    $("[id='"+el+1+"']").removeClass('error_field').addClass('input-custom');
+                                }
+                            }
+                            else{
+                                document.getElementById(el+0).setAttribute('data-original-title', 'Invalid value');
+                                $("[id='"+el+0+"']").removeClass('input-custom').addClass('error_field')
+    
+                                // set error message for tooltip
+                                document.getElementById(el+1).setAttribute('data-original-title', 'Invalid value');
+                                $("[id='"+el+1+"']").removeClass('input-custom').addClass('error_field')
+    
+                                invalid_values.push(el+0, el+1);
+                            }
+                            
                         }
-                    }
+                        else{
+                             if ($("[id='"+el+0+"']").val() != "" && 
+                            !((new Date($("[id='"+el+0+"']").val().split("-")[2], $("[id='"+el+0+"']").val().split("-")[1], $("[id='"+el+0+"']").val().split("-")[0])).isDate())){
+                            $("[id='"+el+0+"']").removeClass('input-custom').addClass('error_field');
+                                document.getElementById(el+0).setAttribute('data-original-title', 'Invalid value');
+                                invalid_values.push(el+0, el+1);
+                             }
+                             else if ($("[id='"+el+1+"']").val() != "" && 
+                             !((new Date($("[id='"+el+1+"']").val().split("-")[2], $("[id='"+el+1+"']").val().split("-")[1], $("[id='"+el+1+"']").val().split("-")[0])).isDate())){
+                                $("[id='"+el+1+"']").removeClass('input-custom').addClass('error_field');
+                                document.getElementById(el+1).setAttribute('data-original-title', 'Invalid value');
+                                invalid_values.push(el+0, el+1);
+                             }
+                             else{
+                                $("[id='"+el+0+"']").removeClass('error_field').addClass('input-custom');
+                                $("[id='"+el+1+"']").removeClass('error_field').addClass('input-custom');
+                             }
+                        }
                         fields.push(el+0, el+1);
-                }
-                    else
+                    }
+                    else{
+                        $("[id='"+el+"']").val($("[id='"+el+"']").val().trim())
                         fields.push(el);
-    var bool_fields = fields.map(function(field){return $("[id='"+field+"']")[0].checkValidity()})
+                    }
+                }
+    fields.forEach(function(item, i, arr){
+        if (!$("[id='"+item+"']")[0].checkValidity() && invalid_values.indexOf(item) == -1){
+            $("[id='"+item+"']").removeClass('input-custom').addClass('error_field')
+            document.getElementById(item).setAttribute('data-original-title', 'Invalid value');
+            invalid_values.push(item)
+        }
+        else if (invalid_values.indexOf(item) == -1){
+            $("[id='"+item+"']").removeClass('error_field').addClass('input-custom');
+            $("[id='"+item+"']").attr('data-original-title', '');
+        }
+        document.getElementById(item).setAttribute('data-toggle', 'tooltip');
+
+    })
+
+    var bool_fields = fields.map(function(field){return $("[id='"+field+"']")[0].checkValidity() && invalid_values.indexOf(field) == -1})
     return bool_fields.reduce(function(sum, current){return sum && current}, true)
+}
+
+Date.prototype.isDate = function(){
+    return (this !== "Invalid Date" && !isNaN(this)) ? true : false;
 }
 
 
 function validateForLoadFile(){
-    if($('#Choose')[0].checkValidity() == false || $('#areas')[0].checkValidity() == false){
+    if($('#Choose')[0].checkValidity() == false){
         hideLoad()
         return
         }
@@ -1579,29 +1647,82 @@ function validateForLoadFile(){
 function checkComAtTt(jsonDictionary){
     var fields = [];
     var final = []
+    var invalid_values = [];
     var f = false
     var id = false
     for( var group in jsonDictionary['fields'])
         for(var el in jsonDictionary['fields'][group])
                 if(jsonDictionary['fields'][group][el]['type'] == 'number'){
+                    $("[id='"+el+0+"']").val($("[id='"+el+0+"']").val().trim())
+                    $("[id='"+el+1+"']").val($("[id='"+el+1+"']").val().trim())
                     // check that left value less than right value
                     if($("[id='"+el+0+"']").val() != '' && $("[id='"+el+1+"']").val() != ''){
-                        if(Number($("[id='"+el+0+"']").val()) > Number($("[id='"+el+1+"']").val())){
-                            if(f == false){
-                                f = $("[id='"+el+0+"']").val()
-                                id = el+0
+                        if(!isNaN(parseInt($("[id='"+el+0+"']").val(), 10)) && !isNaN(parseInt($("[id='"+el+1+"']").val(),10))){
+                            if(Number($("[id='"+el+0+"']").val()) > Number($("[id='"+el+1+"']").val())){
+                                if(f == false){
+                                    f = $("[id='"+el+0+"']").val()
+                                    id = el+0
+                                }
+                                // to get boostrap message we need to insert text to number field
+                                // set error message for tooltip
+                                document.getElementById(el+0).setAttribute('data-original-title', 'Start value should be less than end value');
+                                $("[id='"+el+0+"']").removeClass('input-custom').addClass('error_field')
+
+                                // set error message for tooltip
+                                document.getElementById(el+1).setAttribute('data-original-title', 'Start value should be less than end value');
+                                $("[id='"+el+1+"']").removeClass('input-custom').addClass('error_field')
+
+
+                                invalid_values.push(el+0, el+1);
                             }
-                            // to get boostrap message we need to insert text to number field
-                            $("[id='"+el+0+"']").val('error')
-                            // set error message for tooltip
-                            document.getElementById(el+0).setAttribute("title", 'Start value should be less than end value')
-                            //console.log($("[id='"+el+0+"']")[0])
+                            else{
+                                $("[id='"+el+0+"']").removeClass('error_field').addClass('input-custom');
+                                $("[id='"+el+1+"']").removeClass('error_field').addClass('input-custom');
+                            }
                         }
+                        else{
+                                document.getElementById(el+0).setAttribute('data-original-title', 'Invalid value');
+                                $("[id='"+el+0+"']").removeClass('input-custom').addClass('error_field')
+
+                                // set error message for tooltip
+                                document.getElementById(el+1).setAttribute('data-original-title', 'Invalid value');
+                                $("[id='"+el+1+"']").removeClass('input-custom').addClass('error_field')
+
+                                invalid_values.push(el+0, el+1);
+                        }
+                    }
+                    else{
+                         if ($("[id='"+el+0+"']").val() != "" && $("[id='"+el+0+"']").val() != "0" && !Number($("[id='"+el+0+"']").val()) ){
+                            $("[id='"+el+0+"']").removeClass('input-custom').addClass('error_field');
+                            document.getElementById(el+0).setAttribute('data-original-title', 'Invalid value');
+                            invalid_values.push(el+0, el+1);
+                         }
+                         else if ($("[id='"+el+1+"']").val() != "" && $("[id='"+el+1+"']").val() != "0" && !Number($("[id='"+el+1+"']").val())){
+                            $("[id='"+el+1+"']").removeClass('input-custom').addClass('error_field');
+                            document.getElementById(el+1).setAttribute('data-original-title', 'Invalid value');
+                            invalid_values.push(el+0, el+1);
+                         }
+                         else{
+                            $("[id='"+el+0+"']").removeClass('error_field').addClass('input-custom');
+                            $("[id='"+el+1+"']").removeClass('error_field').addClass('input-custom');
+                         }
                     }
                     
                     fields.push(el+0, el+1)
                 }
-    var bool_fields = fields.map(function(field){return $("[id='"+field+"']").val() >= 0})
+    fields.forEach(function(item, i, arr){
+        if (!$("[id='"+item+"']")[0].checkValidity() && invalid_values.indexOf(item) == -1){
+            $("[id='"+item+"']").removeClass('input-custom').addClass('error_field')
+            document.getElementById(item).setAttribute('data-original-title', "Invalid value");
+            invalid_values.push(item)
+        }
+        else if (invalid_values.indexOf(item) == -1){
+            $("[id='"+item+"']").removeClass('error_field').addClass('input-custom');
+            $("[id='"+item+"']").attr('data-original-title', '');
+        }
+        document.getElementById(item).setAttribute('data-toggle', 'tooltip');
+    })
+    var bool_fields = fields.map(function(field){return $("[id='"+field+"']").val() >= 0 && invalid_values.indexOf(field) == -1})
     final.push(bool_fields.reduce(function(sum, current){return sum && current}, true))
     final.push(id)
     final.push(f)
@@ -1621,9 +1742,22 @@ function training_model(){
             else{
                 jsonDictionary = response;
                 setMessage();
+                if (!jsonDictionary['isTrain']){
+                    $("#Train").prop("disabled",true);
+                }
                 lock_mode(jsonDictionary['single_mod'], jsonDictionary['multiple_mod']);
                 hideLoad();
                 $("#menu-single-descr-mode").removeClass('disabled');
+                disableButtons(jsonDictionary);
+                statInfo(jsonDictionary['statInfo']);
+                categoricFieldsAJAX(jsonDictionary['categoric']);
+                attributesAJAX(jsonDictionary['attributes'], Object.keys(jsonDictionary['categoric']));
+                dynamicChart = updateDynamicPlot(dynamicChart, jsonDictionary['plot']['dynamic bugs']['dynamic bugs']);
+                distributionChart = updateDistributionPlot(distributionChart, jsonDictionary);
+                //$("#Reset").prop("disabled",true);
+                setFileName();
+                clearChartStorage();
+                optimize_message(jsonDictionary['message']);
             }
         },
         error: function(error) {
@@ -1658,4 +1792,41 @@ function check_size_files(){
         setLoad();
     */
     }
+
+for( var group in jsonDictionary['fields']){
+    for(var el in jsonDictionary['fields'][group]){
+        if(jsonDictionary['fields'][group][el]['type'] == 'date' || jsonDictionary['fields'][group][el]['type'] == 'number'){
+            if (jsonDictionary['fields'][group][el]['type'] == 'date'){
+                $("[id='"+el+0+"']").on("change", function(){
+                    $(this).removeClass('error_field').addClass('input-custom');
+                })
+
+                $("[id='"+el+1+"']").on("change", function(){
+                    $(this).removeClass('error_field').addClass('input-custom');
+                })
+
+                $("[id='"+el+0+"']").on("click", function(){
+                    $(this).removeClass('error_field').addClass('input-custom');
+                })
+
+                $("[id='"+el+1+"']").on("click", function(){
+                    $(this).removeClass('error_field').addClass('input-custom');
+                })
+            }
+
+            $("[id='"+el+0+"']").on("input", function(){
+                $(this).removeClass('error_field').addClass('input-custom');
+            })
+
+            $("[id='"+el+1+"']").on("input", function(){
+                $(this).removeClass('error_field').addClass('input-custom');
+            })
+        }
+        else{
+            $("[id='"+el+"']").on("input", function(){
+                $(this).removeClass('error_field').addClass('input-custom');
+            })
+        }
+    }
+}
     

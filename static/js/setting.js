@@ -1,27 +1,9 @@
-/*******************************************************************************
-* Copyright 2016-2019 Exactpro (Exactpro Systems Limited)
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-******************************************************************************/
-
-
 /*-- get data from HTML and parse this to dictionary --*/
 var jsonFromHTML = document.getElementById("json").innerHTML;
 var cleanJsonFromHTML1 = jsonFromHTML.replace(/"/g,'');
 var cleanJsonFromHTML = cleanJsonFromHTML1.replace(/&#34;/g,'"');
 // jsonDictionary is global variable which is used and overriding in many functions
 var jsonDictionary = JSON.parse(cleanJsonFromHTML);
-console.log(jsonDictionary);
 
 
 hideLoad()
@@ -44,6 +26,11 @@ function optimize_message(message){
         files = files + arrays[key] + '\n'
     var text = $("#warning").text(files)
     text.html(text.html().replace(/\n/g,'<br/>'));
+    text.html(text.html().replace(/"/g, ''));
+    text.html(text.html().replace('&amp;#39;', "'"));
+    text.html(text.html().replace('&amp;#39;', "'"));
+    text.html(text.html().replace(/^(?:')/, ""));
+    text.html(text.html().replace(/(?:'<br>)$/, ""));
 }
 
 /*Tooltips*/
@@ -67,7 +54,20 @@ $('#i_table_settings_for_mm').tooltip({
     title : 'Mandatory fields for multiple mode',
     placement: 'top'
 });
+$('#i_area_of_testing_fields').tooltip({
+    title : 'Section with area of testing fields settings - additional fields that added for user needs. It is mutable setting',
+    placement: 'top'
+});
 
+
+$('#referring_to').select2({width:'100%'});
+
+// Disable default action on ENTER keypress
+document.addEventListener('keypress', function(event) {
+    if (event.keyCode == 13) {
+        event.preventDefault();
+    }
+});
 
 function data_type_tooltip(cell){
     switch(cell.getValue()){
@@ -110,9 +110,155 @@ function mandatory_fields_table(data){
 var mandatory_fields = mandatory_fields_table(jsonDictionary)
 
 
+function multiple_mod_fields_table(data){
+        return new Tabulator('#multiple_mode_fields', {
+        data: getDataMultipleModFields(data['config_data']['multiple_mode_fields']),
+        layout: 'fitColumns',
+        width: "50%",
+        columns: [{ title: 'GUI name', field: 'gui_name' }]
 
-        //column definition in the columns array
-        
+    });
+}
+
+
+function getDataMultipleModFields(multiple_mode_fields){
+    table_multiple_mod_fields = []
+    if (multiple_mode_fields){
+        var i = 0
+        multiple_mode_fields.split(",").forEach(function(item_mm){
+            table_multiple_mod_fields[i] = {}
+            table_multiple_mod_fields[i]['gui_name'] = item_mm;
+            table_multiple_mod_fields[i]['1'] = 1; // tabulator works with only 2 values
+            i++;
+        })
+    }
+    return table_multiple_mod_fields
+}
+
+
+var multiple_mode_fields = multiple_mod_fields_table(jsonDictionary)
+
+var validateTabulator = function (value){
+    if (value && value.match('^[a-zA-Z0-9\\(\\)\\-_: ]+$'))
+        return true
+    else
+        return false
+}
+
+function areaOfTestingTable(data){
+    return new Tabulator('#area_of_testing_fields', {
+        layout: 'fitColumns',
+        addRowPos:"bottom",
+        data: data['config_data']['area_of_testing_fields'],
+        columns: [
+            { formatter:'buttonCross', width:40, align:"center",sorter:"string", headerSort:false, cellClick:function(e, cell){cell.getRow().delete()}},
+            { title: 'Name', field: 'gui_name', editable:true, editor:"input", tooltip:"Valid values: a-z, A-Z, (, ), -, _, :"},
+            { formatter: function(cell, formatterParams, onRendered){
+                onRendered(function(){
+                    tag = $(cell.getElement()).find('textarea').tagify({duplicates:true, delimiters: "\\|", pattern:/^[a-zA-Z0-9\(\)\-_: ]+$/})
+                    function addTag(){
+                        var result = ""
+                        $(cell.getElement()).find('tag').each(function(i, item){
+                            result += item.textContent + '|'
+                        })
+                        result = result.split("|")
+                        result.forEach(function(item, i, arr){
+                            if (arr.lastIndexOf(item) != i)
+                                arr.splice(i, 1)
+                        })
+                        result.splice(result.length-1, 1)
+                        result = result.join("|")
+                        cell.setValue(result)
+                        tag = $(cell.getElement()).find('textarea').tagify({duplicates:true, delimiters: "\\|", pattern:/^[a-zA-Z0-9\(\)\-_: ]+$/})
+                        $(cell.getElement()).find('tags').click()
+                        tag.on('add', addTag)
+                        cell.getRow().normalizeHeight();
+                        $(cell.getElement()).find('tags').on("input", function(){cell.getRow().normalizeHeight();})
+                        $(cell.getElement()).find('tags').on("change", function(){cell.getRow().normalizeHeight();})
+                    }
+                    tag.on('add', addTag)
+                })
+                if(cell.getValue()){
+                    return '<textarea>'+cell.getValue()+'</textarea>'
+                }
+                else{
+                    return '<textarea></textarea>'
+                }
+            }, title: 'Area of testing', field:'name', editor:true, variableHeight:true, tooltip:"Valid values: a-z, A-Z, (, ), -, _, :"
+        }]
+    });
+}
+var area_of_testing_fields = areaOfTestingTable(jsonDictionary)
+
+function getAreaOfTesting(){
+    var gui_names = $('#area_of_testing_fields').find('[tabulator-field="gui_name"]:not(:first)')
+    var names = $('#area_of_testing_fields').find('[tabulator-field="name"]:not(:first)')
+    var areaOfTesting = [] 
+    var isCorrectAreas = true
+    for(var i=0; i<gui_names.length; i++){
+        if(gui_names[i].textContent.trim() != ''){
+            if (validateTabulator(gui_names[i].textContent)){
+                var namesStr = collectTagsInString(i)
+                if (namesStr != ''){
+                    var isValid = true
+                    namesStr.split("|").forEach(function(val, ind, arr){
+                        if (!validateTabulator(val))
+                            isValid = false
+                    })
+                    if(isValid){
+                        obj = {'gui_name': gui_names[i].textContent, 'name':collectTagsInString(i)}
+                        areaOfTesting.push(obj)
+                    }
+                    else{
+                        $(names[i]).css("border", "1px solid red")
+                        $(names[i]).on("input", function(){ 
+                            $(this).css("border", "") 
+                        })
+                        isCorrectAreas = false
+                    }
+                }
+                else{
+                    $(names[i]).css("border", "1px solid red")
+                    $(names[i]).on("input", function(){ 
+                        $(this).css("border", "") 
+                    })
+                    isCorrectAreas = false
+                }
+            }
+            else{
+                $(gui_names[i]).css("border", "1px solid red")
+                $(gui_names[i]).on("input", function(){ 
+                    $(this).css("border", "") 
+                })
+                isCorrectAreas = false
+            }
+        }
+        else{
+            if (names[i]){
+                $(gui_names[i]).css("border", "1px solid red")
+                    $(gui_names[i]).on("input", function(){ 
+                        $(this).css("border", "") 
+                    })
+                    isCorrectAreas = false
+            }
+        }
+    }
+    if (isCorrectAreas)
+        if (areaOfTesting.length != 0)
+            return areaOfTesting
+        else
+            return [{}]
+    else return false
+}
+
+function collectTagsInString(index){
+    var result = ""
+    var names = $('[tabulator-field="name"]:not(:first)').find('tags')
+    $(names[index]).find('tag').each(function(index, item){
+        result+=item.textContent+'|'
+    })
+    return result.slice(0, -1)
+}
 
 function special_fields_table(data){
         return new Tabulator('#special_fields', {
@@ -122,9 +268,9 @@ function special_fields_table(data){
         addRowPos:"bottom",
         columns: [
             {formatter:'buttonCross', width:40, align:"center",sorter:"string", headerSort:false, cellClick:function(e, cell){cell.getRow().delete()}},
-            { title: 'GUI name', field: 'gui_name', editor:true, validator:["required", "regex:[a-zA-Z]+"]},
-            { title: 'XML name', field: 'xml_name', editor:true, validator:["required", "maxLength:30"] },           
-            { title: 'type', field: 'type', editor:"select", editorParams:{values:jsonDictionary['data_types']}, validator: "required",
+            { title: 'GUI name', field: 'gui_name', editable:true, editor:"input", tooltip:"Valid values: a-z, A-Z, (, ), -, _, :"},
+            { title: 'XML name', field: 'xml_name', editor:true, tooltip:"Valid values: a-z, A-Z, (, ), -, _, :" },           
+            { title: 'type', field: 'type', editor:"select", editorParams:{values:jsonDictionary['data_types']},
                 tooltip:function(cell){
                     switch(cell.getValue()){
                         case 'text': return 'string type, with full line search'
@@ -141,26 +287,88 @@ function special_fields_table(data){
 }
 var special_fields = special_fields_table(jsonDictionary)
 
+function getSpecialFields(){
+    var gui_names = $('#special_fields').find('[tabulator-field="gui_name"]:not(:first)')
+    var xml_names = $('#special_fields').find('[tabulator-field="xml_name"]:not(:first)')
+    var types = $('#special_fields').find('[tabulator-field="type"]:not(:first)')
+    var special = [] 
+    var isCorrectSpecial = true
+    for(var i=0; i<gui_names.length; i++){
+        if(gui_names[i].textContent.trim() != ''){
+            if (validateTabulator(gui_names[i].textContent)){
+                if (xml_names[i].textContent.trim() != ''){
+                    var isValid = true
+                    if (!validateTabulator(xml_names[i].textContent))
+                        isValid = false
+                    if(isValid){
+                        obj = {'gui_name': gui_names[i].textContent, 'xml_name':xml_names[i].textContent, "type":types[i].textContent}
+                        special.push(obj)
+                    }
+                    else{
+                        $(xml_names[i]).css("border", "1px solid red")
+                        $(xml_names[i]).on("input", function(){ 
+                            $(this).css("border", "") 
+                        })
+                        isCorrectSpecial = false
+                    }
+                }
+                else{
+                    $(xml_names[i]).css("border", "1px solid red")
+                    $(xml_names[i]).on("input", function(){ 
+                        $(this).css("border", "") 
+                    })
+                    isCorrectSpecial = false
+                }
+            }
+            else{
+                $(gui_names[i]).css("border", "1px solid red")
+                $(gui_names[i]).on("input", function(){ 
+                    $(this).css("border", "") 
+                })
+                isCorrectSpecial = false
+            }
+        }
+        else{
+            if (gui_names[i]){
+                $(gui_names[i]).css("border", "1px solid red")
+                    $(gui_names[i]).on("input", function(){ 
+                        $(this).css("border", "") 
+                    })
+                    isCorrectSpecial = false
+            }
+        }
+    }
+    if (isCorrectSpecial)
+        if (special.length != 0)
+            return special
+        else
+            return [{}]
+    else return false
+}
 
 function get_data(){
     return Object.assign({}, {'mandatory_fields': JSON.stringify(mandatory_fields.getData())},
-                             {'special_fields': JSON.stringify(special_fields.getData())}, 
+                             {'special_fields': JSON.stringify(getSpecialFields())}, 
+                             {'area_of_testing_fields': JSON.stringify(getAreaOfTesting())},
                                 {'referring_to': $('#referring_to').val(),
                                 'resolution1name': $('#resolution1name').val(),
                                 'resolution1value': $('#resolution1value').val(),
                                 'resolution2name': $('#resolution2name').val(),
                                 'resolution2value': $('#resolution2value').val(),
-                                'multiple_mod_fields': $('#multiple_mod_fields').val()}) 
+                                'multiple_mode_fields': jsonDictionary['config_data']['multiple_mode_fields']})
 }
-
 
 $("#add_row").click(function(){
     special_fields.addRow({})
 });
 
+$("#add_row_areas").click(function(){
+    area_of_testing_fields.addRow({})
+});
+
 
 $(document).ready(function() {
-    $('#referring_to').select2({width:'50%'});
+    $('#referring_to').select2({width:'100%'});
 });
 
 
@@ -172,7 +380,17 @@ for(i=0;i<jsonDictionary['referring_to'].length;i++){
 
 // AJAX for sent setting data
 $('#submit_settings').click(function significanceTop() {
-    if(!checkValidation()){
+    if(!checkValidation() || !getAreaOfTesting() || !getSpecialFields()){
+        if (!getSpecialFields()){
+            optimize_message("Please correctly fill in all required Special fields.")
+            $('html, body').animate({scrollTop: 0}, 600);
+            return
+        }
+        else if (!getAreaOfTesting()){
+            optimize_message("Please correctly fill in all required Area of Testing fields.")
+            $('html, body').animate({scrollTop: 0}, 600);
+            return
+        }
         $('#setting_form').find(':submit').click();
         return;
         }
@@ -182,9 +400,13 @@ $('#submit_settings').click(function significanceTop() {
             beforeSend: setLoad(),
             data: get_data(),
             success: function(response, status, xhr){
-                hideLoad();
+               hideLoad();
                 if (response.redirect) {
-                    window.location.href = response.redirect;
+                    if (response.isTrain){
+                        jsonDictionary['isTrain'] = true
+                        $("#Train").prop("disabled",false);
+                    }
+                    window.location = response.redirect;
                   }
                 else{
                    var ct = xhr.getResponseHeader("content-type") || "";
@@ -196,6 +418,7 @@ $('#submit_settings').click(function significanceTop() {
                             $("#menu-multiple-descr-mode").addClass('disabled');
                             $("#menu-single-descr-mode").addClass('disabled');
                             $("#menu-analysis-train-link").addClass('disabled');
+                            $('html, body').animate({scrollTop: 0}, 600);
                         }
                         //lock_mode(response['single_mod'], response['multiple_mod'])
                         //set_data(response['data'])
@@ -203,6 +426,45 @@ $('#submit_settings').click(function significanceTop() {
                     }
                 }            
         })})
+
+
+
+$('#reset_settings').click(function significanceTop() {
+    $.ajax({
+         type: "POST",
+         url: '/resetSettings',
+         beforeSend: setLoad(),
+         data: get_data(),
+         success: function(response, status, xhr){
+            if (response.redirect) {
+                    window.location.href = response.redirect;
+            }
+            else{
+                var ct = xhr.getResponseHeader("content-type") || "";
+                   if (ct.indexOf('html') > -1){
+                        document.body.innerHTML = "";
+                        document.write(response);
+                   }
+                   else {
+                        if('undefined'.localeCompare(response['error']) != 0){
+                            optimize_message(response['error']);
+                            hideLoad();
+                        }
+                        else{
+                            $('html, body').animate({scrollTop: 0}, 600);
+                            hideLoad();
+                        }
+                    }
+                }
+         },
+         error: function(error) {
+                 document.getElementById('message').innerHTML = 'error of dynamic reset setting';
+                 $('html, body').animate({scrollTop: 0}, 600);
+                 $('#referring_to').select2({width:'100%'});
+                 hideLoad();
+             }
+         })
+        });
 
 
 function checkValidation(){
@@ -300,3 +562,9 @@ if('undefined'.localeCompare(jsonDictionary['single_mod']) != 0 && 'undefined'.l
     lock_mode(jsonDictionary['single_mod'], jsonDictionary['multiple_mod'])
     $("#menu-analysis-train-link").removeClass('disabled');
 }
+
+$('#area_of_testing_fields').find('[tabulator-field="gui_name"]:not(:first)').on("blur", function(){
+    $(this).trigger("keydown", {
+        keyCode: 27
+    });
+})

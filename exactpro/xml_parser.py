@@ -1,22 +1,3 @@
-'''
-/*******************************************************************************
-* Copyright 2016-2019 Exactpro (Exactpro Systems Limited)
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-******************************************************************************/
-'''
-
-
 import os
 import pandas
 from werkzeug.utils import secure_filename
@@ -25,6 +6,23 @@ import csv
 from datetime import datetime as dt
 import re
 from decimal import Decimal, InvalidOperation
+from html import unescape
+
+
+def clean_description(original_text):
+    if not original_text:
+        return 'default_descr_value'
+    else:
+        cleaned_text = str(unescape(original_text).encode("utf-8")).replace('b', '', 1)
+        with open('regularExpression.csv') as csv_file:
+            for reg_expression_object in [re.compile(reg_expression) for reg_expression_object in
+                                           csv.reader(csv_file, delimiter=',', quotechar='"') for reg_expression in
+                                           reg_expression_object if
+                                           reg_expression]:
+                cleaned_text = re.sub(reg_expression_object, ' ', cleaned_text)
+                if cleaned_text.isspace():
+                    cleaned_text = 'aftercleaning'
+        return cleaned_text.strip()
 
 
 class XMLParser:
@@ -73,7 +71,7 @@ class XMLParser:
                                 if self.chield.tag == 'resolved':
                                     self.row["Resolved"] = XMLParser.get_date(self, self.chield.text)
                                 if self.chield.tag == 'description':
-                                    self.row["Description"] = XMLParser.clean(self, self.chield.text)
+                                    self.row["Description"] = clean_description(self.chield.text)
                                 if self.chield.tag == 'version':
                                     self.count_version = self.count_version + 1
                                     if self.version != '':
@@ -153,18 +151,6 @@ class XMLParser:
 
         date = self.day + '-' + self.month + '-' + self.d.year.__str__()
         return date
-
-    def clean(self, text):
-        if not text:
-            return 'default_descr_value'
-        else:
-            test_clean = text
-            with open('regularExpression.csv') as csv_file:
-                for el in [re.compile(el1) for el in csv.reader(csv_file, delimiter=',', quotechar='"') for el1 in el if el1]:
-                    test_clean = re.sub(el, ' ', test_clean)
-                    if test_clean.isspace():
-                        test_clean = 'aftercleaning'
-            return test_clean.strip()
 
 
 class FileSwitcher(XMLParser):

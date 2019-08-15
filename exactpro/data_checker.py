@@ -1,22 +1,3 @@
-'''
-/*******************************************************************************
-* Copyright 2016-2019 Exactpro (Exactpro Systems Limited)
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-******************************************************************************/
-'''
-
-
 from pathlib import Path
 import os
 from ldap3 import Server, Connection, SUBTREE, ALL, core
@@ -25,27 +6,13 @@ import datetime
 from werkzeug.utils import secure_filename
 from exactpro.config_parser import SettingProvider
 from exactpro.exceptions import LDAPError
-from exactpro.exceptions import IncorrectValueError, NotExist, NotExistModel, NotExistFile, NotExistField, LDAPError
+from exactpro.exceptions import IncorrectValueError, NotExist, NotExistModel, NotExistFile, NotExistField, LDAPError, ModelNotFound, ModelsNotFound
+from exactpro.config_parser import get_models_names
 from flask import session
 import numpy
 
 
 class Checker:
-    def is_empty(self, val):
-        return not bool(val)
-
-    def is_subset(self, inner, outer):
-        return set(inner).issubset(set(outer))
-
-    def no_more(self, val, maxx):
-        sum = 0
-        for el in val:
-            if isinstance(val[el], (list, tuple)):
-                sum += len(val[el])
-            else:
-                sum += 1 
-        return sum == maxx
-
     def get_resolutions(self, data):
         resolutions = [el for el in data.values() if not isinstance(el, list)]
         for el in [el for el in data.values() if isinstance(el, list)]:
@@ -56,7 +23,7 @@ class Checker:
     def check_exist_model(self, model_names):
         if not isinstance(model_names, str):
             for name in model_names:
-                name = secure_filename(name) # converting the filename to secure form (exmpl: Won't fix -> Wont_fix)
+                name = secure_filename(name) # converting the filename to secure form (example: Won't fix -> Wont_fix)
                 if not os.path.exists(str(Path(__file__).parents[2])+'/model/'+name+'.sav'):
                     return True, name
             return False, name
@@ -111,7 +78,13 @@ class Checker:
                            if fields_data['mandatory_fields'][k]['type'] == 'categorical'}
  
             # getting the values list for "Referring to" drop-down field
-            self.ref_to = [el+' '+el1 for el in ref_to_data['referring_to'] for el1 in data[el].dropna().unique().tolist()]
+            self.ref_to = [el+' '+el1 for el in ref_to_data['referring_to'] if el != 'Areas of testing' for el1 in data[el].dropna().unique().tolist()]
+            if 'Areas of testing' in ref_to_data['referring_to']:
+                area_values = SettingProvider('predictions_parameters.ini').get_fields(
+                                                section='predictions_parameters', 
+                                                categories='areas_of_testing'
+                                                )['areas_of_testing']
+                self.ref_to = self.ref_to + ['Area of testing'+' '+el1 for el1 in area_values.split(',') if el1 != "Other_lab"]
             self.fields.update({'ReferringTo': ['null'] if not self.ref_to else self.ref_to})
             
             # getting the unique values of categorical type fields from "special_fields" list to place them inside drop-down fields on GUI
@@ -120,8 +93,8 @@ class Checker:
                                 if fields_data['special_fields'][el]['type'] == 'categorical'})
             return self.fields
         else:
-            raise Exception('Document is not valid. Please check that document has the following fields:' + \
-                            ','.join(list(fields_data['mandatory_fields'].keys())) + ','.join(list(fields_data['special_fields'].keys())))
+            raise Exception('Invalid file.\nPlease check that the file has the following fields:\n{}'.format(
+        ', '.join(list(fields_data['mandatory_fields'].keys())+list(fields_data['special_fields'].keys()))))
 
     # verifies whether the GUI fields count equals to config fields count
     def document_verification(self, data, fields_data):
@@ -180,34 +153,6 @@ class Checker:
         except Exception:
             raise
 
-    # lock/unclock MULTIPLE/SINGLE DESCRIPTION MODE
-    # reason: to avoid user from incorrect system behavior in case when models or configs have some issues
-    # solution: restrict acces to these modules
-    def unlock_single_mod(self, hardcode, multiple=False):
-        try:
-            # getting the models names
-            self.config_reader = SettingProvider('single_mod.ini')
-            self.areas_inner = self.config_reader.get_fields(section='single_mod', categories='columns', evaluate=False)
-            self.config_reader = SettingProvider('attributes.ini')
-            self.resolution = self.config_reader.get_fields(section='fields', categories='resolution', evaluate=True)['resolution']
-            self.exist = Checker.check_exist_model(self, self.get_resolutions(self.resolution) + hardcode
-                                                   + self.areas_inner['columns'].split(','))
-            # verifies that models are exist for both modules
-            if multiple:
-                if self.exist[0]:
-                    return False
-                else:
-                    return True
-            else:
-                if self.exist[0]:
-                    return False
-                elif os.path.exists('top_terms.csv'):
-                    return True
-                else:
-                    return False
-        except (KeyError, FileNotFoundError, SyntaxError):
-            return False
-
     def check_type_fields(self, fields, types):
         for field in fields:
             if field not in types:
@@ -219,56 +164,156 @@ class Checker:
         if count < 10:
             return count, 'upload error: dataset has less than 10 defect reports, count is {}'.format(count)
         return count, None
-    
-    def check_config(self):
-        try:
-            data = {}
-            config_reader = SettingProvider('attributes.ini')
-            session['fields'] = config_reader.get_fields(section='fields', categories=['mandatory_fields', 'special_fields'], evaluate=True)
-            data['special_fields'] = [{'gui_name': k,
-                                      'xml_name': session['fields']['special_fields'][k]['name'],
-                                      'type': session['fields']['special_fields'][k]['type']} for k in session['fields']['special_fields']]
-            session['ref_to'] = config_reader.get_fields(section='fields', categories='referring_to', evaluate=True)
-            data['referring_to'] = session['ref_to']['referring_to']
-            # get resolutions for single mode
-            # these resolutions are also used for models creation
-            session['resolution'] = config_reader.get_fields(section='fields', categories='resolution', evaluate=True)['resolution']
-            data['resolution'] = session['resolution']
-            # get fields for multiple mode
-            session['multiple_mod_fields'] = config_reader.get_setting(section='fields', setting='multiple_mod_fields', evaluate=True)
-            data['multiple_mod_fields'] = ','.join(session['multiple_mod_fields'])
-            # check that used fields are mandatory fields for multiple mod
-            if not Checker.check_type_fields(self, ['Issue_key', 'Summary', 'Priority', 'Description'], session['multiple_mod_fields']):
-                return False, 'for multiple mod fields Issue_key, Summary, Priority, Description is mandatory', data
 
-            # checks that we use correct data type in fields
-            if not Checker.check_type_fields(self, [session['fields'][el][el1][el2] for el in session['fields'] for el1
-                                                in session['fields'][el] for el2 in session['fields'][el][el1] if el2 == 'type'],
-                                                ['text', 'text1', 'text2', 'number', 'date', 'categorical', 'bool']):
-                return False, 'please use only {} types for fields in attributes.ini file'.format(', '.join(['text', 'text1', 'text2', 'number', 'date', 'categorical', 'bool'])), data
 
-            # checks that resolutions number equals to two
-            if not Checker.no_more(self, session['resolution'], 2):
-                return False, 'resolution field in attributes.ini must contains only two value', data
-            
-            # checks that mandatory fields are exist
-            if Checker.is_empty(self, session['fields']['mandatory_fields']):
-                return False, 'please use mandatiry_fields in attributes.ini', data
+def is_empty(val):
+    return not bool(val)
 
-            # checks that content for "Referring to" field is exist
-            if not Checker.is_subset(self, session['ref_to']['referring_to'], [field for group in session['fields']
-                                                                            for field in session['fields'][group]]):
-                return False, 'referring_to field must be subset of fields in attributes.ini', data
-            
-            return True, None, data
-        except FileNotFoundError as e:
-            return False, str(e), data
-        except KeyError as e:
-            return False, str(e), data
-        except SyntaxError as e:
-            return False, str(e), data
+
+# verifies that all fields from current_elements are subset of mandatory_elements
+def is_subset(current_elements, mandatory_elements):
+    return set(current_elements).issubset(set(mandatory_elements))
+
+
+def is_greater(attributes, max_quantity):
+        attr_count = 0
+        for attribute in attributes:
+            if isinstance(attributes[attribute], (list, tuple)):
+                attr_count += len(attributes[attribute])
+            else:
+                attr_count += 1
+        return attr_count == max_quantity
+
+
+def verify_file_exist(file_name, is_check_size = False):
+    if is_check_size:
+        if not os.path.exists(file_name) or os.path.getsize('top_terms.csv') == 0:
+            return False
+    else:
+        if not os.path.exists(file_name):
+            return False
+    return True
+
+
+# verifies whether the models do exist
+def verify_models_exist(models):
+    if not isinstance(models, str):
+        not_found_models = []
+        for model in models:
+            model = secure_filename(model) # converting the filename to secure form (exmpl: Won't fix -> Wont_fix)
+            if not verify_file_exist(str(Path(__file__).parents[2]) + '/model/' + model + '.sav'):
+                not_found_models.append(model + '.sav')
+        if len(not_found_models) > 0:
+            raise ModelsNotFound('Can\'t find the following model(s): {}. Please check whether the models exist'
+                                                                        ' and correctness of models names'
+                                                                        ' in predictions_parameters.ini'.format(', '.join(not_found_models)))
+    else:
+        models = secure_filename(models)
+        if not verify_file_exist(str(Path(__file__).parents[2]) + '/model/' + models + '.sav'):
+            raise ModelNotFound('Can\'t find {}.sav. Please check whether the model exist'
+                                                    ' and correctness of model name'
+                                                    ' in predictions_parameters.ini'.format(models))
+
+
+# verifies correctness of parameters names
+def verify_required_parameters(required_parameters, config_file, section):
+    config_reader = SettingProvider('myconf.ini')
+    required_parameters = config_reader.get_setting(section='Path', setting=required_parameters, evaluate=False)
+    required_parameters = required_parameters.split(',')
+    config_reader = SettingProvider(config_file)
+    available_parameters = config_reader.get_parameters(section=section)
+    if not is_subset(required_parameters, available_parameters):
+        raise KeyError('Configuration error: please check correctness of parameters names in {} file.'.format(config_file))
+
+
+def verify_defect_attributes_config(defect_attributes):
+    mandatory_multiple_mode_fields = ['Issue_key', 'Summary', 'Priority', 'Description']
+    allowed_data_types = ['text', 'text1', 'text2', 'number', 'date', 'categorical', 'bool']
+    try:
+        # verifies that received multiple mode's fields are in mandatory fields list
+        if not is_subset(session['multiple_mode_fields'], mandatory_multiple_mode_fields):
+            return False, '{} are mandatory for multiple description mode.'.format(', '.join(mandatory_multiple_mode_fields))
+
+        # verifies that mandatory/special fields have correct data types
+        if not is_subset([session['defect_attributes'][defect_attribute][attribute_parameters][parameter] 
+                                            for defect_attribute in session['defect_attributes'] 
+                                            for attribute_parameters in session['defect_attributes'][defect_attribute] 
+                                            for parameter in session['defect_attributes'][defect_attribute][attribute_parameters] 
+                                            if defect_attribute != 'area_of_testing_fields' and parameter == 'type'],
+                        allowed_data_types):
+            return False, 'please use only {} types for mandatory and special fields in defect_attributes.ini file.'.format(', '.join(allowed_data_types))
+
+        # verifies that quantity of received resolution's elements isn't greater than specified quantity
+        # because it cannot have more than two values in the list
+        if not is_greater(session['resolution'], 2):
+            return False, 'resolution field cannot have more than two values. please check defect_attributes.ini file.'
+        
+        # verifies that mandatory fields are filled in defect_attributes.ini
+        if is_empty(session['defect_attributes']['mandatory_fields']):
+            return False, 'please specify mandatory_fields in defect_attributes.ini'
+
+        # verifies that all received Referring to's fields do exist in mandatory/special fields
+        is_area = False
+        if 'Areas of testing' in session['ref_to']['referring_to']:
+            session['ref_to']['referring_to'].remove('Areas of testing')
+            is_area = True
+        if not is_subset(session['ref_to']['referring_to'], 
+                        [attribute for defect_attributes in session['defect_attributes']
+                                    for attribute in session['defect_attributes'][defect_attributes]]):
+            if is_area:
+                session['ref_to']['referring_to'].append('Areas of testing')
+            return False, 'referring_to fields should be presented in mandatory or special fields. please check defect_attributes.ini file.'
+        if is_area:
+            session['ref_to']['referring_to'].append('Areas of testing')
+        return True, None
+    except FileNotFoundError as e:
+        return False, str(e)
+    except KeyError as e:
+        return False, str(e)
+    except SyntaxError as e:
+        return False, str(e)
+
+
+def verify_predictions_parameters_config():
+    try:
+        config_exist = verify_file_exist('predictions_parameters.ini')
+        if not config_exist:
+            return {'single_mode': False, 'multiple_mode': False, 'err_message': ''}
+        else:
+            verify_required_parameters(
+                                    required_parameters='required_predictions_parameters',
+                                    config_file='predictions_parameters.ini',
+                                    section='predictions_parameters'
+                                    )
+            verify_models_exist(get_models_names() + ['ttr']) # checking existence of common models
+            verify_models_exist(['priority']) # checking model existence required for single description mode only
+            if not verify_file_exist('top_terms.csv'): # checking top_terms.csv file existence required for single description mode
+                raise FileNotFoundError('Can\'t find top_terms.csv file.')
+        return {'single_mode': True, 'multiple_mode': True, 'err_message': ''}
+    except ModelsNotFound as err:
+        return {'single_mode': False, 'multiple_mode': False, 'err_message': str(err)}
+    except ModelNotFound as err:
+        return {'single_mode': False, 'multiple_mode': True, 'err_message': str(err)}
+    except FileNotFoundError as err:
+        return {'single_mode': False, 'multiple_mode': True, 'err_message': str(err)}
+    except (KeyError, SyntaxError) as err:
+        return {'single_mode': False, 'multiple_mode': False, 'err_message': str(err)}
+
+
+def verify_classes_amount(classes: list, required_amount=2):
+    classes_amount = len(classes)
+    if classes_amount < required_amount:
+        raise ValueError('Error: the received file doesn\'t contain enough data to analyze. Model can\'t be trained.')
+
+
+def verify_samples_amount(dataframe, series_name, required_amount=5):
+    elements_amount = dataframe[series_name].value_counts().tolist()
+    for el in elements_amount:
+        if el < required_amount:
+            raise ValueError('Error: the received file doesn\'t contain enough data to analyze. Model can\'t be trained.')
 
 
 if __name__ == '__main__':
     check = Checker()
     print(check.check_exist_model('dsg'))
+

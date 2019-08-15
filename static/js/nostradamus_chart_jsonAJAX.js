@@ -1,26 +1,8 @@
-/*******************************************************************************
-* Copyright 2016-2019 Exactpro (Exactpro Systems Limited)
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-******************************************************************************/
-
-
 /*-- get data from HTML and parse this to dictionary --*/
 var jsonFromHTML = document.getElementById("json").innerHTML;
 var cleanJsonFromHTML1 = jsonFromHTML.replace(/"/g,'');
 var cleanJsonFromHTML = cleanJsonFromHTML1.replace(/&#34;/g,'"');
 var jsonDictionary = JSON.parse(cleanJsonFromHTML);
-console.log(jsonDictionary);
 
 
 // set default name for resolution charts
@@ -60,7 +42,7 @@ function ResetFilters() {
     //dropDownResolution.va
     //$('#descr').highlightWithinTextarea({highlight: null});
     $("#warning").html('');
-    $('select.highlight').change();
+    //$('select.highlight').change();
 }
 
 /*-- put data from dictionary to HTML --*/
@@ -154,7 +136,7 @@ var ttr_hist = document.getElementById('ttr_hist').getContext('2d');
    var ttr_hist_bar = new Chart(ttr_hist, {
     type: 'bar',
     data: {
-           labels: ['0-30','30-90','90-180','>180'],
+           labels: ['0-30','31-90','91-180','>180'],
            datasets: [{
                 data: [0,0,0,0],
             backgroundColor:["rgba(201, 203, 207, 0.3)","rgba(54, 162, 235, 0.3)","rgba(255, 159, 64, 0.3)","rgba(255, 99, 132, 0.3)"],
@@ -252,7 +234,7 @@ var reject_hist = document.getElementById('reject_hist').getContext('2d');
 });
     /*-- Area Histogram --*/
 var area_hist = document.getElementById('area_hist').getContext('2d');
-   var area_hist_bar = new Chart(area_hist, {/*Заменить лейблы*/
+   var area_hist_bar = new Chart(area_hist, {
     type: 'bar',
     data: {
         labels: [0],
@@ -299,67 +281,72 @@ var area_hist = document.getElementById('area_hist').getContext('2d');
     }
   });
 
-$('#descr').change(function getResult(){
-                       if(!$('#descr')[0].checkValidity()){
-                            $('#predictionForm').find(':submit').click();
-                            $("#descr_btn").prop("disabled",true);
-                            return;
-                            }
-                       else{
-                            $.ajax({
-                                type: "POST",
-                                url: '/result',
-                                beforeSend: setLoad(),
-                                data: $('#descr').serialize(),
-                                success: function(response, status, xhr){
-                                    if (response.redirect) {
-                                         window.location.href = response.redirect;
-                                       }
-                                    else{
-                                        var ct = xhr.getResponseHeader("content-type") || "";
-                                        if (ct.indexOf('html') > -1)
-                                            document.write(response);
-                                        else {
-                                            if('undefined'.localeCompare(response['error']) != 0){
-                                                optimize_message(response['error']);
-                                                hideLoad();
-                                                setDisable()
-                                                }
-                                             else{
-                                                 console.log(response)
-                                                 if('undefined'.localeCompare(response['prio']) != 0)
-                                                    priority_hist_horiz_bar = updateChart(priority_hist_horiz_bar, response['prio']);
-                                                 if('undefined'.localeCompare(response['ttr']) != 0)
-                                                    ttr_hist_bar = updateChart(ttr_hist_bar, response['ttr']);
-                                                 //wont_fix_hist_pie = updateChart(wont_fix_hist_pie, response['wontfix']);
-                                                 //reject_hist_pie = updateChart(reject_hist_pie, response['reject']);
-                                                 if('undefined'.localeCompare(response['resolution_pie']) != 0){
-                                                     wont_fix_hist_pie = updateChart(wont_fix_hist_pie, response['resolution_pie'][Object.keys(response['resolution_pie'])[0]]);
-                                                     $('#resolution1').text(replaceForCategoric(Object.keys(response['resolution_pie'])[0]+' Pie Chart'))
-                                                     reject_hist_pie = updateChart(reject_hist_pie, response['resolution_pie'][Object.keys(response['resolution_pie'])[1]]);
-                                                     $('#resolution2').text(replaceForCategoric(Object.keys(response['resolution_pie'])[1]+' Pie Chart'))
-                                                     }
-                                                 if('undefined'.localeCompare(response['areas']) != 0)
-                                                    area_hist_bar = updateChart(area_hist_bar, response['areas']);
-                                                 if('undefined'.localeCompare(response['recom']) != 0)
-                                                    $('#recom').val(response['recom']);
-                                                 if('undefined'.localeCompare(response['inner']) != 0)
-                                                    resetDisable(response['inner']);
-                                                 if('undefined'.localeCompare(response['single_mod']) != 0 && 'undefined'.localeCompare(response['multiple_mod']) != 0)
-                                                    lock_mode(response['single_mod'], response['multiple_mod'])
-                                                 if('undefined'.localeCompare(response['descr']) != 0)
-                                                     $('#descr').val(response['descr']);
-                                                 hideLoad();}
-                                            }
-                                        }
-                                    },
-                                error: function(error) {
-                                    $('#descr').val('error of dynamic prediction');
-                                    $('html, body').animate({scrollTop: 0}, 600);
-                                    hideLoad();
-                                            }
-                                });
-                   }});
+
+function predict(){
+    if(!$('#descr')[0].checkValidity()){
+        $('#predictionForm').find(':submit').click();
+        $("#descr_btn").prop("disabled",true);
+        return;
+    }
+    else{
+    $.ajax({
+        type: "POST",
+        url: '/result',
+        beforeSend: setLoad(),
+        data: $('#descr').serialize(),
+        success: function(response, status, xhr){
+            if (response.redirect) {
+                window.location.href = response.redirect;
+            }
+            else{
+                var ct = xhr.getResponseHeader("content-type") || "";
+                if (ct.indexOf('html') > -1){
+                    document.write(response);
+                }
+                else {
+                    if('undefined'.localeCompare(response['error']) != 0){
+                        optimize_message(response['error']);
+                        hideLoad();
+                        setDisable()
+                    }
+                    else{
+                        if('undefined'.localeCompare(response['prio']) != 0)
+                            priority_hist_horiz_bar = updateChart(priority_hist_horiz_bar, response['prio']);
+                        if('undefined'.localeCompare(response['ttr']) != 0)
+                            ttr_hist_bar = updateChart(ttr_hist_bar, response['ttr']);
+                        //wont_fix_hist_pie = updateChart(wont_fix_hist_pie, response['wontfix']);
+                        //reject_hist_pie = updateChart(reject_hist_pie, response['reject']);
+                        if('undefined'.localeCompare(response['resolution_pie']) != 0){
+                            wont_fix_hist_pie = updateChart(wont_fix_hist_pie, response['resolution_pie'][Object.keys(response['resolution_pie'])[0]]);
+                            $('#resolution1').text(replaceForCategoric(Object.keys(response['resolution_pie'])[0]+' Pie Chart'))
+                            reject_hist_pie = updateChart(reject_hist_pie, response['resolution_pie'][Object.keys(response['resolution_pie'])[1]]);
+                            $('#resolution2').text(replaceForCategoric(Object.keys(response['resolution_pie'])[1]+' Pie Chart'))
+                        }
+                        if('undefined'.localeCompare(response['areas']) != 0)
+                            area_hist_bar = updateChart(area_hist_bar, response['areas']);
+                        if('undefined'.localeCompare(response['recom']) != 0)
+                            $('#recom').val(response['recom']);
+                        if('undefined'.localeCompare(response['inner']) != 0)
+                            resetDisable(response['inner']);
+                        if('undefined'.localeCompare(response['single_mod']) != 0 && 'undefined'.localeCompare(response['multiple_mod']) != 0)
+                            lock_mode(response['single_mod'], response['multiple_mod'])
+                        if('undefined'.localeCompare(response['descr']) != 0)
+                            $('#descr').val(response['descr']);
+                        hideLoad();
+
+                    }
+                }
+            }
+            /*$("#descr").removeClass("hwt-content");
+            $("#descr").removeClass("hwt-input");*/
+        },
+        error: function(error) {
+        $('#descr').val('error of dynamic prediction');
+        $('html, body').animate({scrollTop: 0}, 600);
+        hideLoad();
+        }
+    });
+}};
 
 
 function updateChart(chart, response){
@@ -395,6 +382,7 @@ function submitPrediction(){
                          $('html, body').animate({scrollTop: 0}, 600);
                          $('#us-priority').val('');
                          $('#descr').val('');
+                         $('#warning').text(response['msg']);
                          hideLoad();
                         }
                     }
@@ -409,7 +397,7 @@ function submitPrediction(){
     }
 
 
-$('select.highlight').change(function (){
+$('select.highlight').on("change", function selectHighlightChange(){
                                      $.ajax({
                                          type: "POST",
                                          url: '/highlight_terms',
@@ -442,7 +430,7 @@ $('select.highlight').change(function (){
                                              hideLoad();
                                                      }
                                          });
-                             })
+                             });
 
 
 
@@ -508,7 +496,6 @@ categoricFields(jsonDictionary['categoric'])
 var highlight = []
 // highlight terms
 function highlight_terms(data){
-    //console.log(data)
     var colors = {'Resolution':'red', 'Testing_areas':'blue', 'Priority':'yellow'}
     if(data['terms'].length == 0){
 
@@ -545,16 +532,27 @@ function highlight_terms(data){
     }
 
 
-var textarea = document.querySelector('textarea');
-
-textarea.addEventListener('keydown', autosize);
-                
-function autosize(){
-    var el = this;
-    setTimeout(function(){
-    el.style.cssText = 'height:120px;padding:50px;';
-    // for box-sizing other than "content-box" use:
-    // el.style.cssText = '-moz-box-sizing:content-box';
-    el.style.cssText = 'height:' + el.scrollHeight + 'px';
-    },0);
+function clearSingleDescriptionModePage(){
+    location.reload()
 }
+
+
+$('#descr').on("input", function(){
+    ResetFilters()
+    priority_hist_horiz_bar.data.datasets[0].data = [0,0,0,0];
+    priority_hist_horiz_bar.update()
+    ttr_hist_bar.data.datasets[0].data = [0,0,0,0];
+    ttr_hist_bar.update()
+    wont_fix_hist_pie.data.datasets[0].data = [0];
+    wont_fix_hist_pie.update();
+    $('#resolution1').text(null)
+    reject_hist_pie.data.datasets[0].data = [0];
+    reject_hist_pie.update()
+    $('#resolution2').text(null)
+    area_hist_bar.data.datasets[0].data = [0,0,0,0];
+    area_hist_bar.update()
+    $('#recom').val("");
+    $('#descr').highlightWithinTextarea('destroy');
+    setDisable();
+})
+

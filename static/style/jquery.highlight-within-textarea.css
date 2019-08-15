@@ -13,7 +13,7 @@
 	left: 0 !important;
 	padding-right: 99px !important;
 	overflow-x: hidden !important;
-	overflow-y: auto !important;
+	overflow-y: scroll  !important;
 }
 
 .hwt-highlights {
@@ -23,7 +23,8 @@
 	white-space: pre-wrap !important;
 	word-wrap: break-word !important;
 	color: transparent !important;
-	overflow: hidden !important;
+	overflow-x: hidden !important;
+	overflow-y: scroll  !important;
 }
 
 .hwt-input {
@@ -34,12 +35,14 @@
 	border-radius: 0;
 	font: inherit;
 	overflow-x: hidden !important;
-	overflow-y: auto !important;
+	overflow-y: scroll to !important;
 }
 
 .hwt-content {
 	border: 1px solid;
 	background: none transparent !important;
+	overflow-x: hidden !important;
+	overflow-y: scroll  !important;
 }
 
 .hwt-content mark {
