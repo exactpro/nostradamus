@@ -4,7 +4,7 @@ Tool for analyzing software defect reports extracted from defect repositories
 ## Python libraries
 
 * Pandas	0.23.0 ,
-* Sklearn	0.19.1 ,
+* Sklearn	0.20.3 ,
 * Imblearn	0.3.3 ,
 * flask	1.0.2 ,
 * bootstrap	 ,
