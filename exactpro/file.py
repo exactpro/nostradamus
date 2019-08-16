@@ -11,7 +11,7 @@ class File:
         else:
             try:
                 data.to_csv(os.path.join(store, file_name), 
-                            columns=list(fields['mandatory_fields'].keys()) + list(fields['special_fields'].keys()) + list(fields['areas_fields'].keys()), 
+                            columns=list(fields['mandatory_fields'].keys()) + list(fields['special_fields'].keys()) + list(fields['area_of_testing_fields'].keys()),  
                             index=False)
             except Exception as e:
                 raise Exception(e)
