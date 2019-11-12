@@ -1,28 +1,28 @@
 # Nostradamus
-Tool for analyzing software defect reports extracted from defect repositories
-
-Python version 3.5 or later.
+Tool for analyzing software defect reports extracted from defect repositories.
 
 ## Python libraries
 
-* setuptools	36.0.1,
-* matplotlib	3.0.0,
-* nltk	3.3,
-* pandas	0.23.4,
-* scikit-learn (sklearn)	0.20.3,
-* imbalanced-learn (imblearn)	0.4.2,
-* scipy	1.1.0,
-* flask,
-* flask_redisSession,
-* redis,
-* ldap3,
-* lxml,
-* flask_bootstrap,
-* psycopg2,
-* tkinter,
-* flask_sessionstore
+* Python 3.5+ ,
+* Matplotlib 3.0.0 ,
+* NLTK 3.3 ,
+* Pandas 0.23.4 ,
+* scikit-learn 0.20.3 ,
+* imbalanced-learn 0.4.2 ,
+* scipy 1.1.0 ,
+* TensorFlow 1.13.1 ,
+* tensorflow-estimator 1.13.0 ,
+* Flask 1.0.2 ,
+* Flask-RedisSession 0.1.2.0 ,
+* Redis 2.10.6 ,
+* ldap3 2.6.1 ,
+* lxml 4.4.1 ,
+* Flask-Bootstrap 3.3.7.1 ,
+* psycopg2 2.8.4 ,
+* Flask-Sessionstore 0.4.5 ,
+* swifter 0.295
 
 ## Execution
-python3.5 app.py
+python3 run.py
 
-Please find the manual in the Wiki section  
+Please find the manual in the Wiki section.
