@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Bootstrap -->
+    <link href="{{url_for('static',filename='style/bootstrap.min.css')}}" rel="stylesheet">
+    <link href="{{url_for('static',filename='style/jasny-bootstrap.min.css')}}" rel="stylesheet">
+    <!-- Google Fonts / Icons -->
+    <link href="{{url_for('static',filename='style/fonts/roboto.css')}}" rel="stylesheet">
+    <!-- Custom styles -->
+    <link href="{{url_for('static',filename='style/style1.css')}}" rel="stylesheet">
+    <link href="{{url_for('static',filename='style/style.css')}}" rel="stylesheet">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon.png') }}">
+    <!-- Menu styles -->
+    <link rel="stylesheet" href="{{url_for('static',filename='style/sidenav.min.css')}}" type="text/css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+    <title>Multiple Description Mode | Nostradamus</title>
+</head>
+
+<body>
+    <div class="loadDiv" id="loadDiv">
+        <script id="json">
+            "{{ json }}"
+        </script>
+
+        <!-- Header -->
+        <section class="navbar-fixed-top">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-7 logo-block-header">
+                        <img src="{{url_for('static',filename='img/logo_dark.png')}}" />
+                        <span class="version">6.2.1</span>
+                    </div>
+                    <div class="col-md-4 user-info-block">
+                        <div id='username'></div>
+                        <div class="user-form-wrap">
+                            <form action="/logout" method="post">
+                                <img class="logout-btn" src="{{url_for('static',filename='img/logout.png')}}" />
+                                <button id="Logout" type="submit" value="Submit" class="logout"
+                                    onclick="clearFileNameLocalStorage()">Logout</button>
+                            </form>
+                        </div>
+                    </div>
+                    <!-- Menu Button-->
+                    <div class="col-md-1 menu-btn-block">
+                        <a href="javascript:;" class="toggle" id="sidenav-toggle">
+                            <i class="material-icons menu-closed">format_align_right</i>
+                            <i class="material-icons menu-hover">menu</i>
+                            <i class="material-icons menu-opened">close</i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Menu -->
+        <nav class="sidenav" data-sidenav data-sidenav-toggle="#sidenav-toggle">
+            <ul class="sidenav-menu">
+                <li>
+                    <form id="Analysis & Training" class="form-content form-horizontal" action="/analysis_and_training"
+                        method="POST">
+                        <a id="menu-analysis-train-link" href="#"
+                            onclick="clearFileNameLocalStorage();document.getElementById('Analysis & Training').submit();"
+                            class="not-dropdown">
+                            <span class="sidenav-link-title">Analysis &amp; Training</span>
+                        </a>
+                    </form>
+                </li>
+                <li>
+                    <a id="menu-predictions-link" href="javascript:;" data-sidenav-dropdown-toggle>
+                        <span class="sidenav-link-title">Predictions</span>
+                        <span class="sidenav-dropdown-icon show" data-sidenav-dropdown-icon>
+                            <i class="material-icons">arrow_drop_down</i>
+                        </span>
+                        <span class="sidenav-dropdown-icon" data-sidenav-dropdown-icon>
+                            <i class="material-icons">arrow_drop_up</i>
+                        </span>
+                    </a>
+
+                    <ul class="sidenav-dropdown ul-dropdown" data-sidenav-dropdown>
+                        <li data-toggle="tooltip" data-placement="top">
+                            <form id="multiple descriptions mode" class="form-content form-horizontal"
+                                action="/multiple_mode" method="POST">
+                                <a id="menu-multiple-descr-mode" href="#" class="active not-dropdown"
+                                    onclick="clearFileNameLocalStorage();document.getElementById('multiple descriptions mode').submit();">Multiple description mode</a>
+                            </form>
+                        </li>
+                        <li>
+                            <form id="single description mode" class="form-content form-horizontal" action="/single_description_mode"
+                                method="POST">
+                                <a id="menu-single-descr-mode" href="#"
+                                    onclick="clearFileNameLocalStorage();document.getElementById('single description mode').submit();"
+                                    class="disabled">Single description mode</a>
+                            </form>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    <form id="setting" class="form-content form-horizontal" action="/setting"
+                        method="POST">
+                        <a id="menu-single-descr-mode" href="#"
+                            onclick="clearFileNameLocalStorage();document.getElementById('setting').submit();">
+                            <span class="sidenav-link-title">Settings</span>
+                        </a>
+                    </form>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Multiple Description Mode Page -->
+        <section class="main-section">
+            <div class="container p-50">
+                <div class="row">
+                    <div class="col-md-12">
+                        <form action="/multiple_mode/upload" method="POST" enctype="multipart/form-data">
+
+                            <div class="row p-50">
+                                <div class="col-xs-3">
+                                    <label class="btn btn-main-style btn-turquoise label-choose-file">Choose File
+                                        <input id="Choose" class="not-visible" type="file" name="file" placeholder="fff"
+                                            accept="text/csv, text/xml" required>
+                                    </label>
+                                </div>
+
+                                <div class="col-xs-3">
+                                    <div style="margin-bottom: 15px;" id="file-name"></div>
+                                    <div id="message" data-model-name="test"></div>
+                                </div>
+                                <div class="col-xs-3">
+                                    <button id="Submit" class="btn btn-main-style btn-turquoise" type="submit"
+                                        onclick="setFinalFileNameLocalStorage();validateForLoadFile();return check_size_files();">Submit</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-offset-1 col-md-5">
+                        <div id="resolution11" class="chart-title "></div>
+                        <canvas id="resolution1"></canvas>
+                    </div>
+                    <div class="col-md-5">
+                        <div id="resolution22" class="chart-title "></div>
+                        <canvas id="resolution2"></canvas>
+                    </div>
+                    <div id="ttr_hist1" class="col-md-offset-1 col-md-5">
+                        <div class="chart-title ">TTR Bar Chart</div>
+                        <canvas id="ttr_hist"></canvas>
+                    </div>
+                    <div id='area_hist1' class="col-md-5">
+                        <div class="chart-title ">Areas of Testing Bar Chart</div>
+                        <canvas id="area_hist"></canvas>
+                    </div>
+                </div>
+                <div class="table-multiple-wrap">
+                    <div class="row">
+                        <div class="col-md-12 table-responsive">
+                            <table class="table table-hover table-hover-custom table-bordered table-multiple" id="table"
+                                name="table">
+                                <thead>
+                                    <tr class="table-multiple-wrap1" id="head">
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-offset-9 col-md-3">
+                        <div class="form-btn-block-multiple">
+                            <form>
+                                <!-- Button to Open the Modal -->
+                                <button id="save" type="button" class="btn btn-main-style btn-turquoise"
+                                    data-toggle="modal" data-target="#myModal">
+                                    Save Results
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- The Modal -->
+        <div class="modal" id="myModal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <!-- Modal Header -->
+                    <div class="modal-header">
+                        <h4 class="modal-title">Save file</h4>
+                    </div>
+                    <!-- Modal body -->
+                    <form method="POST" id="saveForm">
+                        <div class="modal-body">
+                            <input type="text" class="form-control input-custom" id="FileName"
+                                placeholder="Enter filename *.csv" name="fileName" pattern="[A-Za-z0-9-_]+\.csv"
+                                required>
+                        </div>
+                        <!-- Modal footer -->
+                        <div class="modal-footer">
+                            <button id="Close" type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+                            <!--<button id="SaveSubset" class="btn btn-success" type="submit" onclick="get_period('/download_subset');" onsubmit="closeSave();">save</button>-->
+                            <input class="btn btn-success" type="button" value="Save" onclick="saveFile();"
+                                id="SaveSubset">
+                            <button type="submit" id="submitSaveSubset" hidden="hidden"></button>
+                        </div>
+                    </form>
+                    <script>
+                        // Disable default action on ENTER keypress
+                        document.getElementById('FileName').addEventListener('keypress', function(event) {
+                            if (event.keyCode == 13) {
+                                event.preventDefault();
+                            }
+                        });
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <div class="ArticleImgHP-container" id="load">
+            <img class="ArticleImgHP" />
+        </div>
+
+        <!-- Scripts -->
+        <script src="{{url_for('static',filename='js/jquery.min.js')}}"></script>
+        <script src="{{url_for('static',filename='js/layout-bootstrap.js')}}"></script>
+        <!-- Bootstrap -->
+        <script src="{{url_for('static',filename='js/bootstrap.min.js')}}"></script>
+        <!-- Chart Scripts -->
+        <script src="{{url_for('static',filename='js/Chart.min.js')}}"></script>
+        <!-- Menu -->
+        <script src="{{url_for('static',filename='js/sidenav.min.js')}}"></script>
+        <script>
+            $('[data-sidenav]').sidenav();
+        </script>
+        <!-- Scripts ???-->
+        <script src="{{url_for('static',filename='js/Chart.bundle.min.js')}}"></script>
+        <script src="{{url_for('static',filename='js/multipleJson.js')}}"></script>
+    </div>
+</body>
+
+</html>
