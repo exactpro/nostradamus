@@ -1,4 +1,4 @@
-![Nostradamus](https://github.com/Exactpro/nostradamus/blob/master/static/img/logo_dark.png)
+![Nostradamus](https://github.com/Exactpro/nostradamus/blob/master/front_end/static/img/logo_dark.png)
 
 Tool for analyzing software defect reports extracted from defect repositories.
 
