@@ -1,8 +1,8 @@
 *~
+*.vscode
+*.log
+*.iml
+*.pyc
 /.ipynb_checkpoints
 /.idea
-*.log
-
-
-
-
+APP_DefectMiner/nostradamus/flask_sessionstore/
