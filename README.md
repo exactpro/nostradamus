@@ -6,7 +6,7 @@ Tool for analyzing software defect reports extracted from defect repositories.
 
 * Python 3.5+
 * Matplotlib 3.0.0
-* NLTK 3.3
+* NLTK 3.4.5
 * Pandas 0.23.4
 * scikit-learn 0.20.3
 * imbalanced-learn 0.4.2
