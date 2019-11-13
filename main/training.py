@@ -21,7 +21,7 @@ from main.exceptions import ModelNotFound, ModelsNotFound
 from main.validation import is_zero
 from main.logger import BynaryTrainLogger, MultipleTrainLogger
 from main.data_converter import unpack_dictionary_val_to_list
-from main.data_analysis import reindex_dataframe
+from main.data_analysis import reindex_dataframe, check_bugs_count
 
 import pandas
 from werkzeug.utils import secure_filename
@@ -310,6 +310,10 @@ def train_model(
     if not exists(model_path):
         makedirs(model_path)
     df = read_pickle(dataframe_path)
+
+    if not check_bugs_count(df, 100):
+        raise ValueError(
+            'Oops! Too little data to analyze. Model can\'t be trained.')
 
     filtered_classes, dataframes = prepare_df(
         df, areas_of_testing, resolution)
