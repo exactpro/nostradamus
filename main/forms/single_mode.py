@@ -34,7 +34,6 @@ from pathlib import Path
 from main.config_processor import check_predictions_parameters_config
 from main.data_analysis import get_probabilities
 from main.cleaner import clean_description
-from main.db import DatabaseProcessor
 from main.data_converter import unpack_dictionary_val_to_list
 from main.session import check_session
 from psycopg2.extras import Json
@@ -69,8 +68,7 @@ def single_description_mode():
                 'username': session['username'],
                 'categoric': fields,
                 'single_mod': signle_mode_status,
-                'multiple_mod': multiple_mode_status,
-                'inner': session['config.ini']['APP']['version']
+                'multiple_mod': multiple_mode_status
             }))
         else:
             return render_template('resultSinglePage.html', json=json.dumps({
@@ -143,59 +141,11 @@ def predict():
                         'resolution_pie': session['probabilities']['resolution_probability'],
                         'areas': session['probabilities']['areas_of_testing'],
                         'user': session['username'],
-                        'inner': session['config.ini']['APP']['version'],
                         'single_mod': signle_mode_status,
                         'multiple_mod': multiple_mode_status})
     except Exception as err_mssg:
         return jsonify({'username': session['username'],
                         'error': str(err_mssg)})
-
-
-@single_mode.route(
-    '/single_description_mode/submit_predictions',
-    methods=[
-        'POST',
-        'GET'])
-def submit_predictions():
-    if request.method == 'GET':
-        session.clear()
-        return redirect(url_for('home', expired='0'), code=302)
-    if check_session():
-        return jsonify(dict(redirect=url_for('home', expired='1')))
-    if request.method == 'POST':
-        try:
-            user_predictions = {}
-            user_predictions['description'] = request.form['descr']
-            user_predictions['label'] = request.form['uslab']
-            user_predictions['priority'] = request.form['uspriority']
-            user_predictions['username'] = session['username']
-
-            nostradamus_predictions = session['probabilities']['areas_of_testing']
-            nostradamus_predictions['description'] = request.form['descr']
-            nostradamus_predictions['critical'] = session['probabilities']['priority']['Critical']
-            nostradamus_predictions['high'] = session['probabilities']['priority']['High']
-            nostradamus_predictions['medium'] = session['probabilities']['priority']['Medium']
-            nostradamus_predictions['low'] = session['probabilities']['priority']['Low']
-            nostradamus_predictions['advice'] = request.form['predlab']
-
-            logger = getLogger("ul_submit")
-            logger.setLevel(logging.INFO)
-            fh = logging.FileHandler("app.log")
-            formatter = logging.Formatter(
-                '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-            fh.setFormatter(formatter)
-            logger.addHandler(fh)
-            logger.info("inserting to predictions has been started")
-            DatabaseProcessor(
-                session['connections.ini']['ENV']['connection_parameters_insert_local']).execute_query(
-                '''INSERT INTO {} (date, nastradamusPrediction, userPrediction) VALUES ('{}', {}, {})'''.format(
-                    'predictions', datetime.datetime.now(), Json(
-                        nostradamus_predictions), Json(user_predictions)))
-            logger.info("insert to predictions is finished")
-            return jsonify({'msg': 'submission is successful'})
-        except Exception:
-            return jsonify({'username': session['username'],
-                            'msg': 'error of inserting data to database'})
 
 
 @single_mode.route(

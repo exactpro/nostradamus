@@ -27,7 +27,7 @@ from main.config_processor import load_config_to_session, load_base_config, chec
 from main.exceptions import IncorrectValueError, NotExist, NotExistModel, NotExistFile, NotExistField, LDAPError
 from main.file_processor import is_file_exist
 
-from main.session import check_session, User, is_session_expired, remove_folder, create_folder
+from main.session import check_session, is_session_expired, remove_folder, create_folder
 from main.forms.analysis_and_training import analysis
 from main.forms.settings import settings
 from main.forms.multiple_mode import multiple_mode
@@ -72,8 +72,6 @@ def home():
                 str(Path(__file__).parents[0]) + '/model/' + 'predictions_parameters.ini', check_size=True):
             load_config_to_session(
                 str(Path(__file__).parents[0]) + '/model/' + 'predictions_parameters.ini')
-        if session['config.ini']['APP']['version'] == 1:
-            page_name = 'loginPage.html'
 
         if request.method == 'GET':
             if is_session_expired():
@@ -94,21 +92,16 @@ def home():
                     check_size=True):
                 raise NotExistFile(
                     'Please check existence of config.ini and regularExpression.csv files.')
-            if not is_file_exist(str(
-                    Path(__file__).parents[0]) + '/model/' + 'top_terms.csv', check_size=True):
-                if session['config.ini']['APP']['version'] == 1:
-                    raise NotExistFile('top_terms.csv file does not exist.')
             session['is_train'] = False
 
-            session['session_id'] = session.session_id if session['config.ini']['APP']['version'] == 1 else session.sid[:32]
+            session['session_id'] = session.sid[:32]
             session['backup'] = {}
             session['backup']['backup_folder'] = '{0}/backup/{1}/files/'.format(os.path.abspath(os.curdir), session['session_id'])
             session['cache'] = {}
             session['cache'][session['session_id']] = {}
 
             session['temp_files'] = []  # temp files' paths storage
-            if session['config.ini']['APP']['version'] == 0:
-                session['temp_files'].append(
+            session['temp_files'].append(
                     "{cur}/files/{id}".format(cur=os.curdir, id=session['session_id']))
 
             if not os.path.exists(
@@ -116,32 +109,22 @@ def home():
                 create_folder(session['backup']['backup_folder'])
             app.config['UPLOAD_FOLDER'] = session['backup']['backup_folder']
 
-            # user authentification
-            if session['config.ini']['APP']['version'] == 1:
-
-                load_config_to_session(
-                    str(Path(__file__).parents[0]) + '/extensions/' + 'connections.ini')
-                user = User(request.form['username'], request.form['password'])
-                user.authentificate_user(
-                    session['connections.ini']['ENV']['domain_settings'])
-                session.permanent = True
-                session['username'] = user.username
-            else:
-                session.permanent = False
-                session['username'] = 'user'            
+            session.permanent = False
+            session['username'] = 'user'            
 
             # vectorizer settings creation
             session['tfidf'] = StemmedTfidfVectorizer(
                 norm='l2',
                 sublinear_tf=True,
                 min_df=1,
-                stop_words=text.ENGLISH_STOP_WORDS.union(
+                stop_words=text.ENGLISH_STOP_WORDS.difference(('see', 'system', 'call')).union(
                     session['config.ini']['MACHINE_LEARNING']['asignee_reporter'],
                     session['config.ini']['MACHINE_LEARNING']['weekdays_stop_words'],
-                    session['config.ini']['MACHINE_LEARNING']['months_stop_words']),
+                    session['config.ini']['MACHINE_LEARNING']['months_stop_words'],
+                    ['having', 'couldn']),
                 analyzer='word')
 
-            session['markup'] = 0 if session['config.ini']['APP']['version'] == 1 else 1 if (
+            session['markup'] = 1 if (
                 '1' if session['config.ini']['DEFECT_ATTRIBUTES']['mark_up_attributes'] else '0') == '1' else 0
             session['backup']['source_df'] = ''
             session['backup']['filtered_df'] = ''
@@ -162,6 +145,7 @@ def home():
                             'mandatory_attributes': session['config.ini']['DEFECT_ATTRIBUTES']['mandatory_attributes'],
                             'data_types': session['config.ini']['REQUIREMENTS']['allowed_data_types'],
                             'referring_to': session['config.ini']['DEFECT_ATTRIBUTES']['referring_to'],
+                            'logging_level': session['config.ini']['DEFECT_ATTRIBUTES']['logging_level'] ,
                             'config_data': session['config.ini']['DEFECT_ATTRIBUTES']}))
     except Exception as e:
         return render_template(page_name, json=json.dumps({'error': str(e)}))
@@ -177,10 +161,7 @@ def logout():
 
     remove_folder(session['backup']['backup_folder'])
 
-    if session['config.ini']['APP']['version'] == 1:
-        page_name = 'loginPage.html'
-    else:
-        page_name = 'loginPage_portable.html'
+    page_name = 'loginPage_portable.html'
     session.clear()
     return render_template(page_name)
 

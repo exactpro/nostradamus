@@ -43,33 +43,6 @@
         </div>
     </div>
 </section>
-<!--
-<script>
-    document.getElementById('input').style.display = 'none';
-    document.getElementById('login').style.display = 'none';
-    document.getElementById('submitbtn').innerHTML = 'Start';
-    document.getElementById('username').required = false;
-    document.getElementById('password').required = false;
-    var jsonFromHTML = "{{ json }}";
-    var cleanJsonFromHTML = jsonFromHTML.replace(/&#34;/g,'"');
-    //cleanJsonFromHTML = cleanJsonFromHTML.replace(/&#39;/g,'"');
-    var jsonDictionary = JSON.parse(cleanJsonFromHTML);
-    if(jsonDictionary['inner']=='1'){
-        document.getElementById('input').style.display = 'block';
-        document.getElementById('login').style.display = 'block';
-        document.getElementById('submitbtn').innerHTML = 'Submit';
-        document.getElementById('username').required = true;
-        document.getElementById('password').required = true;
-    }
-    var warning = document.getElementById('warning');
-    warning.innerHTML = jsonDictionary['error'];
-    sessionStorage.removeItem("fName");
-    sessionStorage.removeItem("finalName");
-    //sessionStorage.removeItem("relative");
-    //sessionStorage.removeItem("density");
-    //sessionStorage.removeItem("dynamic");
-</script>
--->
 <!--Bootstrap -->
 <script src="{{url_for('static',filename='js/jquery.min.js')}}"></script>
 <script src="{{url_for('static',filename='js/bootstrap.min.js')}}"></script>

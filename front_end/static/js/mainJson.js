@@ -78,7 +78,6 @@ function addField(parent_div, div_class, label_class,
     }
     if(field_type_backend == 'String'){
         i_field.type = field_type
-        i_field.pattern = "[A-Z]{1,10}[\-][0-9]{1,10}"
         i_field.className = field_class[0]
         }
     if(field_type_backend == 'Substring_array'){
@@ -241,17 +240,6 @@ if('undefined'.localeCompare(jsonDictionary['placeholder']) != 0){
     set_placeholder();
     }
 
-
-// setting up markup only if version == 0
-// disable settings module if version == 1
-if('undefined'.localeCompare(jsonDictionary['inner']) != 0){
-    if(jsonDictionary['inner'] == '1'){
-        $("#div_murkup").addClass('disabledfilter');
-        $("#areasDiv").addClass('disabledfilter');
-        $("#setting").addClass('disabledfilter');
-
-    }
-}
 
 // open train only if markup == 1
 if('undefined'.localeCompare(jsonDictionary['markup']) != 0){
@@ -963,6 +951,7 @@ function addOptionAJAX(name, mas){
     }
     else{
         for(i=0;i<mas.length;i++){
+            $(name).prop("disabled",false);
             $(name).append($("<option></option>").attr("value",replaceForCategoric(mas[i])).text(replaceForCategoric(mas[i])));
         }
     }
@@ -970,10 +959,12 @@ function addOptionAJAX(name, mas){
 
 function forEachAJAX(mas){
     for(key in mas){
-        if(key == 'ReferringTo')
-            $('#ReferringTo').find('option').remove().end();
-        else removeOptionsAJAX(document.getElementById(key));
-        addOptionAJAX("[id='"+key+"']",mas[key]);
+        if (key != 'logging_level'){
+            if(key == 'ReferringTo')
+                $('#ReferringTo').find('option').remove().end();
+            else removeOptionsAJAX(document.getElementById(key));
+            addOptionAJAX("[id='"+key+"']",mas[key]);
+        }
     }
 }
 
@@ -1075,8 +1066,8 @@ function attributesAJAX(attrib, keys){
                 setTopFreq();
                         }
                 // if field is select2 that he have massive of values
-                if(Array.isArray(attrib[keys[key]])){
-                    $("[id='"+keys[key]+"']").val(attrib[keys[key]]).trigger('change');
+                if(attrib[keys[key]].split(',').length > 1){
+                    $("[id='"+keys[key]+"']").val(attrib[keys[key]].split(',')).trigger('change');
                 }
                 else{
                     $("[id='"+keys[key]+"']").val(replaceForCategoric(from_bool(attrib[keys[key]])))
@@ -1362,6 +1353,21 @@ function filtering() {
                             $('html, body').animate({scrollTop: 0}, 600);
                             $("#Reset").prop("disabled",false);
                             setFileName();
+                            if (response['attributes']['significant_terms'] != null){
+                                response['attributes']['significant_terms'] = response['attributes']['significant_terms'].map(function(field){return " "+field})
+                                $("#significanceTop").html(response['attributes']['significant_terms'].join());
+                           }
+                           else{
+                                $("#significanceTop").html(response['attributes']['significant_terms']);
+                           }
+                           sessionStorage['moreFreq'] = 0;
+                           if (response['attributes']['frequently_terms'].length <= 10){
+                                $('#moreFreq').prop('disabled', true);
+                           }
+                           else {
+                                $('#moreFreq').prop('disabled', false);
+                           }
+                            setTopFreq();
                             hideLoad();
                        }
                   }

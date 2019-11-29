@@ -42,18 +42,30 @@ from main.exceptions import InconsistentDataError
 analysis = Blueprint('analysis', __name__)
 
 
+def get_categorical_value(fields):
+    uniq_fields = []
+    for field in fields:
+        if len(field.split(',')) > 1:
+            for field_value in field.split(','):
+                uniq_fields.append(field_value)
+        else:
+            uniq_fields.append(field)
+    return list(set(uniq_fields))
+
+
 def load_categorical_defect_attributes(dataframe, defect_attributes):
     return {field: ['null'] if not field in dataframe.keys() or not dataframe.get(field).dropna().unique().tolist()
-            else dataframe.get(field).dropna().unique().tolist()
+            else get_categorical_value(dataframe.get(field).dropna().tolist())
             for field in defect_attributes
             if defect_attributes[field]['type'] == 'Categorical'}
 
 
 def load_categorical_referring_to(dataframe, referring_to_fields):
-    referring_to = [field + ' ' + field_value for field in referring_to_fields if field != 'Areas of testing' for field_value in dataframe[field].dropna().unique().tolist() if is_class_more_than(percentage = 0.005, in_series=dataframe[field], _class = field_value) and field_value != 'Unresolved']
+    referring_to = [field + ' ' + field_value for field in referring_to_fields if field != 'Areas of testing' for field_value in dataframe[field].dropna().unique().tolist() if is_class_more_than(
+        percentage=0.01, in_series=dataframe[field], _class=field_value) and field_value != 'Unresolved' and check_bugs_count(dataframe[dataframe[field] == field_value], 100)]
     if 'Areas of testing' in referring_to_fields:
-        referring_to = referring_to + ['Areas of testing'+ ' ' + area for area in session['config.ini']['DEFECT_ATTRIBUTES']['mark_up_attributes'] if is_class_more_than(percentage = 0.005, in_series = dataframe[area+'_lab'], _class = 1)]
-        
+        referring_to = referring_to + ['Areas of testing' + ' ' + area for area in session['config.ini']['DEFECT_ATTRIBUTES']['mark_up_attributes'] if is_class_more_than(
+            percentage=0.01, in_series=dataframe[area + '_lab'], _class=1) and check_bugs_count(dataframe[dataframe[area + '_lab'] == 1], 100)]
     return {'ReferringTo': ['null'] if not referring_to else referring_to}
 
 
@@ -61,7 +73,7 @@ def get_categorical_fields(dataframe, defect_attributes, referring_to_fields):
     prepared_fields = load_categorical_defect_attributes(dataframe, defect_attributes['mandatory_attributes'])
     prepared_fields.update(load_categorical_referring_to(dataframe, referring_to_fields))
     prepared_fields.update(load_categorical_defect_attributes(dataframe, defect_attributes['special_attributes']))
-
+    prepared_fields.update({'logging_level': ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']})
     return prepared_fields
 
 
@@ -102,7 +114,7 @@ def get_analysis_data(df, defect_attributes, stop_words):
         processed_data['categorical_fields']['ReferringTo'][0]: calculate_significant_terms(
             df,
             processed_data['categorical_fields']['ReferringTo'][0],
-            sw=text.ENGLISH_STOP_WORDS.union(stop_words))}
+            sw=text.ENGLISH_STOP_WORDS.difference(('see', 'system', 'call')).union(stop_words))}
 
     processed_data['gui_attributes'] = {
         'significant_terms': processed_data['significant_terms'][processed_data['categorical_fields']['ReferringTo'][0]],
@@ -214,7 +226,6 @@ def upload_file():
                 'attributes': session['cache'][session['session_id']]['gui_attributes'],
                 'fields': session['config.ini']['DEFECT_ATTRIBUTES'],
                 'placeholder': session['cache'][session['session_id']]['placeholder'],
-                'inner': session['config.ini']['APP']['version'],
                 'single_mod': signle_mode_status,
                 'multiple_mod': multiple_mode_status,
                 'is_train': session['is_train']
@@ -229,7 +240,6 @@ def upload_file():
                 'username': session['username'],
                 'message': str(err_msg),
                 'fields': session['config.ini']['DEFECT_ATTRIBUTES'],
-                'inner': session['config.ini']['APP']['version'],
                 'single_mod': signle_mode_status,
                 'multiple_mod': multiple_mode_status,
                 'is_train': session['is_train']
@@ -252,7 +262,6 @@ def analysis_and_training():
                 'username': session['username'],
                 'message': error_message,
                 'fields': session['config.ini']['DEFECT_ATTRIBUTES'],
-                'inner': session['config.ini']['APP']['version'],
                 'file_size': session['config.ini']['REQUIREMENTS']['max_file_size'],
                 'single_mod': signle_mode_status,
                 'multiple_mod': multiple_mode_status,
@@ -299,7 +308,7 @@ def analysis_and_training():
                     **get_records_count(filtered_df=df, source_df=df))
                 session['config.ini']['DEFECT_ATTRIBUTES']['special_attributes']['ttr'] = {'type': 'Numeric', 'name': 'Time to Resolve (TTR)'}
                 session['new_settings'] = False
-                session['markup'] = 0 if session['config.ini']['APP']['version'] == 1 else 1 if ('1' if session['config.ini']['DEFECT_ATTRIBUTES']['mark_up_attributes'] else '0') == '1' else 0
+                session['markup'] = 1 if ('1' if session['config.ini']['DEFECT_ATTRIBUTES']['mark_up_attributes'] else '0') == '1' else 0
                 session['is_train'] = True if session['markup'] else False
             return render_template('filterPage.html', json=json.dumps({
                 'username': session['username'],
@@ -312,7 +321,6 @@ def analysis_and_training():
                 'attributes': session['cache'][session['session_id']]['gui_attributes'],
                 'fields': session['config.ini']['DEFECT_ATTRIBUTES'],
                 'placeholder': session['cache'][session['session_id']]['placeholder'],
-                'inner': session['config.ini']['APP']['version'],
                 'single_mod': signle_mode_status,
                 'multiple_mod': multiple_mode_status,
                 'is_train': session['is_train']
@@ -323,7 +331,6 @@ def analysis_and_training():
             'username': session['username'],
             'message': 'Oops! Something went wrong. Please try again later.',
             'fields': session['config.ini']['DEFECT_ATTRIBUTES'],
-            'inner': session['config.ini']['APP']['version'],
             'file_size': session['config.ini']['REQUIREMENTS']['max_file_size'],
             'single_mod': signle_mode_status,
             'multiple_mod': multiple_mode_status,
@@ -573,7 +580,6 @@ def download_subset():
             return render_template('filterPage.html', json=json.dumps({'username': session['username'],
                                                                        'message': str(e),
                                                                        'fields': session['config.ini']['DEFECT_ATTRIBUTES'],
-                                                                       'inner': session['config.ini']['APP']['version'],
                                                                        'single_mod': signle_mode_status,
                                                                        'multiple_mod': multiple_mode_status,
                                                                        'is_train': session['is_train']
@@ -603,7 +609,7 @@ def significant_terms():
                 pandas.read_pickle(
                     session['backup']['filtered_df']),
                 referr_to,
-                sw=text.ENGLISH_STOP_WORDS.union(
+                sw=text.ENGLISH_STOP_WORDS.difference(('see', 'system', 'call')).union(
                     session['config.ini']['MACHINE_LEARNING']['asignee_reporter'],
                     session['config.ini']['MACHINE_LEARNING']['weekdays_stop_words'],
                     session['config.ini']['MACHINE_LEARNING']['months_stop_words']))}
@@ -672,7 +678,6 @@ def train():
                 'attributes': session['cache'][session['session_id']]['gui_attributes'],
                 'fields': session['config.ini']['DEFECT_ATTRIBUTES'],
                 'placeholder': session['cache'][session['session_id']]['placeholder'],
-                'inner': session['config.ini']['APP']['version'],
                 'single_mod': signle_mode_status,
                 'multiple_mod': multiple_mode_status,
                 'is_train': session['is_train']})

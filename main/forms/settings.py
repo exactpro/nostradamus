@@ -44,18 +44,27 @@ def get_settings_from_gui(page_data):
     """
 
     parsed_settings = {}
-    parsed_settings['mandatory_attributes'] = {el['gui_name']: {'name': el['xml_name'], 'type': el['type']} for el
-                        in json.loads(page_data['mandatory_attributes'][0])}
+    parsed_settings['mandatory_attributes'] = {
+        el['xml_name']: {
+            'name': el['gui_name'],
+            'type': el['type']} for el in json.loads(
+            page_data['mandatory_attributes'][0])}
 
     if json.loads(page_data['special_attributes'][0])[0]:
-        parsed_settings['special_attributes'] = {el['gui_name']: {'name': el['xml_name'], 'type': el['type']} for el 
-                        in json.loads(page_data['special_attributes'][0])}
+        parsed_settings['special_attributes'] = {
+            el['xml_name']: {
+                'name': el['gui_name'],
+                'type': el['type']} for el in json.loads(
+                page_data['special_attributes'][0])}
     else:
         parsed_settings['special_attributes'] = {}
 
     if json.loads(page_data['mark_up_attributes'][0])[0]:
-        parsed_settings['mark_up_attributes'] = {el["gui_name"]: {"gui_name":el["gui_name"], 'name': el['name']} for el 
-                                in json.loads(page_data['mark_up_attributes'][0])}
+        parsed_settings['mark_up_attributes'] = {
+            el["gui_name"]: {
+                "gui_name": el["gui_name"],
+                'name': el['name']} for el in json.loads(
+                page_data['mark_up_attributes'][0])}
     else:
         parsed_settings['mark_up_attributes'] = {}
 
@@ -67,11 +76,14 @@ def get_settings_from_gui(page_data):
     resol_pie_chart_name_1 = ''.join(page_data['resolution1name'])
     resol_pie_chart_val_2 = ''.join(page_data['resolution2value'])
     resol_pie_chart_name_2 = ''.join(page_data['resolution2name'])
-    parsed_settings['resolution'] = {resol_pie_chart_name_1: [resol_pie_chart_val_1]}
+    parsed_settings['resolution'] = {
+        resol_pie_chart_name_1: [resol_pie_chart_val_1]}
     if resol_pie_chart_name_2 in parsed_settings['resolution']:
-        parsed_settings['resolution'][resol_pie_chart_name_2].append(resol_pie_chart_val_2)
+        parsed_settings['resolution'][resol_pie_chart_name_2].append(
+            resol_pie_chart_val_2)
     else:
-        parsed_settings['resolution'][resol_pie_chart_name_2] = [resol_pie_chart_val_2]
+        parsed_settings['resolution'][resol_pie_chart_name_2] = [
+            resol_pie_chart_val_2]
 
     return parsed_settings
 
@@ -83,9 +95,8 @@ def set_config():
         return redirect(url_for('home', expired='0'), code=302)
     if check_session():
         return redirect(url_for('home', expired='1'), code=302)
-    try: 
-        incoming_defect_attributes = get_settings_from_gui(request.form.to_dict(flat=False))
-
+    incoming_defect_attributes = get_settings_from_gui(request.form.to_dict(flat=False))
+    try:
         verification_status, error_message = check_defect_attributes(incoming_defect_attributes)
         if verification_status:
             creator = Configuration('{}/config.ini'.format(os.curdir))
@@ -96,7 +107,7 @@ def set_config():
                     str(incoming_defect_attributes[attribute])
                 )
             load_config_to_session('config.ini')
-            session['markup'] = 0 if session['config.ini']['APP']['version'] == 1 else 1 if ('1' if session['config.ini']['DEFECT_ATTRIBUTES']['mark_up_attributes'] else '0') == '1' else 0
+            session['markup'] = 1 if ('1' if session['config.ini']['DEFECT_ATTRIBUTES']['mark_up_attributes'] else '0') == '1' else 0
             session['new_settings'] = True
             return jsonify(dict(redirect=url_for('analysis.analysis_and_training')))
         else:
@@ -106,6 +117,7 @@ def set_config():
                             'mandatory_attributes': incoming_defect_attributes['mandatory_attributes'],
                             'data_types': session['config.ini']['REQUIREMENTS']['allowed_data_types'],
                             'referring_to': incoming_defect_attributes['referring_to'],
+                            'logging_level': 'INFO',
                             'config_data': incoming_defect_attributes})
 
     except KeyError as e:
@@ -114,7 +126,8 @@ def set_config():
             'error': 'Field couldn\'t be empty.\nPlease fill in all required fields.',
             'mandatory_attributes': incoming_defect_attributes['mandatory_attributes'],
             'data_types': session['config.ini']['REQUIREMENTS']['allowed_data_types'],
-            'referring_to': incoming_defect_attributes['referring_to']
+            'referring_to': incoming_defect_attributes['referring_to'],
+            'logging_level': 'INFO'
             })
     except Exception as e:
         print(e)
@@ -122,7 +135,8 @@ def set_config():
             'error': 'Something went wrong.\nPlease try again later.',
             'mandatory_attributes': incoming_defect_attributes['mandatory_attributes'],
             'data_types': session['config.ini']['REQUIREMENTS']['allowed_data_types'],
-            'referring_to': incoming_defect_attributes['referring_to']
+            'referring_to': incoming_defect_attributes['referring_to'],
+            'logging_level': 'INFO'
             })
 
 
@@ -147,6 +161,7 @@ def setting():
                                                                 'mandatory_attributes': session['config.ini']['DEFECT_ATTRIBUTES']['mandatory_attributes'],
                                                                 'data_types': session['config.ini']['REQUIREMENTS']['allowed_data_types'],
                                                                 'referring_to': ['Resolution', 'Priority', 'Areas of testing'],
+                                                                'logging_level': ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
                                                                 'config_data': session['config.ini']['DEFECT_ATTRIBUTES'],
                                                                 'single_mod': signle_mode_status,
                                                                 'multiple_mod': multiple_mode_status}))
@@ -156,6 +171,7 @@ def setting():
                                                                 'mandatory_attributes': session['config.ini']['DEFECT_ATTRIBUTES']['mandatory_attributes'],
                                                                 'data_types': session['config.ini']['REQUIREMENTS']['allowed_data_types'],
                                                                 'referring_to': ['Resolution', 'Priority', 'Areas of testing'],
+                                                                'logging_level': ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
                                                                 'config_data': session['config.ini']['DEFECT_ATTRIBUTES'],
                                                                 'single_mod': signle_mode_status,
                                                                 'multiple_mod': multiple_mode_status}))
@@ -183,7 +199,8 @@ def reset_settings():
                                                             'special_attributes': session['config.ini']['DEFECT_ATTRIBUTES']['special_attributes'],
                                                             'mark_up_attributes': session['config.ini']['DEFECT_ATTRIBUTES']['mark_up_attributes'],
                                                             'data_types': session['config.ini']['REQUIREMENTS']['allowed_data_types'],
-                                                            'referring_to': session['config.ini']['DEFECT_ATTRIBUTES']['referring_to'],
+                                                            'referring_to': ['Resolution', 'Priority', 'Areas of testing'],
+                                                            'logging_level': ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
                                                             'config_data': session['config.ini']['DEFECT_ATTRIBUTES'],
                                                             'single_mod': signle_mode_status,
                                                             'multiple_mod': multiple_mode_status

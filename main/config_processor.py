@@ -205,17 +205,6 @@ def add_calculated_fields_to_session(file_name):
         session[file_name]['REQUIREMENTS']['max_file_size'] = session[file_name]['REQUIREMENTS']['max_file_size'] * 1000**2
     elif file_name == 'predictions_parameters.ini':
         session[file_name]['predictions_parameters']['available_predictions_parameters'] = [option_name for option_name in session[file_name]['predictions_parameters'] if option_name != 'available_predictions_parameters']
-    elif file_name == 'connections.ini':
-        session[file_name]['ENV']['domain_settings'] = {'ad_domain_suffix': session[file_name]['ENV']['ad_domain_suffix'],
-                                'ad_server': session[file_name]['ENV']['ad_server'],
-                                'ad_search_tree': session[file_name]['ENV']['ad_search_tree'],
-                                'ad_security_group': session[file_name]['ENV']['ad_security_group']}
-        session[file_name]['ENV']['connection_parameters_insert_local'] = {
-            'dbname': session[file_name]['DB']['dbname_insert'],
-            'user': session[file_name]['USER']['user'],
-            'password': session[file_name]['USER']['password'],
-            'host': session[file_name]['ENV']['local']
-        }
 
 
 def load_config_to_session(path):
@@ -242,6 +231,11 @@ def update_defect_attributes():
         'DEFECT_ATTRIBUTES',
         'mark_up_attributes',
         str(session['config.ini']['DEFECT_ATTRIBUTES']['mark_up_attributes']))
+
+    creator.set_option(
+        'DEFECT_ATTRIBUTES',
+        'logging_level',
+        str(session['config.ini']['DEFECT_ATTRIBUTES']['logging_level'] ))
 
     creator.set_option(
         'DEFECT_ATTRIBUTES',

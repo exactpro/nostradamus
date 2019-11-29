@@ -146,8 +146,7 @@ def filter_dataframe(
         field_value = 1 if field_value == 'Yes' else 0
         filtered_df = dataframe[dataframe[field_name+'_lab'].swifter.apply(bool) == field_value]
     if field_name in get_fields('Categorical', defect_attributes):
-        filtered_df = dataframe[dataframe[field_name].isin(
-            field_value.split(','))]
+        filtered_df = dataframe[dataframe[field_name].swifter.apply(apply_categorical_filter, args=(field_value,))]
     if field_name in get_fields('Boolean', defect_attributes):
         field_value = 1 if field_value == 'Yes' else 0
         filtered_df = dataframe[dataframe[field_name].swifter.apply(bool) == field_value]
@@ -158,9 +157,10 @@ def filter_dataframe(
                                   str.contains(field_value,
                                                case=False, na=False, regex=False)]
     if field_name in get_fields('Substring_array', defect_attributes):
+        filtered_df = dataframe
         for pattern in field_value.split(','):
             filtered_df = apply_substring_array_filter(
-                dataframe, field_name, pattern.strip())
+                filtered_df, field_name, pattern.strip())
     if field_name[:-1] in get_fields('Numeric', defect_attributes):
         if field_name[-1] == '0':
             filtered_df = dataframe[dataframe[field_name[:- \
@@ -195,6 +195,10 @@ def apply_substring_array_filter(df, series, pattern):
         pattern, case=False, na=False, regex=False)]
 
 
+def apply_categorical_filter(df_element, field_value):
+    return bool(set(df_element.split(',')).intersection(set(field_value.split(','))))
+
+
 def compare_words(value, pattern):
     """ Checks whether the elements are equal.
 
@@ -205,7 +209,7 @@ def compare_words(value, pattern):
         Returns:
             Boolean value.
     """
-    regexp = re.compile(r'\b' + pattern + r'\b')
+    regexp = re.compile(r'\b' + pattern + r'\b', re.IGNORECASE)
     return bool(re.findall(regexp, str(value)))
 
 
@@ -447,7 +451,7 @@ def check_bugs_count(dataframe, required_count: int):
     return len(dataframe.index) >= required_count
 
 
-def calculate_significant_terms(df, metric, sw=text.ENGLISH_STOP_WORDS):
+def calculate_significant_terms(df, metric, sw=text.ENGLISH_STOP_WORDS.difference(('see', 'system', 'call'))):
     """ Calculates top terms which are based on significance weights.
 
     Parameters:
@@ -458,7 +462,7 @@ def calculate_significant_terms(df, metric, sw=text.ENGLISH_STOP_WORDS):
         list of the first 20 calculated terms.
 
     """
-    if not metric or not check_bugs_count(df, 100):
+    if not metric or metric == 'null':
         return ['Oops! Too little data to calculate.']
     chi2 = feature_selection.chi2
     term = metric.replace(
@@ -535,7 +539,10 @@ def get_frequently_terms(descr_series):
         list of the first 100 calculated terms.
 
     """
-    session['tfidf'].fit_transform(descr_series)
+    try:
+        session['tfidf'].fit_transform(descr_series)
+    except ValueError:
+        return ['Oops! Too little data to calculate.']
     idf = session['tfidf'].idf_
 
     frequently_terms = dict(zip(session['tfidf'].get_feature_names(), idf))

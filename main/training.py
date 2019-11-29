@@ -19,9 +19,9 @@
 from main.file_processor import is_file_exist, remove_models
 from main.exceptions import ModelNotFound, ModelsNotFound
 from main.validation import is_zero
-from main.logger import BynaryTrainLogger, MultipleTrainLogger
 from main.data_converter import unpack_dictionary_val_to_list
 from main.data_analysis import reindex_dataframe, check_bugs_count
+from main.logger import log_train, log
 
 import pandas
 from werkzeug.utils import secure_filename
@@ -111,6 +111,7 @@ def check_classes_count(classes: list, required_count=2):
             'Oops! Too little data to analyze. Model can\'t be trained.')
 
 
+@log_train
 def training_imbalance(
         descr_series,
         classes_codes,

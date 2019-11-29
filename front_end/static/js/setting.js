@@ -86,7 +86,7 @@ function convert_fields(defect_attributes){
     result = []
     for (field in defect_attributes){
         if (field != 'ttr'){
-            result.push({"gui_name": field, "xml_name": defect_attributes[field]["name"], "type":defect_attributes[field]["type"]})
+            result.push({"gui_name": defect_attributes[field]["name"], "xml_name": field, "type":defect_attributes[field]["type"]})
         }
     }
     return result
@@ -397,6 +397,7 @@ $(document).ready(function() {
 for(i=0;i<jsonDictionary['referring_to'].length;i++){
     $("[id='referring_to']").append($("<option></option>").attr("value",jsonDictionary['referring_to'][i]).text(jsonDictionary['referring_to'][i]));
 }
+
 
 
 function is_null(fields){

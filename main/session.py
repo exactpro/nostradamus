@@ -90,62 +90,6 @@ def check_user(username, password, domain_settings):
         raise LDAPError('The username or password is incorrect')
 
 
-class User:
-    def __init__(self, username='user', password=None):
-        self.__username  = username
-        self.__password = password
-    
-    @property
-    def username(self):
-        return self.__username
-    
-    @username.setter
-    def username(self, username):
-        self.__username = username
-        return self.__username
-    
-    @property
-    def password(self):
-        return self.__password
-    
-    @password.setter
-    def password(self, password):
-        self.__password = password
-        return self.__password
-
-    def authentificate_user(self, domain_settings):
-        authentification = check_user(self.username, self.password, domain_settings)
-        if not authentification:
-            raise LDAPError('Access denied.')
-
-
-# NOTE: use command redis-cli config set notify-keyspace-events KEA in console if it is first start
-def event_handler(msg):
-    # use the commented command below to track session's messages
-    # print(msg['channel'] + '---' + msg['data'])
-    if msg['data'] in ['del', 'expired']:
-        if os.path.exists(os.path.abspath(os.curdir) + '/backup/' + msg['channel'].split(':')[2]):
-            shutil.rmtree(os.path.abspath(os.curdir) + '/backup/' + msg['channel'].split(':')[2], ignore_errors=True)
-
-
-def start_redis(other=None):
-    try:
-        r = StrictRedis(host='localhost', port=6379, db=0, password=config['REDIS']['redis_password'],
-                         charset="utf-8", decode_responses=True)
-        pubsub = r.pubsub()
-        pubsub.psubscribe(**{'__keyspace@0__:*': event_handler})
-        while True:
-            message = pubsub.get_message()
-            if message:
-                pass
-            else:
-                time.sleep(0.01)
-    except exceptions.ConnectionError as e:
-        if other:
-            print('Redis: {}'.format(e))
-            other.terminate()
-
-
 def remove_folder(path):
     for root, dirs, files in os.walk(path):
         if files:

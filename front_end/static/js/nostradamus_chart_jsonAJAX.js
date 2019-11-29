@@ -9,14 +9,6 @@ var jsonDictionary = JSON.parse(cleanJsonFromHTML);
 $('#resolution1').text('resolution1 Pie Chart')
 $('#resolution2').text('resolution2 Pie Chart')
 
-// open markup only if inner == 0
-// if version is OS disable settings mod if version is inner
-if('undefined'.localeCompare(jsonDictionary['inner']) != 0){
-    if(jsonDictionary['inner'] == '1'){
-        $("#setting").addClass('disabledfilter');
-
-    }
-}
 
 function optimize_message(message){
     var array = message.split(" ");
@@ -326,8 +318,7 @@ function predict(){
                             area_hist_bar = updateChart(area_hist_bar, response['areas']);
                         if('undefined'.localeCompare(response['recom']) != 0)
                             $('#recom').val(response['recom']);
-                        if('undefined'.localeCompare(response['inner']) != 0)
-                            resetDisable(response['inner']);
+                        resetDisable(0);
                         if('undefined'.localeCompare(response['single_mod']) != 0 && 'undefined'.localeCompare(response['multiple_mod']) != 0)
                             lock_mode(response['single_mod'], response['multiple_mod'])
                         if('undefined'.localeCompare(response['descr']) != 0)
@@ -356,46 +347,6 @@ function updateChart(chart, response){
     return chart;
 }
 
-
-function submitPrediction(){
-    if(!validatePreSubmit()){
-        $('#predictionForm').find(':submit').click();
-        return;
-    }
-    else{
-        $.ajax({
-            type: "POST",
-            url: '/single_description_mode/submit_predictions',
-            beforeSend: setLoad(),
-            data: $('#predictionForm').serialize(),
-            success: function(response, status, xhr){
-                if (response.redirect) {
-                     window.location.href = response.redirect;
-                   }
-                else{
-                    var ct = xhr.getResponseHeader("content-type") || "";
-                    if (ct.indexOf('html') > -1)
-                        document.write(response);
-                    else {
-                         if('undefined'.localeCompare(response['descr']) != 0)
-                            $('#descr').val(response['descr'])
-                         $('html, body').animate({scrollTop: 0}, 600);
-                         $('#us-priority').val('');
-                         $('#descr').val('');
-                         $('#warning').text(response['msg']);
-                         $('#descr').highlightWithinTextarea('destroy');
-                         hideLoad();
-                        }
-                    }
-                },
-            error: function(error) {
-                $('#descr').val('error of inserting data to database');
-                $('html, body').animate({scrollTop: 0}, 600);
-                hideLoad();
-                        }
-            });
-        }
-    }
 
 
 $('select.highlight').on("change", function selectHighlightChange(){
@@ -478,10 +429,11 @@ function forEach(mas){
     for(key in mas){
         addOption("[id='"+key+"']",mas[key]);
     }
+    $('#us-priority').find('option').remove();
+    addOption("[id=us-priority]",mas['Priority']);
 }
 
 function categoricFields(jsonDictionary){
-    console.log(jsonDictionary)
     forEach(jsonDictionary);
 }
 
@@ -523,7 +475,6 @@ function highlight_terms(data){
                                         'className': colors[data['field']['name']]
                                         })
                     }
-                    console.log(highlight)
                     $('#descr').highlightWithinTextarea({
                                                         highlight: highlight
                                                             });

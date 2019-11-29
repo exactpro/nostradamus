@@ -5,15 +5,6 @@ var cleanJsonFromHTML = cleanJsonFromHTML1.replace(/&#34;/g,'"');
 var jsonDictionary = JSON.parse(cleanJsonFromHTML);
 
 
-// open markup only if inner == 0
-// if version is OS disable settings mod if version is inner
-if('undefined'.localeCompare(jsonDictionary['inner']) != 0){
-    if(jsonDictionary['inner'] == '1'){
-        $("#setting").addClass('disabledfilter');
-
-    }
-}
-
 
 // set default name for resolution charts
 $('#resolution1').text('resolution1 Pie Chart')

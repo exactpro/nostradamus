@@ -30,7 +30,6 @@ from pathlib import Path
 from main.session import check_session
 from main.data_analysis import transform_series, get_predictions_table
 from main.data_converter import unpack_dictionary_val_to_list
-from main.db import DatabaseProcessor
 
 from main.file_processor import save_predictions, check_file_extensions, convert_to_dataframe
 from main.validation import document_verification
@@ -95,8 +94,7 @@ def multiple_description_mode():
                     'file_size': session['config.ini']['REQUIREMENTS']['max_file_size'],
                     'message': error_message,
                     'single_mod': signle_mode_status,
-                    'multiple_mod': multiple_mode_status,
-                    'inner': session['config.ini']['APP']['version']}))
+                    'multiple_mod': multiple_mode_status}))
 
 
 @multiple_mode.route('/multiple_mode/upload', methods=['POST', 'GET'])
@@ -136,14 +134,6 @@ def upload_file():
                             df.index)))]
 
             predictions_table = dict([el.get() for el in predictions_table])
-
-            if session['config.ini']['APP']['version'] == 1:
-                for key in predictions_table:
-                    DatabaseProcessor(
-                        session['connections.ini']['ENV']['connection_parameters_insert_local']).execute_query(
-                        '''INSERT INTO {} (issue_key, nastradamusPrediction) VALUES ('{}', {})'''.format(
-                            'multiple_predictions', key, Json(
-                                predictions_table[key])))
 
             charts = {}
             charts['area_of_testing'] = {
@@ -185,16 +175,14 @@ def upload_file():
                         'plot': charts,
                         'file_size': session['config.ini']['REQUIREMENTS']['max_file_size'],
                         'single_mod': signle_mode_status,
-                        'multiple_mod': multiple_mode_status,
-                        'inner': session['config.ini']['APP']['version']}))
+                        'multiple_mod': multiple_mode_status}))
 
         except Exception as e:
             return render_template('multiplePage.html',
                                    json=json.dumps({'username': session['username'],
                                                     'message': str(e),
                                                     'single_mod': signle_mode_status,
-                                                    'multiple_mod': multiple_mode_status,
-                                                    'inner': session['config.ini']['APP']['version']}))
+                                                    'multiple_mod': multiple_mode_status}))
 
 @multiple_mode.route('/multiple_mode/save', methods=['GET', 'POST'])
 def save_file():
@@ -228,7 +216,6 @@ def save_file():
                                    json=json.dumps({'username': session['username'],
                                                     'message': str(e),
                                                     'fields': session['config.ini']['DEFECT_ATTRIBUTES'],
-                                                    'inner': session['config.ini']['APP']['version'],
                                                     'single_mod': signle_mode_status,
                                                     'multiple_mod': multiple_mode_status,
                                                     'is_train': session['is_train']}))

@@ -37,7 +37,7 @@
                 <div class="row">
                     <div class="col-md-7 logo-block-header">
                         <img src="{{url_for('static',filename='img/logo_dark.png')}}" />
-                        <span class="version">6.2.1</span>
+                        <span class="version">6.2.2</span>
                     </div>
                     <div class="col-md-4 user-info-block">
                         <div id='username'></div>
@@ -146,11 +146,11 @@
                     </div>
                     <div class="row">
                         <div class="col-md-6 settings-wrap" >
-                            <div class="col-md-12 settings-wrap" style="margin:0; padding:0;">
+                            <div class="col-md-12">
                                 <div class="title" data-toggle="tooltip"><span id="i_refering_to">Referring to</span><span class="asterisk">*</span></div>
                                 <div class="form-group settings-form-field">
                                     <div class="col-md-12">
-                                        <select id="referring_to" name="referring_to" multiple="multiple"
+                                        <select id="referring_to" name="referring_to" multiple="single"
                                             placeholder="Resolved" data-select2-id="Status" tabindex="-1"
                                             class="select2-hidden-accessible col-md-12" aria-hidden="true" required>
                                         </select>
