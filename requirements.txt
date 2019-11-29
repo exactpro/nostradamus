@@ -8,11 +8,8 @@ scipy==1.1.0
 tensorflow==1.13.1
 tensorflow-estimator==1.13.0
 flask==1.0.2
-flask_redisSession==0.1.2.0
-redis==2.10.6
 ldap3==2.6.1
 lxml==4.4.1
 flask_bootstrap==3.3.7.1
-psycopg2==2.8.4
 flask_sessionstore==0.4.5
 swifter==0.295

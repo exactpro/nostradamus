@@ -21,7 +21,6 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, s
 import os
 import json
 import pandas
-import psycopg2
 import multiprocessing
 import time
 from pathlib import Path
@@ -34,7 +33,6 @@ from main.data_converter import unpack_dictionary_val_to_list
 from main.file_processor import save_predictions, check_file_extensions, convert_to_dataframe
 from main.validation import document_verification
 from main.config_processor import check_predictions_parameters_config
-from psycopg2.extras import Json
 
 multiple_mode = Blueprint('multiple_mode', __name__)
 

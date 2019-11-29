@@ -19,15 +19,10 @@
 
 from ldap3 import Server, Connection, SUBTREE, ALL, core
 import time
-from redis import StrictRedis, exceptions
 import os
 import shutil
-import configparser
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 from pathlib import Path
-
-from main.exceptions import LDAPError
-
 
 
 def check_session():
@@ -48,46 +43,6 @@ def is_session_expired():
             return True
     else:
         return True
-
-
-config = configparser.ConfigParser()
-config.read(str(Path(__file__).parents[1]) + '/extensions/' + 'connections.ini')
-
-
-def check_user(username, password, domain_settings):
-    """ Checks if the user is registered.
-
-        Parameters:
-            username (str): username;
-            password (str): password;
-            domain_settings (dict): domain' settings.
-
-        Returns:
-            Boolean value.
-
-    """
-    server = Server(domain_settings['ad_server'], get_info=ALL)
-    conn = Connection(
-        server,
-        user=username +
-        domain_settings['ad_domain_suffix'],
-        password=password,
-        auto_bind='NONE',
-        version=3,
-        authentication='SIMPLE',
-        client_strategy='SYNC',
-        auto_referrals=True,
-        check_names=True,
-        read_only=False,
-        lazy=False,
-        raise_exceptions=False)
-    try:
-        if not conn.bind():
-            raise LDAPError('The username or password is incorrect')
-        else:
-            return True
-    except core.exceptions.LDAPPasswordIsMandatoryError:
-        raise LDAPError('The username or password is incorrect')
 
 
 def remove_folder(path):

@@ -36,7 +36,6 @@ from main.data_analysis import get_probabilities
 from main.cleaner import clean_description
 from main.data_converter import unpack_dictionary_val_to_list
 from main.session import check_session
-from psycopg2.extras import Json
 
 
 single_mode = Blueprint('single_mode', __name__)

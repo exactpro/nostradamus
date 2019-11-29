@@ -16,8 +16,6 @@ import os
 import shutil
 from pathlib import Path
 from werkzeug.utils import secure_filename
-from psycopg2.extras import Json
-import psycopg2
 import csv
 from decimal import Decimal
 from configparser import ConfigParser
