@@ -17,12 +17,9 @@
 '''
 
 
-from ldap3 import Server, Connection, SUBTREE, ALL, core
-import time
 import os
 import shutil
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session
-from pathlib import Path
 
 
 def check_session():
