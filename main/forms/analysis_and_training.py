@@ -27,6 +27,7 @@ from decimal import Decimal
 from datetime import datetime as dt
 from pathlib import Path
 from time import strftime
+from zipfile import ZipFile
 
 from main.data_analysis import rollback_filter, filter_dataframe, mark_up_series, mark_up_other_data, create_top_terms_file, calculate_significant_terms, transform_series, check_bugs_count, get_statistical_info, get_records_count, get_frequently_terms
 from main.validation import is_subset
@@ -73,7 +74,7 @@ def get_categorical_fields(dataframe, defect_attributes, referring_to_fields):
     prepared_fields = load_categorical_defect_attributes(dataframe, defect_attributes['mandatory_attributes'])
     prepared_fields.update(load_categorical_referring_to(dataframe, referring_to_fields))
     prepared_fields.update(load_categorical_defect_attributes(dataframe, defect_attributes['special_attributes']))
-    prepared_fields.update({'logging_level': ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']})
+    prepared_fields.update({'logging_level': ['INFO', 'ERROR', 'DO NOT LOG']})
     return prepared_fields
 
 
@@ -172,14 +173,14 @@ def upload_file():
                         df['Reporter'].tolist()] for name in full_name})
             
             session['config.ini']['DEFECT_ATTRIBUTES']['areas_of_testing'] = {}
+            session['config.ini']['DEFECT_ATTRIBUTES']['areas_of_testing'] = {
+                area.strip(): {
+                    'series_name': area.strip() + '_lab',
+                    'elements': session['config.ini']['DEFECT_ATTRIBUTES']['mark_up_attributes'][area]['name'].strip(),
+                    'gui_name': area.strip()
+                } for area in session['config.ini']['DEFECT_ATTRIBUTES']['mark_up_attributes']
+            }
             if session['markup']:
-                session['config.ini']['DEFECT_ATTRIBUTES']['areas_of_testing'] = {
-                    area.strip(): {
-                        'series_name': area.strip() + '_lab',
-                        'elements': session['config.ini']['DEFECT_ATTRIBUTES']['mark_up_attributes'][area]['name'].strip(),
-                        'gui_name': area.strip()
-                    } for area in session['config.ini']['DEFECT_ATTRIBUTES']['mark_up_attributes']
-                }
                 for area in session['config.ini']['DEFECT_ATTRIBUTES']['areas_of_testing']:
                     df = mark_up_series(
                         df,
@@ -189,11 +190,11 @@ def upload_file():
                     )
                 df = mark_up_other_data(df, [session['config.ini']['DEFECT_ATTRIBUTES']['areas_of_testing'][area]['series_name']
                                             for area in session['config.ini']['DEFECT_ATTRIBUTES']['areas_of_testing'] if area != 'Other'])
-                session['config.ini']['DEFECT_ATTRIBUTES']['areas_of_testing']['Other'] = {
-                    'series_name': 'Other_lab', 'elements': 'Other', 'gui_name': 'Other'}
-
                 df.to_pickle(session['backup']['source_df'])
                 df.to_pickle(session['backup']['filtered_df'])
+            if session['markup']:
+                session['config.ini']['DEFECT_ATTRIBUTES']['areas_of_testing']['Other'] = {
+                    'series_name': 'Other_lab', 'elements': 'Other', 'gui_name': 'Other'}
 
             session['cache'][session['session_id']] = get_analysis_data(df,
                                             session['config.ini']['DEFECT_ATTRIBUTES'],
@@ -256,6 +257,17 @@ def analysis_and_training():
         multiple_mode_status = predictions_parameters_verification['multiple_mode']
         signle_mode_status = predictions_parameters_verification['single_mode']
         error_message = predictions_parameters_verification['err_message']
+
+        
+        session['config.ini']['DEFECT_ATTRIBUTES']['areas_of_testing'] = {}  
+        session['config.ini']['DEFECT_ATTRIBUTES']['areas_of_testing'] = {
+            area.strip(): {
+                'series_name': area.strip() + '_lab',
+                'elements': session['config.ini']['DEFECT_ATTRIBUTES']['mark_up_attributes'][area]['name'].strip(),
+                'gui_name': area.strip()
+            } for area in session['config.ini']['DEFECT_ATTRIBUTES']['mark_up_attributes']
+        }
+
         if not is_file_exist(session['backup']['source_df']):
             session['is_train'] = False
             return render_template('filterPage.html', json=json.dumps({
@@ -271,15 +283,7 @@ def analysis_and_training():
             if session['new_settings']:
                 df = pandas.read_pickle(
                     session['backup']['source_df'])
-                session['config.ini']['DEFECT_ATTRIBUTES']['areas_of_testing'] = {}
                 if session['markup']:
-                    session['config.ini']['DEFECT_ATTRIBUTES']['areas_of_testing'] = {
-                        area.strip(): {
-                            'series_name': area.strip() + '_lab',
-                            'elements': session['config.ini']['DEFECT_ATTRIBUTES']['mark_up_attributes'][area]['name'].strip(),
-                            'gui_name': area.strip()
-                        } for area in session['config.ini']['DEFECT_ATTRIBUTES']['mark_up_attributes']
-                    }
                     for area in session['config.ini']['DEFECT_ATTRIBUTES']['areas_of_testing']:
                         df = mark_up_series(
                             df,
@@ -289,8 +293,7 @@ def analysis_and_training():
                         )
                     df = mark_up_other_data(df, [session['config.ini']['DEFECT_ATTRIBUTES']['areas_of_testing'][area]['series_name']
                                                 for area in session['config.ini']['DEFECT_ATTRIBUTES']['areas_of_testing'] if area != 'Other'])
-                    session['config.ini']['DEFECT_ATTRIBUTES']['areas_of_testing']['Other'] = {
-                        'series_name': 'Other_lab', 'elements': 'Other', 'gui_name': 'Other'}
+                   
                     df.to_pickle(session['backup']['source_df'])
                     df.to_pickle(session['backup']['filtered_df'])
 
@@ -310,6 +313,10 @@ def analysis_and_training():
                 session['new_settings'] = False
                 session['markup'] = 1 if ('1' if session['config.ini']['DEFECT_ATTRIBUTES']['mark_up_attributes'] else '0') == '1' else 0
                 session['is_train'] = True if session['markup'] else False
+            if session['markup']:
+                session['config.ini']['DEFECT_ATTRIBUTES']['areas_of_testing']['Other'] = {
+                        'series_name': 'Other_lab', 'elements': 'Other', 'gui_name': 'Other'}
+            
             return render_template('filterPage.html', json=json.dumps({
                 'username': session['username'],
                 'message': session['filename'] + '\n' + error_message,
@@ -632,13 +639,13 @@ def train():
             source_df = pandas.read_pickle(session['backup']['filtered_df'])
             filtered_df = pandas.read_pickle(session['backup']['filtered_df'])
             train_model(
-                str(Path(__file__).parents[2]) + '/model/',
+                str(Path(__file__).parents[2]) + '/models/selected/',
                 session['backup']['filtered_df'],
                 session['config.ini']['DEFECT_ATTRIBUTES']['areas_of_testing'],
                 session['config.ini']['DEFECT_ATTRIBUTES']['resolution'])
             load_config_to_session(str(
                 Path(__file__).parents[2]) +
-                '/model/' +
+                '/models/selected/' +
                 'predictions_parameters.ini')
 
             create_top_terms_file(
@@ -660,7 +667,43 @@ def train():
 
             session['cache'][session['session_id']]['statistical_info'] = dict(session['cache'][session['session_id']]['statistical_info'],
                 **get_records_count(filtered_df=filtered_df, source_df=source_df))
-                
+            
+            path_archived_models = str(Path(__file__).parents[2]) + r'/models/archived/'
+            if not os.path.exists(path_archived_models):
+                create_folder(path_archived_models)    
+            
+            if session['config.ini']['MACHINE_LEARNING']['selected_set_models']:
+                session['config.ini']['MACHINE_LEARNING']['set_models'][session['config.ini']['MACHINE_LEARNING']['selected_set_models']] = 'false'
+            session['config.ini']['MACHINE_LEARNING']['selected_set_models'] = 'no_name'
+            
+            from main.config_processor import Configuration
+            creator = Configuration('{}/config.ini'.format(str(Path(__file__).parents[2])))
+            creator.set_option(
+                'MACHINE_LEARNING',
+                'selected_set_models',
+                "no_name"
+            )
+            session['config.ini']['MACHINE_LEARNING']['set_models']['no_name'] = 'true'
+            creator.set_option(
+                'MACHINE_LEARNING',
+                'set_models',
+                str(session['config.ini']['MACHINE_LEARNING']['set_models'])
+            )
+            load_config_to_session(str(
+                Path(__file__).parents[2]) +
+                'config.ini')
+            
+            creator = Configuration('{}/predictions_parameters.ini'.format(str(Path(__file__).parents[2]) + '/models/selected/'))
+            creator.set_option(
+                'predictions_parameters',
+                'mark_up_attributes',
+                str(session['config.ini']['DEFECT_ATTRIBUTES']['mark_up_attributes'])
+            )
+
+            with ZipFile(os.path.join(str(Path(__file__).parents[2]) + '/models/archived/', "no_name.zip"), 'w') as zf:
+                for dirpath, dirnames, filenames in os.walk(str(Path(__file__).parents[2]) + '/models/selected/'):
+                    for filename in filenames:
+                        zf.write(os.path.join(str(Path(__file__).parents[2]) + '/models/selected/', filename), arcname=filename)
 
             # predictions_parameters.ini file verification
             predictions_parameters_verification = check_predictions_parameters_config()

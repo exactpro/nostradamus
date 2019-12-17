@@ -20,6 +20,7 @@
 import logging
 import pickle
 import os
+import traceback
 from sklearn.model_selection import cross_val_predict
 from sklearn.metrics import classification_report, accuracy_score, roc_auc_score, matthews_corrcoef
 import functools
@@ -65,16 +66,12 @@ def get_level(logger, level):
             logging level object.
 
     """
-    if level == 'DEBUG':
-        return logging.DEBUG
-    elif level == 'INFO':
+    if level == 'INFO':
         return logging.INFO
-    elif level == 'WARNING':
-        return logging.WARNING
     elif level == 'ERROR':
         return logging.ERROR
-    elif logging == 'CRITICAL':
-        return logging.CRITICAL
+    elif logging == 'DO NOT LOG':
+        return None
 
 
 def load_base_loggers_config(func):
@@ -87,11 +84,14 @@ def load_base_loggers_config(func):
             logger (Loger): logger object.
 
     """
+    
     logger = logging.getLogger('{func}'.format(func=func.__name__))
-    logger.setLevel(
-        get_level(
+    level = get_level(
             logger,
-            session['config.ini']['DEFECT_ATTRIBUTES']['logging_level'][0]))
+            session['config.ini']['DEFECT_ATTRIBUTES']['logging_level'][0])
+    if not level:
+        return None
+    logger.setLevel(level)
     if not len(logger.handlers):
         date = datetime.date(datetime.today())
         if not is_file_exist('logs/' + str(date) + '/'):
@@ -117,8 +117,15 @@ def log(func):
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
         logger = load_base_loggers_config(func)
+        if not logger:
+            return func(*args, **kwargs)
         start = datetime.now()
-        func_result = func(*args, **kwargs)
+        try:
+            func_result = func(*args, **kwargs)
+        except Exception as e:
+            logger.error(traceback.format_exc())
+            raise e
+
         logger.info(
             'function: {module}.{name}, arguments:{name}({args},{kwargs}) \
             \ntotal execution date: {date}\
@@ -142,15 +149,26 @@ def log_train(func):
     """
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
-        descr, areas, model_path = args[0], args[1], args[len(args) - 1]
         logger = load_base_loggers_config(func)
+
+        if not logger:
+            func(*args)
+            return
+
+        descr, areas, model_path = args[0], args[1], args[len(args) - 1]
         target_names = [str(x) for x in range(len(areas.unique().tolist()))]
         start = datetime.now()
-        func(*args)
+        
+        try:
+            func(*args)
+        except Exception as e:
+            logger.error(traceback.format_exc())
+            raise e
+
         prediction = __get_prediction(descr, areas, model_path)
-        if areas.name.split('_')[-1] == 'lab':
-            result = '\ntotal execution date: {date} \nareas_name: {areas_name} \n{reports}'.format(
-                date=datetime.now() - start,
+        if not set(target_names).difference(set(['0', '1'])):
+            result = '\ntotal execution time: {time} \nareas_name: {areas_name} \n{reports}'.format(
+                time=datetime.now() - start,
                 areas_name=areas.name,
                 reports=classification_report(
                     areas,
@@ -166,13 +184,20 @@ def log_train(func):
                                 areas,
                                 prediction)) + '\n')
         else:
-            result = '{}'.format(
-                '\n areas_name: ' + areas.name + '\n' +
-                classification_report(
-                    areas,
+            areas_name = ''
+            if 'priority' in areas.name.lower():
+                areas_name = 'priority'
+            elif 'ttr' in areas.name.lower():
+                areas_name = 'ttr'
+
+            result = '\ntotal execution time: {time} \nareas_name: {areas_name} \n{reports}'.format(
+                time=datetime.now() - start,
+                areas_name=areas_name,
+                reports=classification_report(
+                    sorted(areas),
                     prediction,
                     target_names=[
-                        str(el) for el in areas.unique().tolist()]))
+                        str(el) for el in session['predictions_parameters.ini']['predictions_parameters'][areas_name + '_classes']]))
         logger.info(result)
     return wrapped
 

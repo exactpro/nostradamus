@@ -27,6 +27,7 @@ import pandas
 from werkzeug.utils import secure_filename
 from os.path import exists
 from os import makedirs
+import os
 from pathlib import Path
 from sklearn import feature_selection
 from sklearn.feature_selection import SelectKBest
@@ -39,6 +40,7 @@ from pickle import dump
 from pandas import read_pickle, Categorical, qcut, get_dummies
 from flask import session
 from pathlib import Path
+from zipfile import ZipFile
 
 
 def get_models_names():
@@ -50,7 +52,7 @@ def get_models_names():
     areas_of_testing = session['predictions_parameters.ini']['predictions_parameters']['areas_of_testing_classes']
     resolution = unpack_dictionary_val_to_list(session['config.ini']['DEFECT_ATTRIBUTES']['resolution'])
     models = [model for container in [areas_of_testing, resolution]
-              for model in container]
+            for model in container]
     return models
 
 
@@ -65,7 +67,7 @@ def are_models_exist(models):
     for model in models:
         model = secure_filename(model)
         if not is_file_exist(
-                str(Path(__file__).parents[1]) + '/model/' + model + '.sav'):
+                str(Path(__file__).parents[1]) + '/models/selected/' + model + '.sav'):
             not_found_models.append(model + '.sav')
     if len(not_found_models) > 0:
         raise ModelsNotFound(
@@ -270,7 +272,7 @@ def write_classes(filtered_classes):
     """
     from main.config_processor import Configuration
     config = Configuration(
-        str(Path(__file__).parents[1]) + '/model/' + 'predictions_parameters.ini')
+        str(Path(__file__).parents[1]) + '/models/selected/' + 'predictions_parameters.ini')
     # config file creation
     config.create_config('predictions_parameters')
 
@@ -285,6 +287,7 @@ def write_classes(filtered_classes):
                     filtered_classes[_class]))
 
 
+@log
 def get_k_neighbors(series):
     classes = series.unique().tolist()
     min_count = len(series[lambda x: x == classes[0]])
@@ -324,6 +327,12 @@ def train_model(
 
     # model/ folder cleanup
     remove_models()
+
+    # updated predictions parameters writing
+    write_classes(filtered_classes)
+
+    from main.config_processor import load_config_to_session
+    load_config_to_session(str(Path(__file__).parents[1]) + '/models/selected/' + 'predictions_parameters.ini')
 
     smt = SMOTE(
         ratio='minority',
@@ -378,7 +387,4 @@ def train_model(
                               50,
                               svm_imb,
                               model_path + secure_filename(resol))
-
-    # updated predictions parameters writing
-    write_classes(filtered_classes)
 

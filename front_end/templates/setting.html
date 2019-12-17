@@ -37,7 +37,7 @@
                 <div class="row">
                     <div class="col-md-7 logo-block-header">
                         <img src="{{url_for('static',filename='img/logo_dark.png')}}" />
-                        <span class="version">6.2.2</span>
+                        <span class="version">6.2.3</span>
                     </div>
                     <div class="col-md-4 user-info-block">
                         <div id='username'></div>
@@ -118,12 +118,13 @@
         <!-- Settings page -->
         <section class="main-section">
             <div class="container">
-                <form class="form-horizontal form-custom" onsubmit="return false" id="setting_form">
+                <form class="form-horizontal form-custom" onsubmit="return false" id="setting_form" enctype=multipart/form-data>
                     <div class="row">
                         <div class="col-md-12">
                             <div id="warning" class="login_error"></div>
                         </div>
                     </div>
+                    <div class="title" data-toggle="tooltip"><h2>DEFECT ATTRIBUTES</h2></div>
                     <div class="row">
                         <div class="col-md-12 settings-wrap">
                             <div class="title" data-placement="bottom"><span id="i_mandatory_fields">Mandatory Fields</span></div>
@@ -138,24 +139,32 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-12 settings-wrap">
-                            <button id='add_row_areas' class="btn" type="button">+</button>
-                            <div class="title" data-toggle="tooltip"><span id="i_area_of_testing_fields">Area of testing</span></div>
-                            <div id='mark_up_attributes'></div>
-                        </div>
-                    </div>
-                    <div class="row">
                         <div class="col-md-6 settings-wrap" >
-                            <div class="col-md-12">
-                                <div class="title" data-toggle="tooltip"><span id="i_refering_to">Referring to</span><span class="asterisk">*</span></div>
-                                <div class="form-group settings-form-field">
-                                    <div class="col-md-12">
-                                        <select id="referring_to" name="referring_to" multiple="single"
-                                            placeholder="Resolved" data-select2-id="Status" tabindex="-1"
-                                            class="select2-hidden-accessible col-md-12" aria-hidden="true" required>
-                                        </select>
+                            <div class="col-md-12 settings-wrap" style="margin:0; padding:0;">
+                                <div class="col-md-6">
+                                    <div class="title" data-toggle="tooltip"><span id="i_refering_to">Referring to</span><span class="asterisk">*</span></div>
+                                    <div class="form-group settings-form-field">
+                                        <div class="col-md-12">
+                                            <select id="referring_to" name="referring_to" multiple="single"
+                                                placeholder="Resolved" data-select2-id="Status" tabindex="-1"
+                                                class="select2-hidden-accessible col-md-12" aria-hidden="true" required>
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
+                                <div class="col-md-6">
+                                    <div class="title" data-toggle="tooltip"><span id="i_loggings_level">Logging level</span></div>
+                                    <div class="form-group settings-form-field">
+                                        <div class="col-md-12">
+                                            <select id="logging_level" name="logging_level"
+                                                tabindex="-1"
+                                                class="js-example-basic-single col-md-12" required>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-12 settings-wrap" style="margin:0; padding:0;">
                             </div>
                             <div class="col-md-12 settings-wrap" style="margin:0; padding:0;">
                                 <div class="title" data-toggle="tooltip"><span id="i_resolution_settings_for_sm">Resolution Settings for Single Mode</span><span class="asterisk">*</span></div>
@@ -195,6 +204,22 @@
                             <div id='multiple_mode_attributes'></div>
                         </div>
                     </div>
+                    <div class="title" data-toggle="tooltip"><h2>TRAINING</h2></div>
+                    <div class="row">
+                        <div class="col-md-12 settings-wrap">
+                            <button id='add_row_model' class="btn" type="button">+</button>
+                            <input class="not-visible" id="input_file" type="file" name="file" accept=".zip">
+                            <div class="title" data-toggle="tooltip"><span id="i_models">Set Models</span></div>
+                            <div id='set_models'></div>
+                        </div>
+                    </div>
+                    <div class="row">
+                            <div class="col-md-12 settings-wrap">
+                                <button id='add_row_areas' class="btn" type="button">+</button>
+                                <div class="title" data-toggle="tooltip"><span id="i_area_of_testing_fields">Area of testing</span></div>
+                                <div id='mark_up_attributes'></div>
+                            </div>
+                        </div>
                     <div class="row">
                         <button id='submit_settings' class="btn btn-main-style btn-big-settings btn-turquoise floated"
                             type="submit">Submit settings</button>

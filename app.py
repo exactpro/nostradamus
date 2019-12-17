@@ -67,9 +67,9 @@ def home():
         load_base_config()
         load_config_to_session('config.ini')
         if is_file_exist(
-                str(Path(__file__).parents[0]) + '/model/' + 'predictions_parameters.ini', check_size=True):
+                str(Path(__file__).parents[0]) + '/models/selected/' + 'predictions_parameters.ini', check_size=True):
             load_config_to_session(
-                str(Path(__file__).parents[0]) + '/model/' + 'predictions_parameters.ini')
+                str(Path(__file__).parents[0]) + '/models/selected/' + 'predictions_parameters.ini')
 
         if request.method == 'GET':
             if is_session_expired():

@@ -111,7 +111,10 @@
     }
     .btn--block {
         margin: 0;
-    }    
+    } 
+    .areas_title {
+        font-weight: 500;
+    }   
     .title {
         font-weight: 300;
     }

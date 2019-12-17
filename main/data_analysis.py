@@ -261,14 +261,14 @@ def get_predictions_table(
     defect_predictions['Priority'] = df['Priority'][index]
     ttr_probabilities = get_probabilities(
         df['Description_tr'][index], prediction_parameters['ttr_classes'], str(
-            Path(__file__).parents[1]) + '/model/' + 'ttr')
+            Path(__file__).parents[1]) + '/models/selected/' + 'ttr')
 
     defect_predictions['ttr'] = max(
         ttr_probabilities,
         key=ttr_probabilities.get)
     for resolution in resolutions:
         resolution_probabilities = get_probabilities(df['Description_tr'][index], prediction_parameters[resolution.lower(
-        ) + '_classes'], str(Path(__file__).parents[1]) + '/model/' + secure_filename(resolution))
+        ) + '_classes'], str(Path(__file__).parents[1]) + '/models/selected/' + secure_filename(resolution))
 
         defect_predictions[resolution] = (
             max(resolution_probabilities, key=resolution_probabilities.get))
@@ -276,7 +276,7 @@ def get_predictions_table(
     for area in areas_of_testing:
         area_probabilities = get_probabilities(
             df['Description_tr'][index], prediction_parameters['binary_classes'], str(
-                Path(__file__).parents[1]) + '/model/' + secure_filename(area))
+                Path(__file__).parents[1]) + '/models/selected/' + secure_filename(area))
         areas_probabilities.update({area: float(area_probabilities[1])})
 
     defect_predictions['area_of_testing'] = [
@@ -381,7 +381,7 @@ def create_top_terms_file(df, resolutions, priorities, areas_of_testing):
     top_terms = pandas.DataFrame(
         dict([(k, pandas.Series(v)) for k, v in top_terms.items()]))
     top_terms.to_csv(
-        str(Path(__file__).parents[1]) + '/model/' + 'top_terms.csv', index=False)
+        str(Path(__file__).parents[1]) + '/models/selected/' + 'top_terms.csv', index=False)
 
 
 import swifter

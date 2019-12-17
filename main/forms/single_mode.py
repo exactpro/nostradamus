@@ -104,17 +104,17 @@ def predict():
 
         session['probabilities']['priority'] = get_probabilities(
             cleaned_descr, session['predictions_parameters.ini']['predictions_parameters']['priority_classes'],
-            str(Path(__file__).parents[2]) + '/model/' + 'priority')
+            str(Path(__file__).parents[2]) + '/models/selected/' + 'priority')
 
         session['probabilities']['ttr_probability'] = get_probabilities(
             cleaned_descr, session['predictions_parameters.ini']['predictions_parameters']['ttr_classes'],
-            str(Path(__file__).parents[2]) + '/model/' + 'ttr')
+            str(Path(__file__).parents[2]) + '/models/selected/' + 'ttr')
         
         session['probabilities']['resolution_probability'] = {
             resolution: get_probabilities(
                 cleaned_descr,
                 session['predictions_parameters.ini']['predictions_parameters'][resolution.lower() + '_classes'],
-                str(Path(__file__).parents[2]) + '/model/' + secure_filename(resolution)) for resolution in unpack_dictionary_val_to_list(
+                str(Path(__file__).parents[2]) + '/models/selected/' + secure_filename(resolution)) for resolution in unpack_dictionary_val_to_list(
                 session['config.ini']['DEFECT_ATTRIBUTES']['resolution'])
         }
 
@@ -124,7 +124,7 @@ def predict():
                 session['predictions_parameters.ini']['predictions_parameters']['binary_classes'],
                 str(
                     Path(__file__).parents[2]) +
-                '/model/' +
+                '/models/selected/' +
                 secure_filename(area))[1] for area in session['predictions_parameters.ini']['predictions_parameters']['areas_of_testing_classes']}
 
         filtered_areas = [
@@ -174,7 +174,7 @@ def highlight():
                 top_terms = pandas.read_csv(
                     str(
                         Path(__file__).parents[2]) +
-                    '/model/' +
+                    '/models/selected/' +
                     'top_terms.csv')[
                     highlighting_field[1]].dropna().tolist()
                 if probabilities[highlighting_field[1]] > 0.05:

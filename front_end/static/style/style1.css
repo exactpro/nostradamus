@@ -267,6 +267,7 @@ nav.sidenav form {
     height: 55px;
     width: 150px;
 }
+
 /*Login Page*/
 .login-page {
     background-image: url(../img/1.png);
@@ -885,7 +886,7 @@ select.empty-value {
 .tabulator-add-button:hover {
     text-decoration: none;
 }
-#add_row, #add_row_areas {
+#add_row, #add_row_areas, #add_row_model {
     position: absolute;
     right: 15px;
     bottom: 42px;
@@ -905,12 +906,16 @@ select.empty-value {
 #add_row:focus,
 #add_row_areas:hover,
 #add_row_areas:active,
-#add_row_areas:focus
+#add_row_areas:focus,
+#add_row_model:hover,
+#add_row_model:active,
+#add_row_model:hover
 {
     text-decoration: none !important;
 }
 #add_row:hover,
-#add_row_areas:hover
+#add_row_areas:hover,
+#add_row_model:hover
 {
     background-color: rgba(63,151,159,0.9);
 }

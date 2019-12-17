@@ -126,7 +126,7 @@ def check_defect_attributes(defect_attributes):
         if ('Areas of testing' in defect_attributes['referring_to']) and not (is_empty(defect_attributes['mark_up_attributes'])):
             return False, 'Oops! Area of testing section is empty.\
             Please specify areas of testing before assigning this element to Referring to section.'
-        if 'Areas of testing' in defect_attributes['referring_to'] and (not is_file_exist(str(Path(__file__).parents[1]) + '/model/' + 'top_terms.csv', check_size=True)):
+        if 'Areas of testing' in defect_attributes['referring_to'] and (not is_file_exist(str(Path(__file__).parents[1]) + '/models/selected/' + 'top_terms.csv', check_size=True)):
                 return False, 'Oops! Areas of testing couldn\'t be added to Referring to field while models aren\'t trained.' \
                     '\nPlease train models firstly.'
 
@@ -143,8 +143,8 @@ def check_defect_attributes(defect_attributes):
 
 def check_predictions_parameters_config():
     try:
-        config_exist = is_file_exist(
-            str(Path(__file__).parents[1]) + '/model/' + 'predictions_parameters.ini')
+        config_exist = os.path.exists(
+            str(Path(__file__).parents[1]) + '/models/selected/' + 'predictions_parameters.ini')
         if not config_exist:
             return {
                 'single_mode': False,
@@ -159,7 +159,7 @@ def check_predictions_parameters_config():
             # checking top_terms.csv file existence which is required 
             # for single description mode
             if not is_file_exist(
-                    str(Path(__file__).parents[1]) + '/model/' + 'top_terms.csv'):
+                    str(Path(__file__).parents[1]) + '/models/selected/' + 'top_terms.csv'):
                 raise FileNotFoundError('Can\'t find top_terms.csv file.')
         return {'single_mode': True, 'multiple_mode': True, 'err_message': ''}
     except ModelsNotFound as err:

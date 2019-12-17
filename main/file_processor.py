@@ -22,6 +22,7 @@ import time
 from uuid import uuid4
 from os.path import exists, getsize, join, splitext
 from os import getcwd, listdir, chdir, remove
+import shutil
 from pandas import DataFrame, merge, read_csv
 from csv import writer, DictWriter
 from lxml import objectify
@@ -34,6 +35,14 @@ from pathlib import Path
 from main.data_converter import convert_date
 from main.validation import is_subset, is_in
 from main.data_analysis import reindex_dataframe, transform_series
+
+
+def delete_set_models(form_data, old_set_models, new_set_models):
+    delete_set = list(old_set_models.difference(new_set_models))
+    for file_name in delete_set:
+        if file_name == form_data.get('selected_models'):
+            shutil.rmtree(str(Path(__file__).parents[1]) + r'/models/selected/')
+        remove(str(Path(__file__).parents[1]) + r'/models/archived/' + file_name + '.zip')
 
 
 def check_file_extension(*filenames):
@@ -60,6 +69,20 @@ def check_file_extensions(files):
     """
     return all([ext in session['config.ini']['REQUIREMENTS']['file_extensions']
                 for ext in [file.filename.rsplit('.', 1)[1] for file in files]])
+
+def is_file_extensions_zip(files):
+    """ Checks whether the file extension is valid.
+
+        Parameters:
+            files (list): List of FileStorage objects.
+
+        Returns:
+            Boolean value.   
+    """
+    for file in files:
+        if splitext(file.filename)[-1] != '.zip':
+            return False, 'File "{}" has an invalid format'.format(os.path.splitext(file.filename)[0])
+    return True, ""
 
 
 def is_file_exist(*files, check_size=False):
@@ -122,7 +145,7 @@ def save_predictions(table, file_path):
 
 
 def remove_models():
-    models_dir = str(Path(__file__).parents[1]) + '/model/'
+    models_dir = str(Path(__file__).parents[1]) + '/models/selected/'
     for model in [join(models_dir, file) for file in listdir(
             models_dir) if file.endswith('.sav')]:
         remove(model)

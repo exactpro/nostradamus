@@ -4,7 +4,7 @@ var cleanJsonFromHTML1 = jsonFromHTML.replace(/"/g,'');
 var cleanJsonFromHTML = cleanJsonFromHTML1.replace(/&#34;/g,'"');
 // jsonDictionary is global variable which is used and overriding in many functions
 var jsonDictionary = JSON.parse(cleanJsonFromHTML);
-
+var form_data = new FormData()
 
 hideLoad()
 
@@ -61,6 +61,7 @@ $('#i_area_of_testing_fields').tooltip({
 
 
 $('#referring_to').select2({width:'100%'});
+$('#logging_level').select2({width:'100%'});
 
 // Disable default action on ENTER keypress
 document.addEventListener('keypress', function(event) {
@@ -210,6 +211,147 @@ function areaOfTestingTable(data){
 
 var area_of_testing_fields = areaOfTestingTable(jsonDictionary)
 
+function convert_set_models(set_models){
+    var result = []
+    for (key in set_models){
+        obj = {'name':key, 'is_choose':set_models[key]}
+        result.push(obj)
+    }
+    return result
+}
+
+function export_models(name){
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function(){
+        if (xhr.readyState == 4){
+            if (xhr.status == 200){
+                var arrayBuffer = xhr.response;
+                var byteArray = new Uint8Array(arrayBuffer)
+                var blob = new Blob([arrayBuffer], {type: "application/zip"});
+                var link = document.createElement('a');
+                link.href = window.URL.createObjectURL(blob);
+                link.download = name+".zip"
+                link.click();
+                return
+            }
+            else if (xhr.status == 302){
+                optimize_message("The model set has not been uploaded yet.");
+                $('html, body').animate({scrollTop: 0}, 600);
+            }
+        }
+    }
+    xhr.open('POST', '/export_models');
+    xhr.responseType = 'arraybuffer';
+    xhr.send(name);  
+}
+
+function set_models_table(){
+    return new Tabulator('#set_models', {
+        layout: 'fitColumns',
+        addRowPos:"bottom",
+        data: convert_set_models(jsonDictionary['set_models']),
+        columns: [
+            { formatter:'buttonCross', width:40, align:"center",sorter:"string", headerSort:false, cellClick:function(e, cell){
+                var files = form_data.getAll("file");
+                var i = 0
+                for (var i=0; i<files.length; i++){
+                    if (files[i].filename == cell.getValue()){
+                        break
+                    }
+                }
+                if (i < files.length){
+                    files.splice(i, 1);
+                    form_data.delete("file[]");
+                    $.each(files, function(i, v) {
+                        form_data.append("file[]", v);
+                    });
+                }
+                cell.getRow().delete()
+            }},
+            { title: 'Name', field: 'name', editable:false, editor:"input", formatter: function(cell, formatterParams, onRendered){
+                var names = $('#set_models').find('[tabulator-field="name"]:not(:first)')
+                if (names.length != 0){
+                    for (var i=0; i<names.length; i++){
+                        if (names[i].textContent == cell.getValue()){
+                            $(names[i]).css("border", "1px solid red")
+                            $(cell.getElement()).css("border", "1px solid red")
+                        }
+                    }
+                }
+                return cell.getValue()
+            }},
+            { title: 'Choose', field:'is_choose', headerSort:false, formatter: function(cell, formatterParams, onRendered){
+                onRendered(function(){
+                        //set the value of the radio buttons
+                        if($(cell.getElement()).find('input').val()=='true'){
+                            $(cell.getElement()).find('input').prop("checked", true);
+                            form_data.delete('selected_models')
+                            form_data.append('selected_models', cell.getRow().getCell("name").getValue());
+                        }
+
+                        $(cell.getElement()).find('input').on('click', function(e){
+                            if($(this).val() == 'true'){
+                                $(this).val('false')
+                                $(this).prop('checked', false);
+                            }
+                            else{
+                                $("#set_models").find("input[value='true']").val(false)
+                                $(this).val(true)
+                                $(this).prop('checked', true);
+                                form_data.delete('selected_models')
+                                form_data.append('selected_models', cell.getRow().getCell("name").getValue());
+                            }
+                        });
+                    }
+                )
+                //create and style radio buttons
+                var radio = $("<form style='margin-bottom:0;'><input name='rag-radio' type='radio' value='"+cell.getValue()+"'></form>");
+            
+                return radio.html();
+            }, editable:true
+        },
+        {title: "Export", headerSort:false, formatter: function(cell, formatterParams, onRendered){
+            var button = $("<form style='margin-bottom:0;'><button type='button' name='export' class='btn'>Export</button></form>")
+            onRendered(function(){
+                $(cell.getElement()).find('button').on("click", function(){
+                    export_models(cell.getRow().getCell("name").getValue())
+                })
+            })
+            return button.html()
+        }}]
+    });
+}
+
+function get_set_models(){
+    var names = $('#set_models').find('[tabulator-field="name"]:not(:first)')
+    var choose = $('#set_models').find('[tabulator-field="is_choose"]:not(:first)').find('input')
+    var set_models = []
+    var isCorrectSetModels = true
+    for(var i=0; i<names.length; i++){
+        if(names[i].textContent.trim() != ''){
+            obj = {'name': names[i].textContent, 'choose':choose[i].value}
+            set_models.push(obj)
+        }
+        else{
+            if (names[i]){
+                $(names[i]).css("border", "1px solid red")
+                $(names[i]).on("input", function(){ 
+                    $(this).css("border", "") 
+                })
+                isCorrectSetModels = false
+            }
+        }
+    }
+    if (isCorrectSetModels)
+        if (set_models.length != 0)
+            return set_models
+        else
+            return [{}]
+    else return false
+}
+
+var set_models = set_models_table();
+
 function getAreaOfTesting(){
     var gui_names = $('#mark_up_attributes').find('[tabulator-field="gui_name"]:not(:first)')
     var names = $('#mark_up_attributes').find('[tabulator-field="name"]:not(:first)')
@@ -256,10 +398,10 @@ function getAreaOfTesting(){
         else{
             if (names[i]){
                 $(gui_names[i]).css("border", "1px solid red")
-                    $(gui_names[i]).on("input", function(){ 
-                        $(this).css("border", "") 
-                    })
-                    isCorrectAreas = false
+                $(gui_names[i]).on("input", function(){ 
+                    $(this).css("border", "") 
+                })
+                isCorrectAreas = false
             }
         }
     }
@@ -371,7 +513,9 @@ function get_data(){
     return Object.assign({}, {'mandatory_attributes': JSON.stringify(mandatory_fields.getData())},
                              {'special_attributes': JSON.stringify(getSpecialFields())}, 
                              {'mark_up_attributes': JSON.stringify(getAreaOfTesting())},
+                             {'set_models': JSON.stringify(set_models.getData())},
                                 {'referring_to': $('#referring_to').val(),
+                                'logging_level': $('#logging_level').val(),
                                 'resolution1name': $('#resolution1name').val(),
                                 'resolution1value': $('#resolution1value').val(),
                                 'resolution2name': $('#resolution2name').val(),
@@ -387,9 +531,23 @@ $("#add_row_areas").click(function(){
     area_of_testing_fields.addRow({})
 });
 
+$("#add_row_model").click(function(){
+    $('#input_file').click();
+});
+
+$('#input_file').change(function(){
+    var fPath = $(this).val();
+    var slashPos = fPath.lastIndexOf("\\");
+    var name = fPath.slice(slashPos+1).split('.')[0];
+    if(name){
+        set_models.addRow({name: name, is_choose: 'false'})
+    }
+    form_data.append("file[]", $(this)[0].files[$(this)[0].files.length-1])
+});
 
 $(document).ready(function() {
     $('#referring_to').select2({width:'100%'});
+    $('#logging_level').select2({width:'100%'});
 });
 
 
@@ -398,6 +556,9 @@ for(i=0;i<jsonDictionary['referring_to'].length;i++){
     $("[id='referring_to']").append($("<option></option>").attr("value",jsonDictionary['referring_to'][i]).text(jsonDictionary['referring_to'][i]));
 }
 
+for(i=0;i<jsonDictionary['logging_level'].length;i++){
+    $("[id='logging_level']").append($("<option></option>").attr("value",jsonDictionary['logging_level'][i]).text(jsonDictionary['logging_level'][i]));
+}
 
 
 function is_null(fields){
@@ -418,8 +579,41 @@ function checkResolution(){
      return true;
 }
 
+function upload_models(){
+    form_data.append("set_models", JSON.stringify(get_set_models()))
+    $.ajax({
+        type:'POST',
+        url: '/upload_models',
+        data: form_data,
+        processData: false,
+        contentType: false,
+        success: function(response, status, xhr){
+            if (response.redirect) {
+                lock_mode(response.single_mod, response.multiple_mod)
+                window.location = response.redirect;
+            }
+            else{
+                var ct = xhr.getResponseHeader("content-type") || "";
+                if (ct.indexOf('html') > -1)
+                    document.write(response);
+                else {
+                    if('undefined'.localeCompare(response['error']) != 0){
+                        optimize_message(response['error']);
+                        $("#menu-multiple-descr-mode").addClass('disabled');
+                        $("#menu-single-descr-mode").addClass('disabled');
+                        $("#menu-analysis-train-link").addClass('disabled');
+                        $('html, body').animate({scrollTop: 0}, 600);
+                    }
+                }
+                lock_mode(response['single_mod'], response['multiple_mod'])
+            }
+        }  
+    })
+}
+
 // AJAX for sent setting data
 $('#submit_settings').click(function significanceTop() {
+    data = get_data()
     if(!checkValidation() || !getAreaOfTesting() || !getSpecialFields() || !checkResolution()){
         if (!getSpecialFields()){
             optimize_message("Please correctly fill in all required Special fields.")
@@ -437,81 +631,38 @@ $('#submit_settings').click(function significanceTop() {
         }
         $('#setting_form').find(':submit').click();
         return;
-        }
-    if(is_null(get_data())){
-        return
     }
     $.ajax({
             type: "POST",
             url: '/set_config',
             beforeSend: setLoad(),
-            data: get_data(),
+            data: data,
             success: function(response, status, xhr){
                hideLoad();
-                if (response.redirect) {
-                    if (response.is_train){
-                        jsonDictionary['is_train'] = true
-                        $("#Train").prop("disabled",false);
+               var ct = xhr.getResponseHeader("content-type") || "";
+                if (ct.indexOf('html') > -1)
+                    document.write(response);
+                else {
+                    if('undefined'.localeCompare(response['error']) != 0){
+                        optimize_message(response['error']);
+                        $("#menu-multiple-descr-mode").addClass('disabled');
+                        $("#menu-single-descr-mode").addClass('disabled');
+                        $("#menu-analysis-train-link").addClass('disabled');
+                        $('html, body').animate({scrollTop: 0}, 600);
                     }
-                    window.location = response.redirect;
-                  }
-                else{
-                   var ct = xhr.getResponseHeader("content-type") || "";
-                   if (ct.indexOf('html') > -1)
-                       document.write(response);
-                   else {
-                        if('undefined'.localeCompare(response['error']) != 0){
-                            optimize_message(response['error']);
-                            $("#menu-multiple-descr-mode").addClass('disabled');
-                            $("#menu-single-descr-mode").addClass('disabled');
-                            $("#menu-analysis-train-link").addClass('disabled');
-                            $('html, body').animate({scrollTop: 0}, 600);
-                        }
-                        //lock_mode(response['single_mod'], response['multiple_mod'])
-                        //set_data(response['data'])
-                        }
+                    //lock_mode(response['single_mod'], response['multiple_mod'])
+                    //set_data(response['data'])
                     }
-                }            
+                    upload_models()
+                }
+                
         })})
 
 
 
 $('#reset_settings').click(function resetSettings() {
-    $.ajax({
-         type: "POST",
-         url: '/reset_settings',
-         beforeSend: setLoad(),
-         data: get_data(),
-         success: function(response, status, xhr){
-            if (response.redirect) {
-                    window.location.href = response.redirect;
-            }
-            else{
-                var ct = xhr.getResponseHeader("content-type") || "";
-                   if (ct.indexOf('html') > -1){
-                        document.body.innerHTML = "";
-                        document.write(response);
-                   }
-                   else {
-                        if('undefined'.localeCompare(response['error']) != 0){
-                            optimize_message(response['error']);
-                            hideLoad();
-                        }
-                        else{
-                            $('html, body').animate({scrollTop: 0}, 600);
-                            hideLoad();
-                        }
-                    }
-                }
-         },
-         error: function(error) {
-                 document.getElementById('message').innerHTML = 'error of dynamic reset setting';
-                 $('html, body').animate({scrollTop: 0}, 600);
-                 $('#referring_to').select2({width:'100%'});
-                 hideLoad();
-             }
-         })
-        });
+    location.reload()    
+});
 
 
 function checkValidation(){

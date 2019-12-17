@@ -28,11 +28,19 @@ $("#load").removeAttr("style").hide();
 
 // unlock single mod and multiple mod for open source version
 function lock_mode(single_mad, multiple_mod){
-if(single_mad == true)
+if(single_mad == true){
     $("#menu-single-descr-mode").removeClass('disabled');
+}
+else{
+    $("#menu-single-descr-mode").addClass('disabled');
+}
 
-if(multiple_mod == true)
+if(multiple_mod == true){
     $("#menu-multiple-descr-mode").removeClass('disabled');
+}
+else{
+    $("#menu-multiple-descr-mode").addClass('disabled');
+}
 }
 lock_mode(jsonDictionary['single_mod'], jsonDictionary['multiple_mod'])
 
