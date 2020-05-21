@@ -16,6 +16,7 @@ Tool for analyzing software defect reports extracted from defect repositories.
 * Flask-Bootstrap 3.3.7.1
 * Flask-Sessionstore 0.4.5
 * swifter 0.295
+* Werkzeug <1
 
 ## Execution
 python3 run.py
