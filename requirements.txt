@@ -9,3 +9,4 @@ lxml==4.4.1
 flask_bootstrap==3.3.7.1
 flask_sessionstore==0.4.5
 swifter==0.295
+Werkzeug<1
