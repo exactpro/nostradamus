@@ -1,0 +1,29 @@
+@import "../../../styles/colors";
+
+.card {
+  background: $white;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+  box-sizing: border-box;
+  position: relative;
+
+  padding: 20px;
+
+  flex-direction: column;
+  display: flex;
+
+  &__title {
+    position: absolute;
+    font-size: 17px;
+    line-height: 12px;
+    color: $darkGray;
+    margin-bottom: 20px;
+  }
+
+  &__content {
+    background-repeat: no-repeat;
+    background-position: top;
+    background-size: contain;
+    height: 100%;
+  }
+}

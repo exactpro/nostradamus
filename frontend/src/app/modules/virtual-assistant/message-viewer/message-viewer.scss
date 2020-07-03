@@ -1,0 +1,161 @@
+@import "../../../styles/colors";
+
+.message-viewer{
+  height: 100%;
+  margin-top: 10px;
+  overflow: scroll;
+
+  display: flex;
+  flex-direction: column-reverse;
+
+  border-top: 1px solid transparent;
+  box-sizing: border-box;
+
+  &__layout-image{
+    width: 100%;
+    height: 100%;
+    background-size: 50%;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
+  &-message, &-file-upload{
+    display: block;
+    width: max-content;
+    max-width: 60%;
+    padding: 20px 10px;
+    margin: 10px 0;
+
+    color: black;
+
+    font-weight: normal;
+    font-size: 18px;
+    line-height: 22px;
+    text-overflow: ellipsis;
+    overflow-wrap: break-word;
+
+    &_inbound{
+      background-color: $veryLightBlue;
+      border: 1px solid rgba(0, 0, 0, 0.15);
+      border-radius: 8px 8px 8px 0;
+
+    }
+
+    &_outbound{
+      align-self: flex-end;
+      margin-right: 10px;
+      border: 1px solid rgba(0, 0, 0, 0.15);
+      border-radius: 8px 8px 0 8px;
+    }
+  }
+
+  &-message{
+    &__link{
+      &-text{
+        display: inline;
+      }
+      &-ref{
+        color: $darkBlue;
+        &:visited{
+          color: $darkBlue;
+        }
+      }
+    }
+  }
+
+  &-file-upload{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    &__button{
+      padding: 15px 15px;
+
+      box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.15);
+      border-radius: 100%;
+
+      color: white;
+      background-color: $blue;
+
+      &:disabled{
+        cursor: not-allowed;
+        background-color: $grayDisabled;
+      }
+
+      &:hover:not(:disabled){
+        background-color: $seaBlue;
+      }
+    }
+
+    &__wrapper{
+        margin-left: 15px;
+    }
+
+    &__title{
+      color: $darkBlue;
+      font-weight: 500;
+      font-size: 16px;
+      line-height: 24px;
+    }
+
+    &__info{
+      display: flex;
+      margin-top: 10px;
+
+      &-title{
+        color: $grayDisabled;
+        margin-left: 5px;
+      }
+
+      &-title:first-child{
+        margin-left: 0;
+      }
+    }
+
+  }
+
+  &-choice-list{
+    width: 100%;
+    margin-right: 10px;
+    display: flex;
+    flex-wrap: wrap;
+
+    &__item{
+      padding: 5px 15px;
+      margin: 10px;
+
+      background-color: $blue;
+      color: white;
+      border-radius: 30px;
+      font-size: 16px;
+      line-height: 20px;
+
+      cursor: pointer;
+
+      &:hover{
+        background-color: $seaBlue;
+      }
+    }
+
+    &_hidden{
+      pointer-events: none;
+      animation: hideChoiceList .2s ease-out forwards;
+    }
+  }
+
+  &-choice-wrapper{
+    min-height: 30px;
+    margin-top: 15px;
+  }
+
+}
+
+@keyframes hideChoiceList{
+  from{
+    opacity: 1;
+  }
+  to{
+    opacity: 0;
+    display: none;
+  }
+}

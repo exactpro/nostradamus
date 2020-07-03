@@ -1,0 +1,404 @@
+## intent:affirm
+- Accept
+- Awesome!
+- Cool
+- Good
+- Great
+- I accept
+- I accept.
+- I agree
+- agree
+- ok
+- OK
+- Roger that
+- Deal
+- /affirm
+- ok great!
+- okay
+- okb;d
+
+## intent:deny
+- I don't want to
+- NO
+- NO DON"T WANT THIS!
+- Nah
+- Neither
+- Never
+- Nevermind
+- No
+- No thank you
+- No, not really.
+- No, thank you
+- No.
+- Nopes
+- Not really
+- absolutely not
+- decline
+- definitely not
+- deny
+- i decline
+- i don not like this
+- i don't think so
+- i guess it means - no
+- i'm afraid not
+- i'm not sure
+- it is going pretty badly
+- it sucks
+- neither
+- never
+- never mind
+- no
+- no I dont want
+- no sorry
+- no thank you
+- no thanks
+- no way
+- no, i hate it
+- non
+- nop
+- nope
+- not really
+- None of these
+
+## intent:report
+- what happened [yesterday](period)
+- daily report
+- give me daily report
+- show me daily report
+- what i've missed since [yesterday](period)?
+- what i've missed?
+- tell me what's new
+- what's new
+- what is new
+- what's up
+- is there anything new?
+- anything new?
+- any news?
+- news
+- Issues updates
+- Defect updates
+- Bugs updates
+- Issues update
+- Any updates?
+- Tell me what's happened?
+- What happened since [yesterday](period)?
+- any updates?
+- Please tell me the news
+- Any news?
+- What's new for [today](period)?
+- any news for [today](period)?
+- What is happened [today](period)?
+- tell me [today](period)s news
+- What happened [yesterday](period)?
+- Report for [yesterday](period)
+- Report for [today](period)
+- [Today](period)'s news
+- Give me report
+- Tell me what is happened [today](period)
+- Tell me what is happened [yesterday](period)
+- How about daily report?
+- How about report?
+- How about report for [today](period)?
+- How about report from [yesterday](period)
+- report please
+- status report
+- report on status
+- give me status report
+- I want status report
+- generate status report
+- report for status
+- How about status report for [today](period)?
+- How about status report from [yesterday](period)
+- status report for [today](period)
+- status report for [yesterday](period)
+- Let me see status report for for [today](period)
+- Status report
+- could you give me report please?
+- status report for [today](period) please
+
+## intent:inform
+- for [today](period) please
+- for [yesterday](period)
+- report for [today](period)
+- [today](period)
+- [yesterday](period)
+- [today](period)'s report
+- [yesterday](period)'s report
+- [today](period)s report
+- [yesterday](period)s report
+- for [today](period) ofcourse
+- [today](period)'s please
+- let it be for [today](period)
+- let it be for [yesterday](period)
+- I guess for [today](period)
+- I guess for [yesterday](period)
+- let's see for [yesterday](period)
+- i'd like for [today](period)
+- for [this Friday](period)
+- I want report for [today](period)
+- I want report for [yesterday](period)
+- report for [last monday](period)
+- report for [monday](period)
+- report for [tuesday](period)
+- report for [wednesday](period)
+- report for [thursday](period)
+- report for [friday](period)
+- report for [today](period) please
+- [Today](period)
+- [Yesterday](period)
+
+## intent:out_of_scope
+- please help with my ice cream it's dripping
+- no wait go back i want a dripping ice cream but a cone that catches it so you can drink the ice cream later
+- i want a non dripping ice cream
+- someone call the police i think the bot died
+- show me a picture of a chicken
+- neither
+- I want french cuisine
+- i am hungry
+- restaurant
+- can i be shown a gluten free restaurant
+- i don't care!!!!
+- i do not care how are you
+- again?
+- oh wait i gave you my work email address can i change it?
+- hang on let me find it
+- stop it, i do not care!!!
+- how come?
+- I changed my mind
+- what?
+- did i break you
+- that link doesn't work!
+- you already have that
+- this is a really frustrating experience
+- no stop
+- give me food
+- i want food
+- Can I ask you questions first?
+- is it a wasteland full of broken robot parts?
+- can we keep chatting?
+- talk to me
+- who is your favourite robot?
+- I want to order food
+- What is 2 + 2?
+- Who’s the US President?
+- I need a job
+- Am I beautiful?
+- How can I get to the library?
+- how much is the fish?
+- I had very tasty pizza!
+- how's life?
+- Where is snow?
+- May I use your car?
+- How to cook eggs?
+- will you merry me?
+- is there any reason to have a sushi today?
+- are you still here?
+- how can I apply for a new job?
+- lol
+- Some text bla bla bla
+- elihgfe
+- what the weather today?
+
+## intent:goodbye
+- Bye
+- Bye bye
+- adios
+- bye
+- bye bot
+- bye bye
+- bye bye bot
+- bye for now
+- bye udo
+- bye was nice talking to you
+- catch you later
+- ciao
+- farewell
+- good bye
+- good night
+- goodbye
+- goodnight
+- gotta go
+- ok Bye
+- ok bye
+- ok, bye
+- see u later
+- see ya
+- see you
+- Thanks bye
+- bye then
+- ok thanks. bye!
+- ok bye!
+- bye!
+- goodbye!
+- thanks bye!
+- thank you, bye!
+
+## intent:greet
+- Good Morning
+- Good morning
+- HELLO
+- HEY
+- HEllo
+- HI
+- Hei
+- Hello
+- Hello Bot
+- Hello!
+- Hi
+- Hi bot
+- Hi man
+- Hi there
+- Hi!
+- Hi'
+- Hi,
+- Hi, bot
+- What is up?
+- Whats up
+- Whats up my bot
+- ey boss
+- good evening
+- good moring
+- good morning
+- greet
+- greetings
+- hello
+- hello everybody
+- hello friend
+- hello hi
+- hello is anybody there
+- hello it is me again
+- hello robot
+- hello sweatheart
+- hello sweet boy
+- hello there
+- hello world
+- hello?
+- helo
+- hey
+- hey bot
+- hey dude
+- hey hey
+- hey let's talk
+- hey ther
+- hey there
+- hey there..
+- hey, let's talk
+- hi
+- hi again
+- hi hi
+- hi pal!
+- hi there
+- hi there it's me
+- salut
+- yo
+- yoo
+- HIYA
+- hiya
+- hey!
+- Hey
+
+## intent:thanks
+- Thanks
+- Thank you
+- Thank you so much
+- Thanks bot
+- Thanks for that
+- cheers
+- cheers bro
+- ok thanks!
+- perfect thank you
+- thanks a bunch for everything
+- thanks for the help
+- thanks a lot
+- amazing, thanks
+- cool, thanks
+- cool thank you
+- thanks
+- ok thanks
+- ok thank you
+- thank you so much!
+- thanks a lot!
+- thank you
+- Wow thanks!
+- Thanks!
+- thanks!
+
+## intent:describe_yourself
+- Who's there?
+- who is there
+- Anybody here?
+- Who are you?
+- who you are
+- who are you
+- who r u
+- Who am I talking to?
+- Are you a bot?
+- You're bot?
+- you bot?
+- You chat-bot?
+- Am I talking to a bot?
+- am i talking to a bot?
+- introduce yourself
+- please introduce yourself
+- pls introduce yourself
+- introduce
+- describe yourself
+- tell me about yourself
+- tell me who you are
+- tell me who are you
+- what is your name
+- What's your name?
+- what your name
+- your name
+- who's there
+- who are you?
+- who am I talking to?
+- are you a bot?
+- who is Astra?
+- whos is Astra?
+- what is your name?
+- Who you are?
+- who's there?
+
+## intent:what_do_you_can
+- What do you can?
+- what do you can?
+- What you can?
+- What can you do
+- Can you do something
+- Do you can something
+- What are you able to do?
+- Tell what do you can?
+- I'd like to know what you're able to do
+- Please tell what do you can
+- For what you have been created?
+- what for you've been created?
+- what do you can
+- What do you can
+- what esle do you can?
+- what else can you offer me?
+- what else can you offer?
+- what else do you can?
+- i need some help
+- what else you can do for me?
+
+## intent:intro_nostradamus
+- What is Nostradamus
+- Who is Nostradamus
+- who's Nostradamus
+- Tell me about Nostradamus
+- Can you tell me what is Nostradamus?
+- Tell me what is Nostradamus
+- nostradamus
+- n0stradamus
+- Nstradamus
+- nstrdms
+- What can Nostradamus?
+- What Nostradamus can?
+- who is Nostradamus?
+- What is Nostradamus?
+- what is nostradamus
+
+## regex:period
+- [0-9]{4}-[0-9]{2}-[0-9]{2}

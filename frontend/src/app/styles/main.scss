@@ -1,0 +1,17 @@
+@import "colors";
+
+body {
+  font-family: 'Quicksand', sans-serif;
+  font-feature-settings: 'cpsp' on, 'liga' off;
+
+  font-weight: 600;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  background-color: $lightBlue;
+}
+
+a {
+  text-decoration: none;
+}

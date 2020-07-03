@@ -1,0 +1,75 @@
+actions:
+- utter_ask_help
+- utter_ask_period
+- utter_cannot_help
+- utter_describe_yourself
+- utter_goodbye
+- utter_greet
+- utter_intro_nostradamus
+- utter_noworries
+- utter_what_do_you_can
+entities:
+- period
+forms:
+- report_form
+intents:
+- report
+- what_do_you_can
+- goodbye
+- thanks
+- inform
+- greet
+- out_of_scope
+- describe_yourself
+- intro_nostradamus
+- affirm
+- deny
+responses:
+  utter_ask_help:
+  - buttons:
+    - payload: What do you can?
+      title: What do you can?
+    - payload: What is Nostradamus?
+      title: What is Nostradamus?
+    - payload: Status report
+      title: Status report
+    text: How can I help you?
+  utter_ask_period:
+  - buttons:
+    - payload: today
+      title: Today
+    - payload: yesterday
+      title: Yesterday
+    text: For which day?
+  utter_cannot_help:
+  - text: Sorry, I don't get it.
+  - text: I can't help you with that.
+  - text: I'm sorry, I didn’t understand that.
+  utter_describe_yourself:
+  - text: I'm a virtual assistant.
+  utter_goodbye:
+  - text: See you later!
+  - text: Have a good day.
+  - text: Until next time!
+  utter_greet:
+  - text: Hi
+  - text: Hey
+  - text: Hello!
+  utter_intro_nostradamus:
+  - text: Nostradamus is an application for analyzing software defect reports. To
+      find out more please [follow the link](https://exactpro.com/ideas/white-papers/extent-2018-machine-learning-applied-defect-report-analysis)
+  utter_noworries:
+  - text: My pleasure.
+  - text: You are welcome!
+  - text: Glad to help.
+  utter_what_do_you_can:
+  - text: I can give you the latest news on your project.
+session_config:
+  carry_over_slots_to_new_session: true
+  session_expiration_time: 0
+slots:
+  period:
+    auto_fill: false
+    type: text
+  requested_slot:
+    type: unfeaturized

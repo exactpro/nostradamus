@@ -1,0 +1,70 @@
+@import "../../../styles/colors";
+
+.button {
+  border-radius: 1000px;
+  border: none;
+
+  display: flex;
+  align-items: center;
+
+  transition-property: background-color;
+  transition-duration: .2s;
+  transition-timing-function: linear;
+
+  &__icon {
+    display: inline-block;
+    margin-right: 10px;
+    flex-shrink: 0;
+  }
+
+  &__text {
+    display: inline-block;
+    text-align: center;
+    width: 100%;
+  }
+
+  // styled buttons
+
+  &__primary {
+    font-size: 22px;
+    line-height: 22px;
+    color: $white;
+
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
+    padding: 11px 20px;
+    background-color: $blue;
+
+    &:hover {
+      background-color: $activeHover;
+    }
+
+    &:disabled {
+      background: $grayDisabled;
+    }
+  }
+
+  &__flat {
+    font-size: 17px;
+    line-height: 17px;
+    color: $darkBlue;
+
+    padding: 11px 20px;
+    background-color: transparent;
+
+    &:hover {
+      background-color: $lightBlue;
+    }
+
+    &:disabled {
+      background: $white;
+      color: $darkGray;
+      opacity: 0.2;
+    }
+
+    &.selected {
+      background-color: $veryLightGray;
+      color: $darkGray;
+      opacity: 1;
+    }
+  }
+}

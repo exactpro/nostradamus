@@ -1,0 +1,85 @@
+upstream backendapp {
+  server        nostradamus-core:8000;
+}
+
+server {
+  listen 80;
+  server_name           '${SERVER_NAME}';
+  include /etc/nginx/conf.d/ssl_80.conf*;
+  access_log            /var/log/nginx/reverse_80.access.log combined;
+  error_log             /var/log/nginx/reverse_80.error.log;
+
+  location / {
+    root      /usr/share/nginx/html;
+    index     index.html;
+    try_files $uri $uri/ /index.html;
+    add_header Access-Control-Allow-Origin "*";
+  }
+
+  location /api {
+    return 302 /api/;
+  }
+
+   location /api_static/ {
+    rewrite /api_static/(.*) /api_static/$1  break;
+    proxy_pass            http://backendapp/;
+#    proxy_read_timeout    90s;
+#    proxy_connect_timeout 90s;
+#    proxy_send_timeout    90s;
+    proxy_set_header      Host $host;
+    proxy_set_header      X-Real-IP $remote_addr;
+    proxy_set_header      X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header      Proxy "";
+    add_header Access-Control-Allow-Origin "*";
+    add_header Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept, Authorization";
+    }
+
+    location /flower/ {
+        rewrite ^/flower/?(.*)$ /$1 break;
+        proxy_pass            http://flower:5555/;
+        proxy_set_header      Host $host;
+        proxy_set_header      X-Real-IP $remote_addr;
+        proxy_set_header      X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header      Proxy "";
+        add_header Access-Control-Allow-Origin "*";
+        add_header Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept, Authorization";
+    }
+
+    location /virtual-assistant/ {
+    rewrite /virtual-assistant/(.*) /$1  break;
+    proxy_pass            http://virtual-assistant-core:5005/;
+    proxy_set_header      Host $host;
+    proxy_set_header      X-Real-IP $remote_addr;
+    proxy_set_header      X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header      Proxy "";
+    add_header Access-Control-Allow-Origin "*";
+    add_header Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept, Authorization";
+  }
+
+  location /api/ {
+    rewrite /api/(.*) /$1  break;
+    proxy_pass            http://backendapp/;
+#    proxy_read_timeout    90s;
+#    proxy_connect_timeout 90s;
+#    proxy_send_timeout    90s;
+    proxy_set_header      Host $host;
+    proxy_set_header      X-Real-IP $remote_addr;
+    proxy_set_header      X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header      Proxy "";
+    add_header Access-Control-Allow-Origin "*";
+    add_header Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept, Authorization";
+  }
+
+  location /ws/ {
+    rewrite /ws/(.*) /$1  break;
+    proxy_pass            http://channels:8001/;
+    proxy_set_header      Host $host;
+    proxy_set_header      X-Real-IP $remote_addr;
+    proxy_set_header      X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header      Proxy "";
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    add_header Access-Control-Allow-Origin "*";
+    add_header Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept, Authorization";
+  }
+}

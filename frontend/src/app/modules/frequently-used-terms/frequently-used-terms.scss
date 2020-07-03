@@ -1,0 +1,26 @@
+@import "src/app/styles/_colors.scss";
+
+.slide {
+  height: 116px;
+  overflow: hidden;
+}
+
+.helper {
+  height: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+.word {
+  height: 24px;
+  padding: 3px 10px 4px;
+  background: $lightBlue;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 17px;
+  color: $darkGray;
+
+  display: inline-block;
+  margin-right: 5px;
+  margin-bottom: 5px;
+}

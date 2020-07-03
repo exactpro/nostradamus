@@ -1,0 +1,127 @@
+@import "src/app/styles/colors";
+
+.predictions-table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  &__pagination {
+
+  }
+
+  &__scrollable-container {
+
+    overflow-y: scroll;
+  }
+
+  &__table {
+    width: 100%;
+
+    &_with-head {
+      margin-top: 20px;
+
+      tbody {
+        visibility: collapse;
+      }
+    }
+
+    &_with-body {
+      thead {
+        visibility: collapse;
+      }
+    }
+
+    th {
+      font-size: 16px;
+      line-height: 20px;
+      color: $darkGray;
+
+      padding: 0 18px;
+
+      &:first-child {
+        padding-left: 0;
+      }
+
+      &:first-child, &:last-child {
+        text-align: left;
+      }
+    }
+
+    tr {
+
+    }
+
+    td {
+      max-width: 400px;
+      text-align: center;
+      padding: 20px 18px 0;
+
+      font-size: 16px;
+      line-height: 20px;
+      font-weight: 500;
+      color: $darkGray;
+
+      &:first-child {
+        padding-left: 0;
+      }
+
+      &:first-child, &:last-child {
+        text-align: left;
+      }
+    }
+  }
+
+  .color {
+    &_green { color: $green }
+    &_dark-blue { color: $darkBlue }
+    &_orange { color: $orange }
+    &_violet-dark { color: $violetDark }
+    &_cold { color: $cold }
+    &_yellow-strong { color: $yellowStrong }
+    &_orange { color: $orange }
+    &_light-red { color: $lightRed }
+  }
+
+}
+
+.predictions-table-pagination {
+  display: flex;
+  justify-content: flex-end;
+
+  &__field {
+    display: flex;
+    align-items: center;
+
+    &:not(:last-child) {
+      margin-right: 40px;
+    }
+  }
+
+  &__button {
+    margin: 0 5px;
+    background-color: transparent;
+
+    &__icon {
+      color: $darkGray;
+    }
+
+    &:disabled {
+      color: $grayDisabled;
+    }
+  }
+
+  &__label {
+    margin: 0 10px;
+
+    font-size: 16px;
+    line-height: 20px;
+    font-weight: 500;
+    color: $grayDisabledText;
+  }
+
+  &__value {
+    font-size: 16px;
+    line-height: 20px;
+    color: $darkGray;
+  }
+}

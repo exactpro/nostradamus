@@ -1,0 +1,106 @@
+@import "../../../../styles/colors";
+
+.input-training-element
+{
+  width: 100%;
+  position: relative;
+  overflow-x: hidden;
+
+  &-block-container{
+    height: 0;
+    min-height: 40px;
+
+    font-weight: 500;
+    font-size: 16px;
+    line-height: 30px;
+    padding-right: 60px;
+
+    overflow: hidden;
+    box-sizing: border-box;
+
+    &_simple,&_odd{
+      background-color: $veryLightGray;
+    }
+
+    &_simple{
+      border-bottom: 1px solid $deepDarkBlue;
+    }
+
+    &_even{
+      background-color: $lightBlue;
+    }
+
+    &_hovered{
+      background-color: $seaBlue;
+      color: $white;
+    }
+
+    &_edited{
+      background-color: $lightSeaBlue;
+      border: 2px solid $seaBlue;
+
+      .input-training-element-value-block{
+        margin: 3px;
+      }
+    }
+
+    &__placeholder{
+      pointer-events: none;
+      position: absolute;
+      color: $gray;
+      top: 50%;
+      left: 10px;
+      transform: translateY(-50%);
+    }
+  }
+
+  &-value-block{
+    padding: 5px;
+    max-width: 90%;
+
+    background-color: $grayDisabled;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 4px;
+    height: 30px;
+    margin: 5px;
+
+    &__number{
+      color: $darkBlue;
+      margin: 10px 5px;
+    }
+
+    &__content{
+      color: $darkGray;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    &__close{
+      background-color: transparent;
+      margin: 10px 5px;
+      padding: 0;
+      opacity: .5;
+      transition: opacity .2s ease-out;
+      &:hover:not([disabled]){
+        opacity: 1;
+      }
+    }
+  }
+
+  &__spread-button{
+    position: absolute;
+    display: none;
+    font-size: 12px;
+    top: 20px;
+    transform: translateY(-50%);
+    right: 5px;
+    background-color: transparent;
+    cursor: pointer;
+
+    &__number{
+      display: inline;
+    }
+  }
+}

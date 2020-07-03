@@ -1,0 +1,20 @@
+@import "../../../../styles/colors";
+
+.free-input {
+  width: 100%;
+
+  background-color: transparent;
+
+  padding: 10px 0;
+
+  font-family: 'Quicksand', sans-serif;
+  font-weight: 600;
+
+  font-size: 16px;
+  line-height: 20px;
+  color: $darkGray;
+
+  &::placeholder {
+    color: $grayDisabled;
+  }
+}

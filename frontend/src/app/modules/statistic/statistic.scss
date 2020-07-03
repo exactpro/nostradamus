@@ -1,0 +1,58 @@
+@import "src/app/styles/_colors.scss";
+
+
+.statistic-table {
+  width: calc(100% - 20px);
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  table-layout: fixed;
+
+  &__row {
+    height: 50px;
+  }
+
+  &__row-header {
+    vertical-align: middle;
+    font-size: 18px;
+    line-height: 22px;
+    color: $darkGray;
+    width: 262px;
+    padding-left: 20px;
+  }
+
+  &__column-header {
+    vertical-align: middle;
+    font-size: 14px;
+    line-height: 17px;
+    text-align: center;
+    color: $gray;
+  }
+
+  &__cell {
+    border-top: 1px solid $grayDisabled;
+    vertical-align: middle;
+    width: calc((100% - 262px)/4);
+    text-align: center;
+
+    font-size: 20px;
+    line-height: 20px;
+
+    &_type {
+      &_max {
+        color: $orange;
+      }
+      &_min {
+        color: $lightGreen;
+      }
+      &_mean {
+        color: $blue;
+      }
+      &_std {
+        color: $sirene;
+      }
+    }
+
+  }
+}

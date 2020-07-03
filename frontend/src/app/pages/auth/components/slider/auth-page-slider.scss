@@ -1,0 +1,54 @@
+@import "../../../../styles/colors";
+
+.auth-page-slide {
+  background-position: center;
+  background-size: cover;
+
+  font-family: "Open Sans", sans-serif;
+  color: $deepDarkBlueForAuthPage;
+  font-weight: normal;
+  font-size: 16px;
+
+  height: 100%;
+
+  padding: 23px 44px;
+
+  &__title {
+    font-weight: bolder;
+    text-transform: capitalize;
+    font-size: 46px;
+    max-width: 500px;
+    line-height: 50px;
+    margin-bottom: 40px;
+  }
+
+  &__plain-text {
+    margin-bottom: 20px;
+    line-height: 21px;
+  }
+
+  &__disordered-list{
+    max-width: 400px;
+  }
+
+  &__disordered-list-elem {
+    line-height: 26px;
+    list-style-position: inside;
+    text-indent: -1em;
+    padding-left: 1em;
+
+    &::before {
+      content: '';
+      display: inline-block;
+
+      width: 8px;
+      height: 8px;
+
+      border-radius: 100%;
+      background-color: $active;
+
+      margin-right: 12px;
+    }
+  }
+
+}

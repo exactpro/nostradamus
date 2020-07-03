@@ -1,0 +1,23 @@
+.donut-chart {
+  height: 100%;
+  width: 100%;
+
+  display: flex;
+  justify-content: space-between;
+
+  &__legend {
+    width: 200px;
+
+    svg > g > g:nth-child(1) {
+      display: none;
+    }
+  }
+
+  text {
+    font-size: 18px !important;
+    font-family: 'Quicksand', sans-serif !important;
+    font-feature-settings: 'cpsp' on, 'liga' off;
+    font-weight: 600;
+  }
+
+}

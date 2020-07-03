@@ -1,0 +1,65 @@
+@import "src/app/styles/_colors.scss";
+
+.defect-submission {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  &__scroll-container {
+    display: flex;
+    height: 100%;
+  }
+
+  &__helper-graph svg > *:not(.yAxis) {
+    display: none;
+  }
+
+  .recharts-cartesian-axis-tick {
+    font-size: 13px;
+    color: $gray;
+  }
+
+  &__graph {
+    height: 100%;
+
+    display: flex;
+    flex-direction: row;
+    overflow-x: scroll;
+    margin-left: 5px;
+  }
+
+  &__filter {
+    margin-top: 18px;
+
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  &__period {
+    padding: 5px 15px;
+
+    cursor: pointer;
+
+    font-size: 16px;
+    line-height: 20px;
+    color: $darkBlue;
+
+    border-radius: 1000px;
+
+    margin-left: 10px;
+
+    transition-property: background-color, color;
+    transition-duration: .1s;
+    transition-timing-function: linear;
+
+    &_active {
+      background-color: $veryLightGray;
+      color: $darkGray;
+      cursor: default;
+    }
+
+    &:hover:not(&_active) {
+      color: $deepDarkBlue;
+    }
+  }
+}

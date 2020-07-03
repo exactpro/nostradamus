@@ -1,0 +1,37 @@
+@import "src/app/styles/_colors.scss";
+
+.exact-match {
+  margin: 0 8px;
+  padding: 4px;
+
+  &:hover {
+    cursor: pointer;
+  }
+
+  &__icon {
+    font-size: 9px;
+    margin-top: 1px;
+    color: $grayDisabledText;
+  }
+
+  &__toggle {
+    width: 16px;
+    height: 16px;
+
+    border-radius: 100%;
+
+    background-color: $white;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    &_checked {
+      background-color: $green;
+
+      .exact-match__icon {
+        color: $white;
+      }
+    }
+  }
+}

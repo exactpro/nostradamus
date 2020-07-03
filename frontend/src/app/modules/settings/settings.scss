@@ -1,0 +1,16 @@
+@import "../../styles/colors";
+
+.settings-block{
+
+  &__button-wrapper{
+    display: flex;
+    margin-top: 20px;
+  }
+
+  &__button{
+    &_shifted{
+      margin-left: 30px;
+    }
+  }
+
+}

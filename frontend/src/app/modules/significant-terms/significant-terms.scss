@@ -1,0 +1,71 @@
+@import "../../styles/colors";
+
+.significant-terms {
+  padding-top: 20px;
+  color: $darkGray;
+
+  height: 100%;
+  position: relative;
+  margin: auto;
+  width: 100%;
+
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: center;
+  align-items: center;
+
+  &__select-wrapper {
+    position: absolute;
+    right: -10px;
+    top: -10px;
+    border-radius: 1000px;
+    padding: 5px 15px;
+    background-color: $veryLightGray;
+
+    display: flex;
+    align-items: center;
+
+    cursor: pointer;
+
+    &:hover, &:focus {
+      .significant-terms__select-icon {
+        opacity: 1;
+      }
+    }
+  }
+
+  &__select {
+    font-family: 'Quicksand', sans-serif;
+    font-feature-settings: 'cpsp' on, 'liga' off;
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 20px;
+
+    background: $veryLightGray;
+
+    color: $darkGray;
+    cursor: pointer;
+
+    // remove default arrow
+
+    /* for Firefox */
+    -moz-appearance: none;
+    /* for Chrome */
+    -webkit-appearance: none;
+
+    /* For IE10 */
+    &::-ms-expand {
+      display: none;
+    }
+  }
+
+  &__select-icon {
+    opacity: 0.5;
+    cursor: pointer;
+
+    transition-property: opacity;
+    transition-duration: .2s;
+    transition-timing-function: linear;
+  }
+}

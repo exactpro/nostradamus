@@ -1,0 +1,81 @@
+@import "src/app/styles/_colors.scss";
+
+.bar-chart {
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  &_vertical {
+    flex-direction: row;
+    justify-content: space-around;
+
+    .bar-chart {
+      &__item {
+        flex-direction: column-reverse;
+        width: 100px;
+      }
+
+      &__item-label {
+        width: 100%;
+        text-align: center;
+        margin-top: 20px;
+      }
+
+      &__item-value {
+        width: 100%;
+        text-align: center;
+      }
+
+      &__item-chart {
+        flex-direction: column-reverse;
+        height: 100%;
+      }
+
+      &__item-rectangle {
+        border-radius: 8px;
+        min-height: 8px;
+        margin-right: 0;
+        margin-top: 10px;
+      }
+    }
+  }
+
+  &__item {
+    display: flex;
+
+    &:not(:last-child) {
+      margin-right: 5px;
+    }
+
+    &-label {
+      width: 100px;
+      font-size: 16px;
+      line-height: 21px;
+      color: $gray;
+      flex-shrink: 0;
+    }
+
+    &-chart {
+      display: flex;
+      width: 100%;
+    }
+
+    &-rectangle {
+      background-color: #F2D16D;
+      border-radius: 25px;
+      margin-right: 20px;
+      min-width: 20px;
+    }
+
+    &-value {
+      width: 80px;
+      font-size: 16px;
+      line-height: 21px;
+      color: $gray;
+      flex-shrink: 0;
+    }
+  }
+}

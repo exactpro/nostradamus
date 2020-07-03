@@ -1,0 +1,1 @@
+mongo eval "use issues;db.bug.createIndex({Key: 1}, {unique: true})"

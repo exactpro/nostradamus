@@ -1,0 +1,107 @@
+@import "../../../../styles/colors";
+
+.dropdown-element{
+  position: relative;
+  width: 100%;
+  font-size: 16px;
+  *{cursor: pointer;}
+
+  &__select{
+    width: 100%;
+    background-color: $veryLightGray;
+    height: 40px;
+    line-height: 40px;
+    padding: 0 10px;
+    box-sizing: border-box;
+
+    &_simple,&_odd{
+      background-color: $veryLightGray;
+    }
+
+    &_simple{
+      border-bottom: 1px solid $deepDarkBlue;
+    }
+
+    &_even{
+      background-color: $lightBlue;
+    }
+
+    &_hovered{
+      background-color: $seaBlue;
+      color: $white;
+    }
+
+    &_edited{
+      background-color: $lightSeaBlue;
+      border: 2px solid $seaBlue;
+    }
+
+    &_disabled{
+      color: $gray;
+    }
+    option{
+      color: $darkGray;
+      box-shadow: none;
+    }
+  }
+
+  &__open{
+    position: absolute;
+    top: 50%;
+    right: 16px;
+    transform: translateY(-50%);
+  }
+
+  &__clear-value{
+    position: absolute;
+    top: 50%;
+    right: 35px;
+    transform: translateY(-50%);
+    background-color: transparent;
+    opacity: .5;
+    transition: opacity .2s ease-out;
+    &:hover{
+      opacity: 1;
+    }
+  }
+
+  &__default-value{
+    display: none;
+  }
+
+  &-wrapper{
+    position: absolute;
+    width: inherit;
+    z-index: 100;
+    border: 1px solid $gray;
+    display: none;
+
+    &__option{
+      padding: 3px 10px;
+
+      &_simple{
+        background-color: $veryLightGray;
+        &:hover{
+          background-color: $lightOrange;
+        }
+      }
+
+      &_edited{
+        background-color: $lightSeaBlue;
+        &:hover{
+          background-color: $seaBlue;
+          color: white;
+        }
+      }
+    }
+
+  }
+
+  &:focus &-wrapper{
+    display: block;
+  }
+
+  &:focus &__open{
+    transform: rotate(180deg) translateY(50%);
+  }
+}

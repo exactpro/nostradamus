@@ -1,0 +1,14 @@
+@import "src/app/styles/_colors.scss";
+
+.header {
+  height: 90px;
+  display: flex;
+  align-items: center;
+
+  &__title {
+    width: 400px;
+    font-size: 24px;
+    line-height: 30px;
+    color: $deepDarkBlue;
+  }
+}

@@ -1,0 +1,15 @@
+.analysis-and-training-section{
+
+  &__filter{
+    margin-top: 30px;
+  }
+
+  &__training{
+    margin-top: 50px;
+  }
+  &__spinner{
+    position: relative;
+    width: 100%;
+    height: 40vh; 
+  }
+}

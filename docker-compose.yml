@@ -1,0 +1,129 @@
+version: "3.7"
+
+services:
+  nostradamus-core:
+    container_name: nostradamus-core
+    image: &nostradamus-core nostradamus-core
+    restart: "on-failure"
+    build:
+      context: ./nostradamus
+      dockerfile: Dockerfile
+    command: bash -c "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn -b 0.0.0.0:8000 nostradamus.wsgi --log-level debug --timeout 18000"
+    env_file: &envfile
+      - .env
+    links:
+      - mongodb
+      - redis
+    depends_on:
+      - redis
+
+  nostradamus-frontend:
+    container_name: nostradamus-frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - '80:80'
+      - '443:8443'
+    links:
+      - nostradamus-core
+      - flower
+      - virtual-assistant-core
+    volumes:
+      - ./certs:/opt/nginx/certs
+    environment:
+      - SERVER_NAME
+
+  redis:
+    container_name: redis
+    restart: always
+    image: redis:6.0.1
+    ports:
+      - "6379:6379"
+
+  mongodb:
+    container_name: mongodb
+    restart: always
+    image: mongo:4.2.6
+    ports:
+            - '27017:27017'
+    volumes:
+            - ./mongo-init.sh:/docker-entrypoint-initdb.d/mongo-init.sh
+    command: --wiredTigerCacheSizeGB 2.5
+
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3.8.3
+    env_file: *envfile
+    ports:
+      - 5672:5672
+      - 15672:15672
+
+  channels:
+    container_name: channels
+    image: *nostradamus-core
+    restart: "on-failure"
+    env_file: *envfile
+    command: python manage.py runserver 0.0.0.0:8001
+    links:
+      - "rabbitmq:rabbitmq"
+      - mongodb
+    depends_on:
+      - rabbitmq
+      - mongodb
+
+  worker:
+    image: *nostradamus-core
+    restart: "on-failure"
+    env_file: *envfile
+    command: celery -A nostradamus worker --max-memory-per-child=600000 --concurrency=10 -P threads -l info
+    links:
+      - "rabbitmq:rabbitmq"
+      - mongodb
+    depends_on:
+      - rabbitmq
+      - mongodb
+
+  scheduler:
+    container_name: scheduler
+    image: *nostradamus-core
+    restart: "on-failure"
+    env_file: *envfile
+    command: celery -A nostradamus beat -l info
+    links:
+      - "rabbitmq:rabbitmq"
+      - mongodb
+    depends_on:
+      - rabbitmq
+
+  flower:
+    container_name: flower
+    image: *nostradamus-core
+    restart: "on-failure"
+    env_file: *envfile
+    command: flower -A nostradamus --port=5555 --url-prefix=flower
+    depends_on:
+      - worker
+      - scheduler
+
+  virtual-assistant-core:
+    container_name: virtual-assistant-core
+    image: rasa/rasa:1.10.3-full
+    ports:
+      - 5005:5005
+    volumes:
+      - ./chatbot:/app
+      - ./chatbot/models:/app/models
+    command: run --enable-api --cors '*' --debug
+    env_file: *envfile
+
+  virtual-assistant-actions:
+    container_name: virtual-assistant-actions
+    volumes:
+      - ./chatbot/actions:/app/actions
+    build:
+      context: ./chatbot
+      dockerfile: Dockerfile
+    expose:
+      - "5055"
+    env_file: *envfile

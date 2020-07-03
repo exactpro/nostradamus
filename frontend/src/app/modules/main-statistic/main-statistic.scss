@@ -1,0 +1,33 @@
+@import "src/app/styles/_colors.scss";
+
+.main-statistic {
+  display: flex;
+
+  &__block {
+    margin-left: 20px;
+  }
+
+  &__number {
+    font-size: 30px;
+    line-height: 37px;
+    text-align: center;
+
+    &_type {
+      &_total {
+        color: #1F7EAD;
+      }
+
+      &_filtered {
+        color: #F68B55;
+      }
+    }
+  }
+
+  &__number-label {
+    margin-top: 4px;
+    font-size: 14px;
+    line-height: 17px;
+    color: #656565;
+    text-align: center;
+  }
+}

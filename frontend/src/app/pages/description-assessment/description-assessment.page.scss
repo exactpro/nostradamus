@@ -1,0 +1,58 @@
+.dAssessment-page {
+
+  &__content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    max-width: 1450px;
+  }
+
+  &__column {
+    display: inline-flex;
+    flex-direction: column;
+
+    &_position {
+      &_left {
+        width: 47.5862%;
+        max-width: 690px;
+      }
+
+      &_right {
+        width: 51.0344%;
+        max-width: 740px;
+        margin-left: 20px;
+      }
+    }
+  }
+
+  &__card:not(:first-child) {
+    margin-top: 20px;
+  }
+
+  .text-field {
+    height: 530px;
+    width: 100%;
+    max-width: 690px;
+  }
+  .probability {
+    height: 280px;
+    width: 100%;
+    max-width: 690px;
+  }
+
+  .bug-resolution {
+    height: 230px;
+    width: 100%;
+    max-width: 740px;
+  }
+  .priority {
+    height: 280px;
+    width: 100%;
+    max-width: 740px;
+  }
+  .ttr {
+    height: 280px;
+    width: 100%;
+    max-width: 740px;
+  }
+}
