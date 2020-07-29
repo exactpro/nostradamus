@@ -18,5 +18,5 @@ daphne==2.5.0
 channels-redis==2.4.2
 channels==2.4.0
 pystemmer==2.0.0.1
-uvicorn==0.11.5
+uvicorn==0.11.7
 flower==0.9.4
