@@ -12,20 +12,22 @@ import pandas as pd
 import zipfile
 
 
-def check_bugs_count(df: pd.DataFrame, required_count: int = 100):
+def check_bugs_count(issues: pd.DataFrame, required_count: int = 100) -> bool:
     """ Checks the number of bugs in the dataset.
     
     Parameters:
     ----------
-        df:
-            Bug reports.
-        required_count:
-            required count bugs.
+    issues:
+        Bug reports.
+    required_count:
+        required count bugs.
+
     Returns:
     ----------
-        True, if the required count of bugs is present in the dataset, otherwise it is False.
+        True, if the required count of bugs is present in the dataset,
+        otherwise it is False.
     """
-    return len(df.index) >= required_count
+    return len(issues.index) >= required_count
 
 
 def unpack_lists(lists: list) -> list:
@@ -50,6 +52,7 @@ def get_user_dir(instance: Model) -> Path:
     ----------
     instance:
             Instance of User model.
+
     Returns:
     ----------
         Path to user instance directory.
@@ -64,7 +67,7 @@ def get_user_dir(instance: Model) -> Path:
     return instance_path
 
 
-def get_models_dir(instance: Model):
+def get_models_dir(instance: Model) -> Path:
     """ Creates current.zip archive if it haven't been created before.
 
     Parameters:
@@ -77,8 +80,10 @@ def get_models_dir(instance: Model):
         Path to user/archive/current.zip.
     """
     path = get_user_dir(instance).joinpath("archive").joinpath("current.zip")
+
     if os.path.exists(path):
         return path
+
     zip_file = zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED)
     zip_file.close()
     return path
@@ -116,8 +121,8 @@ def init_instance_folders(path: Path) -> None:
     path:
         Path to usr or team directory.
     """
-    path.joinpath("archive").mkdir()
-    path.joinpath("backup").mkdir()
+    path.joinpath("archive").mkdir(exist_ok=True)
+    path.joinpath("backup").mkdir(exist_ok=True)
 
 
 def check_required_percentage(series: Series, value: str) -> bool:
@@ -134,17 +139,17 @@ def check_required_percentage(series: Series, value: str) -> bool:
     Returns:
     ----------
         True if value percentage is greater than 1% from the whole series
-        otherwise Flase.
+        otherwise False.
     """
     return series[series == value].size / series.size >= MIN_CLASS_PERCENTAGE
 
 
-def get_assignee_reporter(df: DataFrame) -> set:
+def get_assignee_reporter(issues: DataFrame) -> set:
     """ Parsing full names from Assignee and Reported series
 
     Parameters:
     ----------
-    df:
+    issues:
         Bug reports.
 
     Returns:
@@ -153,7 +158,8 @@ def get_assignee_reporter(df: DataFrame) -> set:
     """
     full_names = [
         full_name.lower().split()
-        for full_name in df["Assignee"].tolist() + df["Reporter"].tolist()
+        for full_name in issues["Assignee"].tolist()
+        + issues["Reporter"].tolist()
     ]
 
     assignee_reporter = set(unpack_lists(full_names))
@@ -161,19 +167,19 @@ def get_assignee_reporter(df: DataFrame) -> set:
     return assignee_reporter
 
 
-def get_stop_words(df: DataFrame) -> set:
+def get_stop_words(issues: DataFrame) -> set:
     """ Generates stop words for TfidfVectorizer constructor.
 
     Parameters:
     ----------
-    df:
+    issues:
         Bug reports.
 
     Returns:
     ----------
         Unique words which will be ignored.
     """
-    assignee_reporter = get_assignee_reporter(df)
+    assignee_reporter = get_assignee_reporter(issues)
 
     return STOP_WORDS.union(assignee_reporter)
 
@@ -183,12 +189,12 @@ def save_to_archive(archive_path: Path, file_name: str, content):
 
     Parameters:
     ----------
-        archive_path:
-            Path to an archive.
-        file_name:
-            Name of the file which will be appended to archive.
-        content:
-            Data to be written to the file.
+    archive_path:
+        Path to an archive.
+    file_name:
+        Name of the file which will be appended to archive.
+    content:
+        Data to be written to the file.
     """
     with zipfile.ZipFile(archive_path, "a") as file_:
         file_.writestr(file_name, content, compress_type=zipfile.ZIP_DEFLATED)

@@ -4,7 +4,7 @@ import pandas as pd
 from utils.data_converter import math_round
 
 
-def calculate_statistics(df: pd.DataFrame, series: list) -> dict:
+def calculate_statistics(issues: pd.DataFrame, series: list) -> dict:
     """Calculates the following metrics for handled series:
         - minimum value;
         - maximum value;
@@ -13,7 +13,7 @@ def calculate_statistics(df: pd.DataFrame, series: list) -> dict:
 
     Parameters
     ----------
-    df:
+    issues:
         DataFrame to be used for calculations.
     series:
         Series names to be used as metrics for calculations.
@@ -26,15 +26,15 @@ def calculate_statistics(df: pd.DataFrame, series: list) -> dict:
     for name in series:
         try:
             if name == "Time to Resolve":
-                df = df[df.Resolution != "Unresolved"]
+                issues = issues[issues.Resolution != "Unresolved"]
             statistics.update(
                 {
                     name: {
-                        "minimum": str(df[name].min()),
-                        "maximum": str(df[name].max()),
-                        "mean": str(int(math_round(df[name].mean()))),
+                        "minimum": str(issues[name].min()),
+                        "maximum": str(issues[name].max()),
+                        "mean": str(int(math_round(issues[name].mean()))),
                         "std": str(
-                            int(math_round(np.nan_to_num(df[name].std())))
+                            int(math_round(np.nan_to_num(issues[name].std())))
                         ),
                     }
                 }

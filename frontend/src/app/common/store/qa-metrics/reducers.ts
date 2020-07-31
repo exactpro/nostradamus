@@ -9,6 +9,10 @@ const initialState: QAMetricsStore = {
 		data: HttpStatus.PREVIEW,
 		table: HttpStatus.PREVIEW,
 	},
+	records_count: {
+		total: 0, 
+		filtered: 0
+	},
 	isModelTrained: true,
 	predictions_table: [],
 	prediction_table_rows_count: 0,
@@ -41,6 +45,7 @@ export const qaMetricsPageReducer = (state: QAMetricsStore = initialState, actio
 		case 'SET_QA_METRICS_ALL_DATA':
 			return {
 				...state,
+				records_count: {...action.data.records_count},
 				predictions_table: [...action.data.predictions_table],
 				prediction_table_rows_count: action.data.prediction_table_rows_count,
 				areas_of_testing_chart: { ...action.data.areas_of_testing_chart },
@@ -55,6 +60,9 @@ export const qaMetricsPageReducer = (state: QAMetricsStore = initialState, actio
 				predictions_table: [...action.tableData],
 			};
 
+		case "CLEAR_QA_METRICS_DATA":
+			return {...initialState};  
+			
 		default:
 			return state;
 	}

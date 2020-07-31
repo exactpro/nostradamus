@@ -7,12 +7,18 @@ export interface QAMetricsStore {
 	statuses: {
 		[key in QAMetricsStorePart]: HttpStatus
 	},
+	records_count: QAMetricsRecordsCount,
 	predictions_table: QAMetricsData[];
 	prediction_table_rows_count: number;
 	areas_of_testing_chart: QAMetricsData;
 	priority_chart: QAMetricsData;
 	ttr_chart: QAMetricsData;
 	resolution_chart: QAMetricsResolutionChartData;
+}
+
+export interface QAMetricsRecordsCount{
+	total: number,
+	filtered: number
 }
 
 export interface QAMetricsData {

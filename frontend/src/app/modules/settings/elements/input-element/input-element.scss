@@ -40,8 +40,10 @@
     }
 
     &_disabled{
+      pointer-events: none;
       cursor: pointer;
-      border-bottom: 1px solid $grayDisabled;
+      background-color: $veryLightGray;
+      border-bottom: 1px solid $deepDarkBlue;
     }
 
   }

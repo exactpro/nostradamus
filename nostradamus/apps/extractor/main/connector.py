@@ -4,33 +4,29 @@ from datetime import datetime as dt
 from typing import Optional
 
 from django.conf import settings
-from mongoengine import connect
 from pymongo import MongoClient, UpdateOne
 
 from apps.extractor.consumers import ExtractorConsumer
-from apps.extractor.models import Bug
-from utils.redis import clear_cache
+from utils.redis import clear_cache_by_keys
 
 CLIENT = MongoClient(host=settings.MONGODB_HOST, port=settings.MONGODB_PORT)
 
 DB = CLIENT[settings.MONGODB_NAME].bug
 
-connect(
-    settings.MONGODB_NAME,
-    host=settings.MONGODB_HOST,
-    port=settings.MONGODB_PORT,
-)
 
-
-def get_issues(fields: list = None, filters: list = None) -> list:
+def get_issues(
+    fields: list = None, filters: list = None, query: dict = None
+) -> list:
     """ Query bugs from the db with specific conditions.
 
     Parameters
     ----------
-    filters:
-        Filters to be applied.
     fields:
         Issue fields.
+    filters:
+        Filters to be applied.
+    query:
+        MongoDB's native query.
 
     Returns
     -------
@@ -109,13 +105,14 @@ def get_issues(fields: list = None, filters: list = None) -> list:
     fields = {field: 1 for field in fields} if fields else None
     if fields:
         fields["_id"] = 0
+    else:
+        fields = {"_id": 0}
 
     if filters:
         query = _build_find_query()
-        issues = DB.find(query, fields)
-        return [issue for issue in issues]
+    query = query if query else {}
 
-    issues = DB.find({}, fields)
+    issues = DB.find(query, fields)
     return [issue for issue in issues]
 
 
@@ -169,12 +166,17 @@ def insert_issues(issues: list) -> None:
     if issues:
         DB.insert_many(documents=issues, ordered=False)
 
-        clear_cache()
+        cache_keys = [
+            "analysis_and_training:defect_submission",
+            "qa_metrics:predictions_page",
+            "qa_metrics:predictions_table",
+        ]
+        clear_cache_by_keys(cache_keys)
 
         ExtractorConsumer.loader_notification()
 
 
-def update_issues(issues: list):
+def update_issues(issues: list) -> None:
     """ Update issues in the db.
 
     Parameters
@@ -193,10 +195,42 @@ def update_issues(issues: list):
         ]
         DB.bulk_write(requests=requests, ordered=False)
 
-        clear_cache()
+        cache_keys = [
+            "analysis_and_training:defect_submission",
+            "analysis_and_training:records_count",
+            "qa_metrics:predictions_page",
+            "qa_metrics:predictions_table",
+        ]
+        clear_cache_by_keys(cache_keys)
 
         ExtractorConsumer.loader_notification()
 
 
 def get_issue_count():
-    return Bug.objects.count()
+    return DB.count()
+
+
+def get_fields() -> list:
+    """ Get unique field names from Bug document.
+
+    Returns:
+        Unique field names.
+    """
+    fields = [key for key in DB.find_one()]
+
+    return fields
+
+
+def get_unique_values(field: str) -> list:
+    """ Query unique values from the db by the field.
+
+    Parameters
+    ----------
+    field:
+        Issue field.
+
+    Returns
+    -------
+        Unique values.
+    """
+    return DB.distinct(field)

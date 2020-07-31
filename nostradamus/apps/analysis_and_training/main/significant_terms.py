@@ -4,16 +4,17 @@ import numpy as np
 from collections import OrderedDict
 
 from apps.analysis_and_training.main.common import check_required_percentage
+from apps.analysis_and_training.main.mark_up import mark_up_series
 from apps.analysis_and_training.main.training import get_top_terms
 from utils.const import SIGNIFICANT_TERMS_METRICS
 
 
-def calculate_significance_weights(df: pd.DataFrame, metric: str) -> dict:
+def calculate_significance_weights(issues: pd.DataFrame, metric: str) -> dict:
     """ Calculates top terms based on significance weights.
 
     Parameters:
     ----------
-    df:
+    issues:
         Bug reports.
     metric:
         Value which is used for calculations.
@@ -24,12 +25,12 @@ def calculate_significance_weights(df: pd.DataFrame, metric: str) -> dict:
     """
 
     if metric.split()[0] in ("Resolution", "Priority"):
-        df = pd.get_dummies(
-            df, prefix=[metric.split()[0]], columns=[metric.split()[0]]
+        issues = pd.get_dummies(
+            issues, prefix=[metric.split()[0]], columns=[metric.split()[0]]
         )
         metric = metric.split()[0] + "_" + " ".join(metric.split()[1:])
 
-    calculated_terms = get_top_terms(df, metric)
+    calculated_terms = get_top_terms(issues, metric)
 
     for term in calculated_terms:
         if np.isnan(calculated_terms[term]):
@@ -46,15 +47,16 @@ def calculate_significance_weights(df: pd.DataFrame, metric: str) -> dict:
     return dict(list(calculated_terms.items())[:20])
 
 
-def get_term_metrics(df: pd.DataFrame, aot: dict):
+def get_term_metrics(issues: pd.DataFrame, aot: dict) -> list:
     """ Generates metrics for significant terms calculation.
 
     Parameters:
     ----------
-    df:
+    issues:
         Bug reports.
     aot:
         Areas of testing.
+
     Returns:
     ----------
         Metrics represented as Metric Value pairs.
@@ -63,26 +65,31 @@ def get_term_metrics(df: pd.DataFrame, aot: dict):
     metrics = []
 
     for metric in SIGNIFICANT_TERMS_METRICS:
-        el_series = df[metric]
-        for category in el_series.dropna().unique().tolist():
-            if category and check_required_percentage(el_series, category):
+        series = issues[metric]
+        for category in series.dropna().unique().tolist():
+            if category and check_required_percentage(series, category):
                 metrics.append(" ".join([metric, category]))
 
     if aot:
-        aot_metrics = [
-            area["area_of_testing"] for area in aot["mark_up_entities"]
-        ]
+        aot_metrics = []
+        for area in aot["mark_up_entities"]:
+            series = mark_up_series(
+                issues, aot["source_field"], "aot", area["entities"]
+            ).aot
+            if check_required_percentage(series, 1):
+                aot_metrics.append(area["area_of_testing"])
+
         metrics.extend(aot_metrics)
 
     return metrics
 
 
-def get_significant_terms(df: pd.DataFrame, aot: dict = None) -> dict:
-    """ Generates all required data for significant terms view.
+def get_significant_terms(issues: pd.DataFrame, aot: dict = None) -> dict:
+    """ Generates content for significant terms card.
 
     Parameters:
     ----------
-    df:
+    issues:
         Bug reports.
     aot:
         Areas of testing.
@@ -95,17 +102,16 @@ def get_significant_terms(df: pd.DataFrame, aot: dict = None) -> dict:
     """
 
     # Can't be calculated on dataset containing less than 100 bugs
-    if len(df) < 100:
+    if len(issues) < 100:
 
-        # TODO need decide how to return exceptions separately
         # TODO raise exception if dataframe length is less than 100
         return {"referring_to": [], "chosen_metric": "", "terms": {}}
 
-    metrics = get_term_metrics(df, aot)
+    metrics = get_term_metrics(issues, aot)
 
     if metrics:
         chosen_metric = metrics[0]
-        terms = calculate_significance_weights(df, chosen_metric)
+        terms = calculate_significance_weights(issues, chosen_metric)
     else:
         chosen_metric = ""
         terms = {}

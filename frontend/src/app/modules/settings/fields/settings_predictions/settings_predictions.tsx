@@ -1,99 +1,110 @@
 import React, {Component} from "react";
 import Icon, {IconSize, IconType} from "app/common/components/icon/icon";
 import Button, { ButtonStyled } from 'app/common/components/button/button';
-import InputElement from "app/modules/settings/elements/input-element/input-element";
 import InputPredictionsElement from "app/modules/settings/elements/input-predictions-element/input-predictions-element";
 import cn from "classnames";
 import {connect, ConnectedProps} from "react-redux";
 import {RootStore} from "app/common/types/store.types";
-import {sendSettings} from "app/common/store/settings/thunks";
-import {PredictionTableType, SettingsSections} from "app/common/store/settings/types";
+import {sendSettingsData} from "app/common/store/settings/thunks";
+import {PredictionTableData, SettingsSections} from "app/common/store/settings/types";
 import "app/modules/settings/fields/settings_predictions/settings_predictions.scss";
+import DropdownElement from "../../elements/dropdown-element/dropdown-element";
 
 interface SettingsPredictionsState{
-  values: PredictionTableType[],
+  names: string[],
+  predictions: PredictionTableData[],
   dataInput: string,
   isSettingsDefault: boolean,
 }
 
 class SettingsPredictions extends Component<SettingsPredictionsProps, SettingsPredictionsState>{
 
-  state: SettingsPredictionsState = {
-    values:[],
-    dataInput: "",
-    isSettingsDefault: true,
-  }
-
   constructor(props: SettingsPredictionsProps)
   {
     super(props);
-    this.state.values=[...this.props.predictions];
+    this.state = this.getDefaultStateObject();
   }
 
   detectIsSettingsDefault = (isSettingsDefault: boolean = false) => this.setState({isSettingsDefault})
 
-  setInputData = (value: string) => {
-    this.setState({dataInput: value});
+  setInputData = (dataInput: string) => {
+    this.setState({dataInput});
   }
 
   clearInputData = () => {
-    this.setState({dataInput:""});
+    this.setInputData("");
   }
 
-  addPosition = () => {
-    let {values} = this.state;
-    values.push({
+  addPrediction = () => {
+    let {predictions} = this.state;
+
+    predictions.push({
       name: this.state.dataInput,
       is_default: false,
-      position: values.length+1,
+      position: predictions.length+1,
+      settings: 0,
     });
-    this.setState({values});
+
+    this.setState({predictions});
     this.clearInputData();
     this.detectIsSettingsDefault();
   }
 
-  clearValue = (index: number) => () => {
-    let {values} = this.state;
-    values.splice(index, 1);
-    this.setState({values});
-    this.repairOrder();
+  deletePrediction = (index: number) => () => {
+    let {predictions} = this.state;
+
+    predictions.splice(index, 1);
+
+    this.setState({predictions});
+    this.fixPredictionOrder();
   }
 
-  changeValue = (index: number, name: string) => {
-    let {values} = this.state;
-    values[index].name= name;
-    this.setState({values});
+  editPrediction = (index: number, name: string) => {
+    let {predictions} = this.state;
+
+    predictions[index].name= name;
+
+    this.setState({predictions});
   }
 
-  repairOrder = () => {
-    let values = this.state.values.map((item,index)=>({...item, position: index+1}));
-    this.setState({values});
+  fixPredictionOrder = () => {
+    let predictions = this.state.predictions.map((item,index)=>({...item, position: index+1}));
+
+    this.setState({predictions});
   }
 
-  changeValuesOrder = (indexOfDraggedVal: number, indexOfNewPosition: number) =>
+  changePredictionsOrder = (indexOfDraggedVal: number, indexOfNewPosition: number) =>
   {
-    let {values}=this.state;
-    let val = values.splice(indexOfDraggedVal,1)[0];
-    values.splice(indexOfNewPosition,0,val);
-    this.setState({values});
-    this.repairOrder();
+    let {predictions}=this.state;
+    let val = predictions.splice(indexOfDraggedVal,1)[0];
+
+    predictions.splice(indexOfNewPosition,0,val);
+
+    this.setState({predictions});
+    this.fixPredictionOrder();
     this.detectIsSettingsDefault();
   }
 
   saveSettings =() => {
-    this.props.sendSettings(SettingsSections.predictions, this.state.values);
+    this.props.sendSettingsData(SettingsSections.predictions, this.state.predictions);
+
     this.detectIsSettingsDefault(true);
   }
 
-  clearSettings =() => {
-    this.setState({
-      values:[...this.props.predictions],
-      dataInput: "",
-    });
-    this.detectIsSettingsDefault(true);
+  setDefaultSettings =() => {
+    this.setState(this.getDefaultStateObject());
   }
+
+  getDefaultStateObject = (): SettingsPredictionsState => ({
+    names: [...this.props.predictions.field_names],
+    predictions:[...this.props.predictions.predictions_table_settings],
+    dataInput: "",
+    isSettingsDefault: true,
+  })
 
   render(){
+    let excludeNames = this.state.predictions.map(item=>item.name);
+
     return (
       <div className="settings-predictions">
         <p className="settings-predictions__title">Predictions</p>
@@ -101,23 +112,24 @@ class SettingsPredictions extends Component<SettingsPredictionsProps, SettingsPr
         <div className="settings-predictions-header">
           <p className="settings-predictions-header__title">Add Own Element</p>
           <div className="settings-predictions-header__wrapper">
-            <InputElement value={this.state.dataInput}
-                          onChange={this.setInputData}
-                          onClear={this.clearInputData}
-                          placeholder="Element"/>
+            <DropdownElement value={this.state.dataInput}
+                             onChange={this.setInputData}
+                             onClear={this.clearInputData}
+                             dropDownValues={this.state.names}
+                             excludeValues={excludeNames}/>
             <button className={cn("settings-predictions__add-position", "settings-predictions__button")}
-                    onClick={this.addPosition}
-                    disabled={!this.state.dataInput || this.state.values.length>=7}>
+                    onClick={this.addPrediction}
+                    disabled={!this.state.dataInput || this.state.predictions.find((item:PredictionTableData)=>!item.is_default) !== undefined}>
               <Icon size={IconSize.small} type={IconType.close}/>
             </button>
           </div>
         </div>
 
         <div className="settings-predictions-main">
-          <InputPredictionsElement  values={this.state.values}
-                                    onClear={this.clearValue}
-                                    onChange={this.changeValue}
-                                    onChangeOrder={this.changeValuesOrder}/>
+          <InputPredictionsElement  values={this.state.predictions}
+                                    onClear={this.deletePrediction}
+                                    onChange={this.editPrediction}
+                                    onChangeOrder={this.changePredictionsOrder}/>
         </div>
 
         <div className="settings-predictions-footer">
@@ -125,7 +137,7 @@ class SettingsPredictions extends Component<SettingsPredictionsProps, SettingsPr
                   icon={IconType.close}
                   iconSize={IconSize.normal}
                   styled={ButtonStyled.Flat}
-                  onClick={this.clearSettings}
+                  onClick={this.setDefaultSettings}
                   disabled={this.state.isSettingsDefault}/>
           <Button text="Save Changes"
                   icon={IconType.check}
@@ -140,11 +152,11 @@ class SettingsPredictions extends Component<SettingsPredictionsProps, SettingsPr
 }
 
 const mapStateToProps = ({settings}: RootStore) => ({
-  predictions: settings.defaultSettings.predictions_table,
+  predictions: settings.settingsStore.defaultSettings.predictions_table,
 })
 
 const mapDispatchToProps = {
-  sendSettings,
+  sendSettingsData,
 }
 
 const connector = connect(mapStateToProps, mapDispatchToProps)

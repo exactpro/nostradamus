@@ -6,6 +6,8 @@ from .views import (
     DefectSubmission,
     SignificantTerms,
     Train,
+    FrequentlyTerms,
+    Statistics,
 )
 
 
@@ -15,4 +17,6 @@ urlpatterns = [
     path("defect_submission/", DefectSubmission.as_view()),
     path("significant_terms/", SignificantTerms.as_view()),
     path("train/", Train.as_view()),
+    path("frequently_terms/", FrequentlyTerms.as_view()),
+    path("statistics/", Statistics.as_view()),
 ]

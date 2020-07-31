@@ -7,6 +7,8 @@ import { HttpStatus } from 'app/common/types/http.types';
   setData = "SET_DATA",
   clearData = "CLEAR_DATA",
   sendData = "SEND_DATA",
+  setCollectingDataStatus = "SET_COLLECTING_DATA_STATUS",
+  clearSettings = "CLEAR_SETTINGS",
 }
 
 export enum SettingsSections{
@@ -17,15 +19,26 @@ export enum SettingsSections{
 }
 
 // Type for Filter section: Analysis&Training and QAMetrics
-export type FilterType = {
+export type FilterData = {
   name: string,
   filtration_type: string,
 }
+
+export type FilterType = {
+  filter_settings: FilterData[],
+  names: string[],
+}
 // Type for PredictionTable section
-export type PredictionTableType = {
+export type PredictionTableData = {
   name: string,
-  is_default: false,
+  is_default: boolean,
   position: number,
+  settings: number
+}
+
+export type PredictionTableType = {
+  predictions_table_settings: PredictionTableData[],
+  field_names: string[]
 }
 
 // Type for Training section
@@ -46,17 +59,18 @@ export type TrainingType = {
   bug_resolution: BugResolution[],
 }
 
-export type SettingsDataUnion = FilterType[] | PredictionTableType[] | TrainingType;
+export type SettingsDataUnion = FilterData[] | PredictionTableData[] | TrainingType;
 
-export interface SettignsData{
-  filters: FilterType[],
-  qa_metrics: FilterType[],
-  predictions_table: PredictionTableType[],
+export interface SettingsData{
+  filters: FilterType,
+  qa_metrics: FilterType,
+  predictions_table: PredictionTableType,
   training: TrainingType,
 }
 
 export interface SettingsStore{
   isOpen: boolean,
+  isCollectingFinished: boolean,
   status: {[key: string]: HttpStatus},
-  defaultSettings: SettignsData,
+  defaultSettings: SettingsData,
 }

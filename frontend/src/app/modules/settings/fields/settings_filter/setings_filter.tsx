@@ -1,15 +1,14 @@
 import React, {Component} from "react";
 import cn from "classnames";
-import "app/modules/settings/fields/settings_filter/settings_filter.scss";
-import InputElement from "app/modules/settings/elements/input-element/input-element";
+import "app/modules/settings/fields/settings_filter/settings_filter.scss"; 
 import DropdownElement from "app/modules/settings/elements/dropdown-element/dropdown-element";
-import {FilterElementType} from "app/modules/settings/elements/elements-types";
+import {FilterElementType, FilterDropdownType} from "app/modules/settings/elements/elements-types";
 import Icon, {IconSize, IconType} from "app/common/components/icon/icon";
 import Button, { ButtonStyled } from 'app/common/components/button/button';
 import {connect, ConnectedProps} from "react-redux";
 import {RootStore} from "app/common/types/store.types";
 import {SettingsSections} from "app/common/store/settings/types";
-import {sendSettings} from "app/common/store/settings/thunks";
+import {sendSettingsData} from "app/common/store/settings/thunks";
 
 interface SettingsFilterData{
   [key: string]: string,
@@ -18,7 +17,8 @@ interface SettingsFilterData{
 }
 
 interface SettingsFilterState{
-  [key: string]: boolean|Array<SettingsFilterData>|SettingsFilterData|Array<FilterElementType>,
+  [key: string]: boolean|Array<SettingsFilterData>|SettingsFilterData|Array<FilterElementType>| string[],
+  names: string[], 
   settings: Array<SettingsFilterData>,
   dataInput: SettingsFilterData,
   dataEdit: SettingsFilterData,
@@ -35,47 +35,35 @@ class SettingsFilter extends Component<Props, SettingsFilterState>{
   constructor(props: Props)
   {
     super(props);
-    this.state.settings=[...props.defaultSettings[props.section]];
-    this.state.status=props.defaultSettings[props.section].map((_:any,index:number)=>index%2===1? FilterElementType.odd: FilterElementType.even);
+    this.state = this.getDefaultStateObject();
   }
 
-  state:SettingsFilterState={
-    settings:[],
-    dataInput:{
-      name:"",
-      filtration_type:"",
-    },
-    dataEdit:{
-      name:"",
-      filtration_type:"",
-    },
-    status:[],
-    isSettingsDefault: true,
-  }
+  setFieldData = (keyField: "dataInput" | "dataEdit", valField: keyof SettingsFilterData) => (value: string) => {
+    let data: SettingsFilterData = this.state[keyField];
 
-
-  detectIsSettingsDefault = (isSettingsDefault: boolean = false) => this.setState({isSettingsDefault})
-
-  setFieldData = (keyField: string = "dataInput", valField: string = "name") => (value: string) => {
-    let data: SettingsFilterData = this.state[keyField] as SettingsFilterData;
     data[valField] = value;
+
     this.setState({
       [keyField]:data
     });
   }
 
-  clearFieldData = (keyField: string = "dataInput", valField?: string) => () => {
-    let data: SettingsFilterData = this.state[keyField] as SettingsFilterData;
+  clearFieldData = (keyField: "dataInput" | "dataEdit", valField?: keyof SettingsFilterData) => () => {
+    let data: SettingsFilterData = this.state[keyField];
+
     valField? data[valField] = "" : data={name:"", filtration_type: ""};
+
     this.setState({
       [keyField]:data,
     });
   }
 
-  addPosition = () => {
+  addTableRow = () => {
     let {settings,status} = this.state;
+
     settings.push({...this.state.dataInput});
-    status.push(status.length%2===1? FilterElementType.odd: FilterElementType.even);
+    status.push(this.getTableRowParity(status.length));
+
     this.setState({
       settings,
       status,
@@ -84,39 +72,53 @@ class SettingsFilter extends Component<Props, SettingsFilterState>{
     this.detectIsSettingsDefault();
   }
 
-  changeHoverStatus = (index: number) => ({type}: any) => {
+  changeTableRowHoverStatus = (index: number) => ({type}: any) => {
     let {status} = this.state;
+
+    if(status[index]===FilterElementType.edited) return;
+
     switch (type) {
       case "mouseenter":
         status[index] = FilterElementType.hovered;
         break;
       default:
-        status[index] = index%2===1? FilterElementType.odd: FilterElementType.even;
+        status[index] = this.getTableRowParity(index);
         break;
     }
+
     this.setState({status});
   }
 
+<<<<<<< HEAD
+  editTableRowData = (index: number) => () => {
+=======
   editPosition = (index: number) => () => {
-    let {status, dataEdit} = this.state;
-    dataEdit = {...this.state.settings[index]};
+>>>>>>> [Settings][Filter] Refactoring
+    let {status} = this.state, dataEdit = {...this.state.settings[index]};
+
     status[index] = FilterElementType.edited;
+
     this.setState({status, dataEdit});
   };
 
-  acceptEditing = (index: number) => () => {
+<<<<<<< HEAD
+  acceptTableRowEditing = (index: number) => () => {
+=======
+  acceptPositionEditing = (index: number) => () => {
+>>>>>>> [Settings][Filter] Refactoring
     let {settings,status} = this.state;
+
     settings[index]={...this.state.dataEdit};
-    status[index] = index%2===1? FilterElementType.odd: FilterElementType.even;
+    status[index] = this.getTableRowParity(index);
+
     this.setState({
       settings,
       status,
     });
-    this.clearFieldData("dataEdit");
     this.detectIsSettingsDefault();
   }
 
-  deletePosition = (index: number) => () =>{
+  deleteTableRow = (index: number) => () =>{
     let {settings, status} = this.state;
     settings.splice(index,1);
     status.pop();
@@ -127,27 +129,94 @@ class SettingsFilter extends Component<Props, SettingsFilterState>{
     this.detectIsSettingsDefault();
   }
 
-  isButtonValid = (field: string = "dataInput") => {
-    let data: SettingsFilterData = this.state[field] as SettingsFilterData;
-    return !(data.name && data.filtration_type);
-  }
-
-  isHoverValid = (index: number) => this.state.status[index]!==FilterElementType.edited? this.changeHoverStatus(index): undefined;
-
-  clearSettings = () => {
-    this.setState({
-      settings: [...this.props.defaultSettings[this.props.section]],
-      status: this.props.defaultSettings[this.props.section].map((_:any,index:number)=>index%2===1? FilterElementType.odd: FilterElementType.even)
-    });
-    this.detectIsSettingsDefault(true);
+<<<<<<< HEAD
+  setDefaultSettings = () => {
+    this.setState(this.getDefaultStateObject());
   }
 
   saveSettings = () => {
-    this.props.sendSettings(this.props.section, this.state.settings);
+    this.props.sendSettingsData(this.props.section, this.state.settings);
     this.detectIsSettingsDefault(true);
+=======
+  clearSettings = () => {
+    this.setState(this.getDefaultStateObject());
+>>>>>>> [Settings][Filter] Refactoring
+  }
+
+  getDefaultStateObject = (): SettingsFilterState => ({
+      names: [...this.props.defaultSettings[this.props.section].names],
+      settings: [...this.props.defaultSettings[this.props.section].filter_settings].sort((firstItem: SettingsFilterData, secondItem: SettingsFilterData)=>firstItem.name.toLowerCase().localeCompare(secondItem.name.toLowerCase())),
+      status: this.props.defaultSettings[this.props.section].filter_settings.map((_:any,index:number)=>this.getTableRowParity(index)),
+      dataInput: {
+        name:"",
+        filtration_type:"",
+      },
+      dataEdit:{
+        name:"",
+        filtration_type:"",
+      },
+      isSettingsDefault: true,
+    })
+
+  getTableRowParity = (numb: number) => numb%2===1? FilterElementType.odd: FilterElementType.even;
+
+  detectIsSettingsDefault = (isSettingsDefault: boolean = false) => this.setState({isSettingsDefault});
+
+  isPositionAcceptButtonValid = (field: "dataInput" | "dataEdit") => {
+    let data: SettingsFilterData = this.state[field];
+    return !(data.name && data.filtration_type);
+  }
+
+  getDefaultStateObject = (): SettingsFilterState => ({
+      names: [...this.props.defaultSettings[this.props.section].names],
+      settings: [...this.props.defaultSettings[this.props.section].filter_settings].sort((firstItem: SettingsFilterData, secondItem: SettingsFilterData)=>firstItem.name.toLowerCase().localeCompare(secondItem.name.toLowerCase())),
+      status: this.props.defaultSettings[this.props.section].filter_settings.map((_:any,index:number)=>this.getTableRowParity(index)),
+      dataInput: {
+        name:"",
+        filtration_type:"",
+      },
+      dataEdit:{
+        name:"",
+        filtration_type:"",
+      },
+      isSettingsDefault: true,
+    })
+
+  getTableRowParity = (numb: number) => numb%2===1? FilterElementType.odd: FilterElementType.even;
+
+  detectIsSettingsDefault = (isSettingsDefault: boolean = false) => this.setState({isSettingsDefault});
+
+  isPositionAcceptButtonValid = (field: "dataInput" | "dataEdit") => {
+    let data: SettingsFilterData = this.state[field];
+    return !(data.name && data.filtration_type);
+  }
+
+  getDefaultStateObject = (): SettingsFilterState => ({
+      settings: [...this.props.defaultSettings[this.props.section]],
+      status: this.props.defaultSettings[this.props.section].map((_:any,index:number)=>this.getTableRowParity(index)),
+      dataInput: {
+        name:"",
+        filtration_type:"",
+      },
+      dataEdit:{
+        name:"",
+        filtration_type:"",
+      },
+      isSettingsDefault: true,
+    })
+
+  getTableRowParity = (numb: number) => numb%2===1? FilterElementType.odd: FilterElementType.even;
+
+  detectIsSettingsDefault = (isSettingsDefault: boolean = false) => this.setState({isSettingsDefault});
+
+  isPositionAcceptButtonValid = (field: "dataInput" | "dataEdit") => {
+    let data: SettingsFilterData = this.state[field];
+    return !(data.name && data.filtration_type);
   }
 
   render(){
+    let excludeNames = this.state.settings.map(item=>item.name);
+
     return(
       <div className="settings-filter">
         <p className="settings-filter__title">Filter</p>
@@ -156,10 +225,19 @@ class SettingsFilter extends Component<Props, SettingsFilterState>{
 
           <div className="settings-filter-name">
             <p className="settings-filter-header__title">Name</p>
-            <InputElement onChange={this.setFieldData()}
+<<<<<<< HEAD
+            <DropdownElement onChange={this.setFieldData("dataInput", "name")}
+                             onClear={this.clearFieldData("dataInput", "name")}
+                             style={{width:"90%"}}
+                             value={this.state.dataInput.name}
+                             dropDownValues={this.state.names}
+                             excludeValues={excludeNames}/>
+=======
+            <InputElement onChange={this.setFieldData("dataInput", "name")}
                           onClear={this.clearFieldData("dataInput", "name")}
                           style={{width:"90%"}}
                           value={this.state.dataInput.name}/>
+>>>>>>> [Settings][Filter] Refactoring
           </div>
 
           <div className="settings-filter-type">
@@ -168,11 +246,17 @@ class SettingsFilter extends Component<Props, SettingsFilterState>{
             <div className="settings-filter-header__dropdown-wrapper">
               <DropdownElement  onChange={this.setFieldData("dataInput", "filtration_type")}
                                 onClear={this.clearFieldData("dataInput", "filtration_type")}
-                                value={this.state.dataInput.filtration_type}/>
+                                value={this.state.dataInput.filtration_type}
+                                dropDownValues={Object.values(FilterDropdownType)}
+                                writable={false}/>
 
               <button className={cn("settings-filter-header__add-position", "settings-filter__button")}
+<<<<<<< HEAD
+                      onClick={this.addTableRow}
+=======
                       onClick={this.addPosition}
-                      disabled={this.isButtonValid()}>
+>>>>>>> [Settings][Filter] Refactoring
+                      disabled={this.isPositionAcceptButtonValid("dataInput")}>
                 <Icon size={IconSize.small} type={IconType.close}/>
               </button>
 
@@ -187,14 +271,27 @@ class SettingsFilter extends Component<Props, SettingsFilterState>{
             this.state.settings.map(({name,filtration_type},index)=>(
             <div  key={index}
                   className="settings-filter-main__section"
-                  onMouseEnter={this.isHoverValid(index)}
-                  onMouseLeave={this.isHoverValid(index)}>
+<<<<<<< HEAD
+                  onMouseEnter={this.changeTableRowHoverStatus(index)}
+                  onMouseLeave={this.changeTableRowHoverStatus(index)}>
+
+              <div className={cn("settings-filter-name", "settings-filter-name_tabled")}>
+                <DropdownElement type={this.state.status[index]}
+                                 value={this.state.status[index]===FilterElementType.edited? this.state.dataEdit.name: name}
+                                 onClear={this.clearFieldData("dataEdit", "name")}
+                                 onChange={this.setFieldData("dataEdit", "name")}
+                                 dropDownValues={this.state.names}
+                                 excludeValues={excludeNames.filter(exName=>exName!==name)}/>
+=======
+                  onMouseEnter={this.changeHoverStatus(index)}
+                  onMouseLeave={this.changeHoverStatus(index)}>
 
               <div className={cn("settings-filter-name", "settings-filter-name_tabled")}>
                 <InputElement type={this.state.status[index]}
                               value={this.state.status[index]===FilterElementType.edited? this.state.dataEdit.name: name}
                               onClear={this.clearFieldData("dataEdit", "name")}
-                              onChange={this.setFieldData("dataEdit")}/>
+                              onChange={this.setFieldData("dataEdit", "name")}/>
+>>>>>>> [Settings][Filter] Refactoring
               </div>
 
               <div className="settings-filter-type">
@@ -202,13 +299,19 @@ class SettingsFilter extends Component<Props, SettingsFilterState>{
                   <DropdownElement  type={this.state.status[index] }
                                     value={this.state.status[index]===FilterElementType.edited? this.state.dataEdit.filtration_type: filtration_type}
                                     onChange={this.setFieldData("dataEdit","filtration_type")}
-                                    onClear={this.clearFieldData("dataEdit", "filtration_type")}/>
+                                    onClear={this.clearFieldData("dataEdit", "filtration_type")}
+                                    dropDownValues={Object.values(FilterDropdownType)}
+                                    writable={false}/>
 
                   {
                     this.state.status[index] === FilterElementType.edited &&
                     <button className={cn("settings-filter-type__accept-button", "settings-filter__button")}
-                            onClick={this.acceptEditing(index)}
-                            disabled={this.isButtonValid("dataEdit")}>
+<<<<<<< HEAD
+                            onClick={this.acceptTableRowEditing(index)}
+=======
+                            onClick={this.acceptPositionEditing(index)}
+>>>>>>> [Settings][Filter] Refactoring
+                            disabled={this.isPositionAcceptButtonValid("dataEdit")}>
                       <Icon type={IconType.check} size={IconSize.normal}/>
                     </button>
                   }
@@ -221,13 +324,13 @@ class SettingsFilter extends Component<Props, SettingsFilterState>{
                 <div className="settings-filter-main__section-edit-wrapper">
 
                   <button className="settings-filter-main__edit-button"
-                          onClick={this.editPosition(index)}
+                          onClick={this.editTableRowData(index)}
                           disabled={this.state.status.includes(FilterElementType.edited)}>
                     <Icon type={IconType.edit2} size={IconSize.normal}/>
                   </button>
 
                   <button className="settings-filter-main__delete-button"
-                          onClick={this.deletePosition(index)}>
+                          onClick={this.deleteTableRow(index)}>
                     <Icon type={IconType.delete} size={IconSize.normal}/>
                   </button>
 
@@ -244,7 +347,7 @@ class SettingsFilter extends Component<Props, SettingsFilterState>{
                   icon={IconType.close}
                   iconSize={IconSize.normal}
                   styled={ButtonStyled.Flat}
-                  onClick={this.clearSettings}
+                  onClick={this.setDefaultSettings}
                   disabled={this.state.isSettingsDefault}/>
           <Button text="Save Changes"
                   icon={IconType.check}
@@ -259,11 +362,11 @@ class SettingsFilter extends Component<Props, SettingsFilterState>{
 }
 
 const mapStateToProps = ({settings}: RootStore) => ({
-  defaultSettings: settings.defaultSettings
+  defaultSettings: settings.settingsStore.defaultSettings
 })
 
 const mapDispatchToProps = {
-  sendSettings,
+  sendSettingsData,
 }
 
 const connector = connect(mapStateToProps, mapDispatchToProps)

@@ -1,18 +1,25 @@
+import { AnalysisAndTrainingApi } from 'app/common/api/analysis-and-training.api';
 import { TagCloud } from 'app/common/components/charts/tag-cloud/tag-cloud';
 import CircleSpinner from 'app/common/components/circle-spinner/circle-spinner';
 import Icon, { IconType } from 'app/common/components/icon/icon';
 import { HttpStatus } from 'app/common/types/http.types';
-import { RootStore } from 'app/common/types/store.types';
-import { updateTerms } from 'app/modules/significant-terms/store/thunk';
+import { Terms } from 'app/modules/significant-terms/store/types';
 import React from 'react';
-import { connect, ConnectedProps } from 'react-redux';
 
 import './significant-terms.scss';
+
+interface Props {
+	status: HttpStatus,
+	onChangeMetric: (period: string) => void,
+	metrics: string[],
+	chosen_metric: string | null,
+	terms: Terms
+}
 
 class SignificantTerms extends React.PureComponent<Props> {
 
 	changeSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-		this.props.updateTerms(String(e.target.value));
+		this.props.onChangeMetric(String(e.target.value));
 	};
 
 	render() {
@@ -25,7 +32,7 @@ class SignificantTerms extends React.PureComponent<Props> {
                   className="significant-terms__select"
                   id="significant-terms__select"
                   placeholder="Metric"
-                  value={this.props.chosen_metric}
+                  value={this.props.chosen_metric!}
                   onChange={this.changeSelect}
                   name="Metric"
               >
@@ -54,24 +61,4 @@ class SignificantTerms extends React.PureComponent<Props> {
 	}
 }
 
-const mapStateToProps = (state: RootStore) => ({
-	terms: state.analysisAndTraining.significantTerms.terms,
-	chosen_metric: state.analysisAndTraining.significantTerms.chosen_metric,
-	metrics: state.analysisAndTraining.significantTerms.metrics,
-	status: state.analysisAndTraining.significantTerms.status,
-});
-
-const mapDispatchToProps = {
-	updateTerms,
-};
-
-const connector = connect(
-	mapStateToProps,
-	mapDispatchToProps,
-);
-
-type PropsFromRedux = ConnectedProps<typeof connector>
-
-type Props = PropsFromRedux & {};
-
-export default connector(SignificantTerms);
+export default SignificantTerms;

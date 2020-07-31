@@ -1,6 +1,8 @@
 actions:
+- action_default_ask_affirmation
 - utter_ask_help
 - utter_ask_period
+- utter_ask_rephrase
 - utter_cannot_help
 - utter_describe_yourself
 - utter_goodbye
@@ -13,17 +15,17 @@ entities:
 forms:
 - report_form
 intents:
+- out_of_scope
 - report
+- inform
+- deny
 - what_do_you_can
 - goodbye
 - thanks
-- inform
 - greet
-- out_of_scope
 - describe_yourself
 - intro_nostradamus
 - affirm
-- deny
 responses:
   utter_ask_help:
   - buttons:
@@ -41,6 +43,8 @@ responses:
     - payload: yesterday
       title: Yesterday
     text: For which day?
+  utter_ask_rephrase:
+  - text: Sorry, I didn't get you.
   utter_cannot_help:
   - text: Sorry, I don't get it.
   - text: I can't help you with that.

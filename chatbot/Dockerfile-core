@@ -1,0 +1,11 @@
+FROM rasa/rasa:1.10.3-full
+
+WORKDIR /app
+
+COPY ./actions/requirements.txt ./
+
+USER root
+
+RUN pip install -r requirements.txt
+
+COPY . /app/

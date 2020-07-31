@@ -1,4 +1,4 @@
-import { AnalysisAndTrainingStatistic, StatisticPart } from 'app/common/store/analysis-and-training/types';
+import { AnalysisAndTrainingStatistic, StatisticPart } from 'app/common/types/analysis-and-training.types';
 import React from 'react';
 
 import './statistic.scss';

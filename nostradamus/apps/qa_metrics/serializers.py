@@ -5,7 +5,13 @@ from apps.analysis_and_training.serializers import (
 )
 
 
+class RecordsCountSerializer(serializers.Serializer):
+    total = serializers.IntegerField()
+    filtered = serializers.IntegerField()
+
+
 class PredictionsInfoSerializer(serializers.Serializer):
+    records_count = RecordsCountSerializer()
     predictions_table = serializers.ListField(
         child=serializers.DictField(child=serializers.CharField())
     )

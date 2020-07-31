@@ -8,7 +8,7 @@ services:
     build:
       context: ./nostradamus
       dockerfile: Dockerfile
-    command: bash -c "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn -b 0.0.0.0:8000 nostradamus.wsgi --log-level debug --timeout 18000"
+    command: bash -c "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn -b 0.0.0.0:8000 -c gunicorn-conf.py -k uvicorn.workers.UvicornH11Worker nostradamus.asgi --access-logfile - --error-logfile - --log-level debug"
     env_file: &envfile
       - .env
     links:
@@ -16,6 +16,9 @@ services:
       - redis
     depends_on:
       - redis
+    volumes:
+      - ./nostradamus/data/:/home/app/nostradamus/data/
+      - ./nostradamus/assets/:/home/app/nostradamus/assets/
 
   nostradamus-frontend:
     container_name: nostradamus-frontend
@@ -111,19 +114,19 @@ services:
     image: rasa/rasa:1.10.3-full
     ports:
       - 5005:5005
-    volumes:
-      - ./chatbot:/app
-      - ./chatbot/models:/app/models
+    build:
+      context: ./chatbot
+      dockerfile: Dockerfile-core
     command: run --enable-api --cors '*' --debug
     env_file: *envfile
 
   virtual-assistant-actions:
     container_name: virtual-assistant-actions
-    volumes:
-      - ./chatbot/actions:/app/actions
     build:
       context: ./chatbot
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile-actions
+    volumes:
+    - /etc/localtime:/etc/localtime
     expose:
       - "5055"
     env_file: *envfile

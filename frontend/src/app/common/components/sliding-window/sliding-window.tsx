@@ -15,7 +15,7 @@ export default function SlidingWindow(props: Props)
   return(
     <div className="sliding-window">
 
-      {props.isOpen && <div className="sliding-window__underlayer"/>}
+      {props.isOpen && <div className="sliding-window__underlayer" onClick={props.onClose}/>}
 
       <div className={cn("sliding-window-wrapper", {"sliding-window-wrapper_open": props.isOpen})}>
 

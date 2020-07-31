@@ -55,7 +55,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ("id", "name", "email", "password", "team")
 
-    def create(self, validated_data: OrderedDict):
+    def create(self, validated_data: OrderedDict) -> User:
         """ Creates new User instance when calling serializer.save() method.
 
         Parameters:
@@ -79,7 +79,7 @@ class UserSerializer(serializers.ModelSerializer):
 
         return user_instance
 
-    def get_team(self):
+    def get_team(self) -> Team:
         return Team.objects.get(id=self.validated_data["team"])
 
 
@@ -87,7 +87,7 @@ class AuthRequestSerializer(serializers.Serializer):
     credentials = serializers.CharField(required=True)
     password = serializers.CharField(required=True)
 
-    def get_credentials(self):
+    def get_credentials(self) -> tuple:
         return (
             self.validated_data["credentials"].lower(),
             self.validated_data["password"],

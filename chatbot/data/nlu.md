@@ -12,7 +12,7 @@
 - OK
 - Roger that
 - Deal
-- /affirm
+- affirm
 - ok great!
 - okay
 - okb;d
@@ -20,7 +20,7 @@
 ## intent:deny
 - I don't want to
 - NO
-- NO DON"T WANT THIS!
+- NO DON'T WANT THIS!
 - Nah
 - Neither
 - Never
@@ -115,6 +115,8 @@
 - Status report
 - could you give me report please?
 - status report for [today](period) please
+- report status
+- report
 
 ## intent:inform
 - for [today](period) please
@@ -146,6 +148,7 @@
 - report for [today](period) please
 - [Today](period)
 - [Yesterday](period)
+- [Today](period)
 
 ## intent:out_of_scope
 - please help with my ice cream it's dripping
@@ -196,9 +199,22 @@
 - are you still here?
 - how can I apply for a new job?
 - lol
+- aksjetk
+- qwerty
+- polkiujhytg
+- zxcvbnmllkjhgfds
+- polow
+- colololo
 - Some text bla bla bla
 - elihgfe
 - what the weather today?
+- -
+- tuc
+- truto
+- _
+- dfghjkl
+- ::::::
+- [][][][]
 
 ## intent:goodbye
 - Bye

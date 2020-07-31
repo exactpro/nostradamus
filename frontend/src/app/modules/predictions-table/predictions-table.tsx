@@ -24,7 +24,11 @@ class PredictionsTable extends React.Component<IProps, IState> {
 
 	onChangeLimit = (e: React.ChangeEvent<HTMLSelectElement>) => {
 		let newLimit = Number(e.target.value);
-		let newCurrentPage = Math.ceil(this.state.currentPage * this.state.limit / newLimit);
+		let oldLimit = this.state.limit;
+		let newCurrentPage = Math.ceil(this.state.currentPage * oldLimit / newLimit);
+		
+		if((newCurrentPage-1)*newLimit>this.props.totalCount) newCurrentPage = Math.ceil(this.props.totalCount / newLimit);
+		
 		this.setState({
 			limit: newLimit,
 			currentPage: newCurrentPage,

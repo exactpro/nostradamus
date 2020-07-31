@@ -1,10 +1,7 @@
-import { updateDefectSubmission } from 'app/common/store/analysis-and-training/thunks';
-import { RootStore } from 'app/common/types/store.types';
+import { AnalysisAndTrainingDefectSubmission } from 'app/common/types/analysis-and-training.types';
 import React from 'react';
-import { connect, ConnectedProps } from 'react-redux';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import cn from 'classnames';
-import moment from 'moment';
 
 import './defect-submission.scss';
 
@@ -17,38 +14,25 @@ const TimeFilters = {
 	Year: 'Year',
 };
 
-interface DefectSubmissionState {
-	activeTimeFilter: string
+interface Props {
+	defectSubmission: AnalysisAndTrainingDefectSubmission | undefined,
+	activeTimeFilter: string,
+	onChangePeriod: (period: string) => void
 }
 
-class DefectSubmission extends React.Component<PropsFromRedux, DefectSubmissionState> {
-
-	state = {
-		activeTimeFilter: TimeFilters.SixMonths,
-	};
+class DefectSubmission extends React.Component<Props> {
 
 	graphRef: React.RefObject<HTMLDivElement> = React.createRef();
 
 	setFilter = (timeFilter: string) => () => {
-		this.setState({
-			...this.state,
-			activeTimeFilter: timeFilter,
-		}, this.updateGraph);
+		this.props.onChangePeriod(timeFilter);
 	};
-
-	updateGraph = () => {
-		this.props.updateDefectSubmission(this.state.activeTimeFilter);
-	};
-
-	componentDidMount(): void {
-		this.updateGraph();
-	}
 
 	render() {
-		let { activeTimeFilter } = this.state;
+		let { activeTimeFilter } = this.props;
 
 		const graphData = Object.entries(this.props.defectSubmission || {}).map(([key, value]) => ({
-			data: moment(key).format('DD.MM.YYYY'),
+			data: key,
 			value: value,
 		}));
 
@@ -116,30 +100,4 @@ class DefectSubmission extends React.Component<PropsFromRedux, DefectSubmissionS
 	}
 }
 
-const mapStateToProps = (state: RootStore) => ({
-	defectSubmission: state.analysisAndTraining.analysisAndTraining.defectSubmission,
-});
-
-const mapDispatchToProps = {
-	updateDefectSubmission,
-};
-
-const connector = connect(
-	mapStateToProps,
-	mapDispatchToProps,
-);
-
-type PropsFromRedux = ConnectedProps<typeof connector>
-
-export default connector(DefectSubmission);
-
-// const data = [
-// 	{
-// 		'name': '31.08',
-// 		'pv': 200,
-// 	},
-// 	{
-// 		'name': '01.09',
-// 		'pv': 260,
-// 	},
-// ];
+export default DefectSubmission;

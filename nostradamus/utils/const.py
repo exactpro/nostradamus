@@ -86,11 +86,20 @@ STOP_WORDS = text.ENGLISH_STOP_WORDS.difference(
 
 PERIOD_MAPPING = {
     "Day": "D",
-    "Week": "W",
+    "Week": "W-MON",
     "Month": "M",
     "3 Months": "3M",
     "6 Months": "6M",
     "Year": "Y",
+}
+
+PERIOD_FORMAT_MAPPING = {
+    "Day": "%d.%m.%Y",
+    "Week": "%d.%m.%Y",
+    "Month": "%b %Y",
+    "3 Months": "%b %Y",
+    "6 Months": "%b %Y",
+    "Year": "%Y",
 }
 
 SIGNIFICANT_TERMS_METRICS = ["Resolution", "Priority"]
@@ -133,7 +142,7 @@ PREDICTIONS_TABLE_FIELD_MAPPING = {
 PREDICTION_FIELDS = [
     "Resolution_prediction",
     "areas_of_testing_prediction",
-    "ttr_prediction",
+    "Time to Resolve_prediction",
 ]
 
 DEFAULT_OFFSET = 0
@@ -149,11 +158,14 @@ UNRESOLVED_BUGS_FILTER = {
 MANDATORY_FIELDS = [
     "Description_tr",
     "Time to Resolve",
+    "Resolution",
     "Attachments",
     "Comments",
     "Resolved",
+    "Resolution",
     "Created",
     "Updated",
     "Assignee",
     "Reporter",
+    "Key",
 ]

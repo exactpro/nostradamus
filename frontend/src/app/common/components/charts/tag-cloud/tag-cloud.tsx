@@ -10,6 +10,7 @@ import './tag-cloud.scss';
 interface IProps {
 	tags: Terms;
 	className?: string;
+	percentage?: boolean
 }
 
 export class TagCloud extends React.Component<IProps> {
@@ -23,18 +24,18 @@ export class TagCloud extends React.Component<IProps> {
 
 	renderBlock = (termsList: Tag[], position: string) => {
 
-		let standartSize: number = 12;
+		let standardSize: number = 12;
 
 		return (
 			<div className={cn('tag-cloud__block', position)}>
 				{
-					termsList.map(({ name, size, color }, index) => (
+					termsList.map(({ name, size, absoluteValue, color }, index) => (
 						<div
 							key={name}
 							className={cn('tag-cloud__term', `tag-cloud__term_color_${color}`)}
-							style={{ fontSize: Math.floor(!!size ? size : standartSize), zIndex: 10 - index }}
+							style={{ fontSize: Math.floor(!!size ? size : standardSize), zIndex: 10 - index }}
 						>
-							<Tooltip duration={1} message={`${name} - ${size.toFixed(1)}`}>
+							<Tooltip duration={1} message={`${name} - ${absoluteValue.toFixed(1)}${this.props.percentage ? '%' : ''}`}>
 								{this.getShortVersion(name)}
 							</Tooltip>
 						</div>

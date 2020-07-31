@@ -1,5 +1,6 @@
 from zipfile import ZipFile
-from multiprocessing import Pool
+
+import concurrent.futures
 import pandas as pd
 import numpy
 from typing import List
@@ -33,21 +34,24 @@ from utils.exceptions import (
 )
 from utils.warnings import ModelsNotTrainedWarning
 
+from sklearn.model_selection import GridSearchCV
 
-def compare_resolutions(df: pd.DataFrame, resolutions: list) -> set:
+
+def compare_resolutions(issues: pd.DataFrame, resolutions: list) -> set:
     """ Checks for difference between required resolutions and those that are present in df.
-    
+
     Parameters:
     ----------
-        df:
-            Bug reports.
-        resolutions:
-            bugs resolution.
+    issues:
+        Bug reports.
+    resolutions:
+        bugs resolution.
+
     Returns:
     ----------
         The difference between the required resolutions and those that are present in the dataframe.
     """
-    return set(resolutions).difference(set(df.Resolution.unique()))
+    return set(resolutions).difference(set(issues.Resolution.unique()))
 
 
 def get_k_neighbors(series: pd.Series) -> int:
@@ -55,11 +59,12 @@ def get_k_neighbors(series: pd.Series) -> int:
     
     Parameters:
     ----------
-        series:
-            data used for calculations.
+    series:
+        data used for calculations.
+
     Returns:
     ----------
-        number of k-nearest neighbors.
+        Number of k-nearest neighbors.
     """
     unique_values_count = series.value_counts()
     k_neighbors = (
@@ -67,6 +72,7 @@ def get_k_neighbors(series: pd.Series) -> int:
         if len(unique_values_count) != 0
         else 0
     )
+
     if k_neighbors <= 1:
         raise SmallNumberRepresentatives(
             f"Oops! Too small number of class representatives for {series.name}"
@@ -74,6 +80,7 @@ def get_k_neighbors(series: pd.Series) -> int:
 
     if len(set(unique_values_count)) == 1:
         return 2
+
     return k_neighbors
 
 
@@ -82,8 +89,8 @@ def stringify_ttr_intervals(intervals: List[pd.Interval]) -> str:
     
     Parameters:
     ----------
-        intervals: 
-            intervals.
+    intervals:
+        intervals.
 
     Returns:
     ----------
@@ -97,25 +104,25 @@ def stringify_ttr_intervals(intervals: List[pd.Interval]) -> str:
         ]
         + [
             str(intervals[el].left + 1) + "-" + str(intervals[el].right)
-            for el in range(len(intervals) - 1)
+            for el in range(1, len(intervals) - 1)
         ]
         + [">" + str(intervals[len(intervals) - 1].left)]
     )
 
 
 def filter_classes(
-    df: pd.DataFrame, areas_of_testing: list, resolution: list
+    issues: pd.DataFrame, areas_of_testing: list, resolution: list
 ) -> dict:
-    """ Filters out classes with inadequate percentage of representatives
+    """ Filters out classes with inadequate percentage of representatives.
     
     Parameters:
     ----------
-        df:
-            Bug reports.
-        areas_of_testing:
-            areas of testing classes;
-        resolution:
-            resolution classes.
+    issues:
+        Bug reports.
+    areas_of_testing:
+        areas of testing classes;
+    resolution:
+        resolution classes.
 
     Returns:
     ----------
@@ -124,8 +131,8 @@ def filter_classes(
     classes = {
         "areas_of_testing": areas_of_testing,
         "Resolution": resolution,
-        "Priority": df["Priority"].unique().tolist(),
-        "Time to Resolve": df["Time to Resolve"].unique().tolist(),
+        "Priority": issues["Priority"].unique().tolist(),
+        "Time to Resolve": issues["Time to Resolve"].unique().tolist(),
     }
 
     filtered_classes = {}
@@ -134,49 +141,78 @@ def filter_classes(
             filtered_classes[metric] = [
                 el
                 for el in classes[metric]
-                if check_required_percentage(df[el], 1)
-                and len(set(df[el])) != 1
+                if check_required_percentage(issues[el], 1)
+                and len(set(issues[el])) != 1
             ]
         else:
             filtered_classes[metric] = sorted(
                 [
                     el
                     for el in classes[metric]
-                    if check_required_percentage(df[metric], el)
-                    and len(set(df[metric])) != 1
+                    if check_required_percentage(issues[metric], el)
+                    and len(set(issues[metric])) != 1
                 ]
             )
+
     return filtered_classes
 
 
-def encode_series(df: pd.DataFrame) -> pd.DataFrame:
+def encode_series(issues: pd.DataFrame) -> pd.DataFrame:
     """Encodes series classes.
     
     Parameters:
     ----------
-        df:
-            Bug reports.
+    issues:
+        Bug reports.
 
     Returns:
     ----------
         Dataframe containing encoded series.
     """
+
     # TODO Investigation is required for imbalanced data
-    df["Time to Resolve"] = qcut(
-        df["Time to Resolve"].astype(int), q=4, duplicates="drop"
+    issues["Time to Resolve"] = qcut(
+        issues["Time to Resolve"].astype(int), q=4, duplicates="drop"
     )
-    df["time to resolve_codes"] = df["Time to Resolve"].cat.rename_categories(
-        range(len(df["Time to Resolve"].unique()))
+    issues["time to resolve_codes"] = issues[
+        "Time to Resolve"
+    ].cat.rename_categories(range(len(issues["Time to Resolve"].unique())))
+
+    issues["priority_codes"] = Categorical(
+        issues["Priority"], ordered=True
+    ).codes
+
+    issues = issues.reset_index(drop=True)
+    series_resolution = issues["Resolution"]
+    issues = get_dummies(issues, columns=["Resolution"])
+    issues["Resolution"] = series_resolution
+
+    return issues
+
+
+def get_best_params(model, X: pd.Series, Y: pd.Series) -> dict:
+    """ Selects optimal parameters for model.
+
+    Parameters:
+    ----------
+    model:
+        model;
+    X:
+        training vector;
+    Y:
+        target values.
+
+    Returns:
+    ----------
+        Best parameters for model.
+    """
+    param_grid = {"clf__C": [1, 2], "clf__gamma": [2, 5]}
+
+    gs = GridSearchCV(
+        model, param_grid, scoring="f1_weighted", cv=10, n_jobs=12
     )
-
-    df["priority_codes"] = Categorical(df["Priority"], ordered=True).codes
-
-    df = df.reset_index(drop=True)
-    series_resolution = df["Resolution"]
-    df = get_dummies(df, columns=["Resolution"])
-    df["Resolution"] = series_resolution
-
-    return df
+    gs.fit(X, Y)
+    return gs.best_params_
 
 
 def train_imbalance(
@@ -188,27 +224,27 @@ def train_imbalance(
     req_percentage: int,
     CLF_,
     model_name: str,
-) -> dict:
+) -> tuple:
     """ Trains models using handled setting and saves them as .sav objects.
 
     Parameters:
     ----------
     instance:
-        Instance of User model;
+        Instance of User model.
     descr_series:
-        description series;
+        description series.
     classes_codes:
-        series with classes' codes;
+        series with classes' codes.
     TFIDF_:
-        vectorizer;
+        vectorizer.
     IMB_:
-        SMOTE instance;
+        SMOTE instance.
     FS_:
-        ranking terms method;
+        ranking terms method.
     req_percentage:
-        percentage to be taken from the ranked list;
+        percentage to be taken from the ranked list.
     CLF_:
-        classifier;
+        classifier.
     model_name:
         models name.
 
@@ -221,14 +257,20 @@ def train_imbalance(
     clf_model = Pipeline(
         [("tfidf", TFIDF_), ("imba", IMB_), ("fs", transformer), ("clf", CLF_)]
     )
-    clf_model.set_params(fs__percentile=req_percentage).fit(
-        descr_series, classes_codes
-    )
 
-    return {model_name: clf_model}
+    best_params = get_best_params(clf_model, descr_series, classes_codes)
+    print(f"{model_name}:{best_params}")
+
+    clf_model.set_params(
+        fs__percentile=req_percentage,
+        clf__C=best_params["clf__C"],
+        clf__gamma=best_params["clf__gamma"],
+    ).fit(descr_series, classes_codes)
+
+    return {model_name: clf_model}, {model_name: best_params}
 
 
-def save_training_parameters(archive_path: Path, classes: dict):
+def save_training_parameters(archive_path: Path, classes: dict, params: dict):
     """ Saves training parameters to the config file.
 
     Parameters:
@@ -237,6 +279,8 @@ def save_training_parameters(archive_path: Path, classes: dict):
         Path to an archive.
     classes:
         classes.
+    params:
+        params for model.
     """
     training_settings = {}
 
@@ -252,24 +296,29 @@ def save_training_parameters(archive_path: Path, classes: dict):
         else:
             training_settings[class_] = classes[class_]
 
+    training_settings["model_params"] = params
+
     save_to_archive(
         archive_path, "training_parameters.pkl", dumps(training_settings)
     )
 
 
 def train(
-    instance: Model, df: pd.DataFrame, areas_of_testing: list, resolution: list
+    instance: Model,
+    issues: pd.DataFrame,
+    areas_of_testing: list,
+    resolution: list,
 ) -> dict:
     """ Train models.
     
     Parameters:
     ----------
     instance:
-        Instance of User model;
-    df:
-        Bug reports;
+        Instance of User model.
+    issues:
+        Bug reports.
     areas_of_testing:
-        areas of testing;
+        areas of testing.
     resolution:
         resolution.
 
@@ -286,8 +335,10 @@ def train(
             Bugs description, classes codes, SMOTE instance and model name.
         """
         for metric in filtered_classes.keys():
-            if metric == "Priority" or metric == "Time to Resolve":
-                filtered_df = df[df[metric].isin(filtered_classes[metric])]
+            if metric in ["Priority", "Time to Resolve"]:
+                filtered_df = issues[
+                    issues[metric].isin(filtered_classes[metric])
+                ]
                 smt = SMOTE(
                     ratio="minority",
                     random_state=0,
@@ -295,7 +346,7 @@ def train(
                     n_jobs=4,
                 )
                 smt.k_neighbors = get_k_neighbors(
-                    df[metric.lower() + "_codes"]
+                    filtered_df[metric.lower() + "_codes"]
                 )
                 classes_codes = filtered_df[metric.lower() + "_codes"]
                 model_name = metric.split("_")[0]
@@ -314,63 +365,72 @@ def train(
                         kind="borderline1",
                         n_jobs=4,
                     )
-                    smt.k_neighbors = get_k_neighbors(df[df_index])
+                    smt.k_neighbors = get_k_neighbors(issues[df_index])
 
-                    yield df.Description_tr, df[df_index], smt, class_
+                    yield issues.Description_tr, issues[df_index], smt, class_
 
-    df = df[
-        (df["Resolution"] != "Unresolved")
-        & (df["Resolved"].isna() is not True)
-        & (df["Resolved"].notnull())
+    issues = issues[
+        (issues["Resolution"] != "Unresolved")
+        & (issues["Resolved"].isna() is not True)
+        & (issues["Resolved"].notnull())
     ]
-    df = df.reset_index()
+    issues = issues.reset_index()
 
-    if not check_bugs_count(df):
+    if not check_bugs_count(issues):
         raise LittleDataToAnalyze
 
-    df = encode_series(df)
-    filtered_classes = filter_classes(df, areas_of_testing, resolution)
+    issues = encode_series(issues)
+    filtered_classes = filter_classes(issues, areas_of_testing, resolution)
 
     # TODO: remove unnecessary resolution verification
     # when settings will be linked to data
-    missing_resolutions = compare_resolutions(df, resolution)
+    missing_resolutions = compare_resolutions(issues, resolution)
     if missing_resolutions:
         raise ResolutionElementsMissed(
             f"Oops! These Resolution elements are missed: {missing_resolutions}. Models can't be trained."
         )
 
-    filtered_resolutions = set(resolution).difference(
-        set(filtered_classes.get("Resolution"))
+    filtered_elements = (
+        set(resolution).union(set(areas_of_testing))
+    ).difference(
+        set(filtered_classes.get("Resolution")).union(
+            set(filtered_classes.get("areas_of_testing"))
+        )
     )
-    if filtered_resolutions:
-        raise ResolutionElementsMissed(
-            f"Oops! These Resolution elements are missed: {filtered_resolutions}. Models can't be trained."
+
+    if filtered_elements:
+        raise SmallNumberRepresentatives(
+            f"Oops! Too little number of class representatives for: {filtered_elements}. Models can't be trained."
         )
 
     svm_imb = SVC(gamma=2, C=1, probability=True, class_weight="balanced")
-
-    sw = get_stop_words(df)
+    sw = get_stop_words(issues)
     tfidf = StemmedTfidfVectorizer(stop_words=sw)
 
     try:
-        with Pool() as pool:
-            models = [
-                pool.apply_async(
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            models_and_params = {
+                executor.submit(
                     train_imbalance,
-                    args=(
-                        description,
-                        classes,
-                        tfidf,
-                        smote,
-                        chi2,
-                        50,
-                        svm_imb,
-                        model_name,
-                    ),
+                    description,
+                    classes,
+                    tfidf,
+                    smote,
+                    chi2,
+                    50,
+                    svm_imb,
+                    model_name,
                 )
                 for description, classes, smote, model_name in _params_producer()
+            }
+            models = [
+                model.result()[0]
+                for model in concurrent.futures.as_completed(models_and_params)
             ]
-            models = [model.get() for model in models]
+            params = [
+                param.result()[1]
+                for param in concurrent.futures.as_completed(models_and_params)
+            ]
     except ValueError:
         raise InconsistentGivenData
 
@@ -381,26 +441,28 @@ def train(
     )
     filtered_classes["binary"] = [0, 1]
 
-    save_training_parameters(get_models_dir(instance), filtered_classes)
+    save_training_parameters(
+        get_models_dir(instance), filtered_classes, params
+    )
 
     resolutions = [
         "Resolution_" + resol for resol in filtered_classes["Resolution"]
     ]
     save_top_terms(
         get_models_dir(instance),
-        df,
+        issues,
         resolutions,
         filtered_classes["Priority"],
         filtered_classes["areas_of_testing"],
     )
 
 
-def get_top_terms(df: pd.DataFrame, metric: str) -> dict:
+def get_top_terms(issues: pd.DataFrame, metric: str) -> dict:
     """ Calculates top terms.
 
     Parameters:
     ----------
-    df:
+    issues:
         Bug reports.
     metric:
         Value which is used for calculations.
@@ -411,32 +473,33 @@ def get_top_terms(df: pd.DataFrame, metric: str) -> dict:
     """
     chi2 = feature_selection.chi2
 
-    sw = get_stop_words(df)
+    sw = get_stop_words(issues)
     tfidf = StemmedTfidfVectorizer(stop_words=sw)
-    tfs = tfidf.fit_transform(df["Description_tr"])
+    tfs = tfidf.fit_transform(issues["Description_tr"])
 
-    y = df[metric]
+    y = issues[metric]
     selector = SelectKBest(score_func=chi2, k="all")
     selector.fit_transform(tfs, y)
+
     return dict(zip(tfidf.get_feature_names(), selector.scores_))
 
 
-def calculate_top_terms(df: pd.DataFrame, metric: str) -> list:
+def calculate_top_terms(issues: pd.DataFrame, metric: str) -> list:
     """ Calculates top terms which are based on significance weights.
 
     Parameters:
     ----------
-        df: 
-            Bug reports;
-        metric: 
-            field which is used for calculation.
+    issues:
+        Bug reports.
+    metric:
+        field which is used for calculation.
 
     Returns:
     ----------
         list of the calculated terms.
 
     """
-    terms = get_top_terms(df, metric)
+    terms = get_top_terms(issues, metric)
 
     terms = {k: v for (k, v) in terms.items() if v > 1}
     return [
@@ -446,7 +509,7 @@ def calculate_top_terms(df: pd.DataFrame, metric: str) -> list:
 
 def save_top_terms(
     archive_path: Path,
-    df: pd.DataFrame,
+    issues: pd.DataFrame,
     resolutions: list,
     priorities: list,
     areas_of_testing: list,
@@ -455,20 +518,20 @@ def save_top_terms(
     
     Parameters:
     ----------
-        archive_path:
-            Path to an archive;
-        df: 
-            Bug reports;
-        resolutions: 
-            resolutions;
-        priorities: 
-            priorities derived after models' training;
-        areas_of_testing: 
-            areas of testing derived after models' training.
+    archive_path:
+        Path to an archive.
+    issues:
+        Bug reports.
+    resolutions:
+        resolutions.
+    priorities:
+        priorities derived after models' training.
+    areas_of_testing:
+        areas of testing derived after models' training.
 
     """
     binarized_df = pd.get_dummies(
-        df, prefix=["Priority"], columns=["Priority"],
+        issues, prefix=["Priority"], columns=["Priority"],
     )
     top_terms = {}
 

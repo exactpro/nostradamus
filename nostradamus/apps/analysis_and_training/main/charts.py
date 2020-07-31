@@ -1,10 +1,10 @@
 import pandas as pd
 
-from utils.const import PERIOD_MAPPING
+from utils.const import PERIOD_MAPPING, PERIOD_FORMAT_MAPPING
 
 
-def calculate_defect_submission(df: pd.DataFrame, period: str) -> dict:
-    """ Calculates coordinates for Cumulative chart of defect submission.
+def get_defect_submission(df: pd.DataFrame, period: str) -> dict:
+    """ Calculates coordinates for defect submission chart.
 
     Parameters:
     ----------
@@ -17,13 +17,12 @@ def calculate_defect_submission(df: pd.DataFrame, period: str) -> dict:
     ----------
         Chart coordinates.
     """
-    df.set_index(df["Created"], inplace=True)
-
     chart_period = PERIOD_MAPPING[period]
+    date_format = PERIOD_FORMAT_MAPPING[period]
 
-    result = df["Key"].resample(chart_period).count().cumsum()
-    result.index = result.index.strftime("%Y-%m-%d")
+    df.set_index(df["Created"], inplace=True)
+    coordinates = df["Key"].resample(chart_period).count().cumsum()
+    coordinates.index = coordinates.index.strftime(date_format)
+    coordinates = coordinates.to_dict()
 
-    result = dict(zip(result.index, result))
-
-    return result
+    return coordinates

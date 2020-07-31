@@ -6,7 +6,7 @@ from string import whitespace
 from apps.authentication.models import User
 
 
-def name_whitespaces_validator(value):
+def name_whitespaces_validator(value: str) -> None:
     whitespaces_regex = re.compile(f"[{whitespace}]")
 
     if whitespaces_regex.search(value):
@@ -15,7 +15,7 @@ def name_whitespaces_validator(value):
         )
 
 
-def password_whitespaces_validator(value):
+def password_whitespaces_validator(value: str) -> None:
     whitespaces_regex = re.compile(f"[{whitespace}]")
 
     if whitespaces_regex.search(value):
@@ -24,7 +24,7 @@ def password_whitespaces_validator(value):
         )
 
 
-def email_whitespaces_validator(value):
+def email_whitespaces_validator(value: str) -> None:
     whitespaces_regex = re.compile(f"[{whitespace}]")
 
     if whitespaces_regex.search(value):
@@ -33,7 +33,7 @@ def email_whitespaces_validator(value):
         )
 
 
-def name_special_symbols_validator(value):
+def name_special_symbols_validator(value: str) -> None:
     special_symbols_regex = re.compile(r"[-№`/!-,:-@[-^{-~]")
 
     if special_symbols_regex.search(value):
@@ -42,7 +42,7 @@ def name_special_symbols_validator(value):
         )
 
 
-def email_validator(value):
+def email_validator(value: str) -> None:
     email_regex = re.compile(r"[№/!--:-?[-`{-~]")
 
     if email_regex.search(value):
@@ -51,7 +51,7 @@ def email_validator(value):
         )
 
 
-def unique_user_name(value):
+def unique_user_name(value: str) -> None:
     user = User.objects.filter(name__iexact=value)
 
     if user:
@@ -60,7 +60,7 @@ def unique_user_name(value):
         )
 
 
-def unique_user_email(value):
+def unique_user_email(value: str) -> None:
     user = User.objects.filter(email__iexact=value)
 
     if user:

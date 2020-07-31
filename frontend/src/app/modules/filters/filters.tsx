@@ -54,7 +54,9 @@ export class Filters extends React.Component<InnerProps> {
 				<div className="filters__scroll-container">
 					<div className="filters__list">
 						{
-							this.filters.fields.map((field, index) => (
+							this.filters.fields
+								.sort((field1, field2) => field1.name > field2.name ? 1 : -1)
+								.map((field, index) => (
 								<div className="filters__filter" key={index}>
 									<div className="filters__filter-name">
 										{field.name}

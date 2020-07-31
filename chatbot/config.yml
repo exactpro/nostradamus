@@ -1,5 +1,3 @@
-# Configuration for Rasa NLU.
-# https://rasa.com/docs/rasa/nlu/components/
 language: "en"
 
 pipeline:
@@ -15,8 +13,6 @@ pipeline:
   - name: DIETClassifier
   - name: EntitySynonymMapper
 
-# Configuration for Rasa Core.
-# https://rasa.com/docs/rasa/core/policies/
 policies:
   - name: MemoizationPolicy
   - name: MappingPolicy
@@ -24,3 +20,5 @@ policies:
   - name: FormPolicy
   - name: TwoStageFallbackPolicy
     nlu_threshold: 0.8
+    fallback_core_action_name: "utter_cannot_help"
+    fallback_nlu_action_name: "utter_cannot_help"

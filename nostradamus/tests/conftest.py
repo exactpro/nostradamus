@@ -50,6 +50,34 @@ def statistics():
     data = {
         "Comments": [_ for _ in range(100)],
         "Attachments": [_ for _ in range(100)],
+        "Time to Resolve": [_ for _ in range(100)],
+        "Resolution": ["Done" for _ in range(100)],
+    }
+
+    return pd.DataFrame(data=data, columns=list(data.keys()))
+
+
+@pytest.fixture
+def statistics_2():
+    data = {
+        "Comments": [_ for _ in range(100)],
+        "Attachments": [_ for _ in range(100)],
+        "Time to Resolve": [_ if _ % 2 == 1 else 10 for _ in range(100)],
+        "Resolution": [
+            "Done" if _ % 2 == 1 else "Unresolved" for _ in range(100)
+        ],
+    }
+
+    return pd.DataFrame(data=data, columns=list(data.keys()))
+
+
+@pytest.fixture
+def statistics_3():
+    data = {
+        "Comments": [_ for _ in range(100)],
+        "Attachments": [_ for _ in range(100)],
+        "Time to Resolve": [_ for _ in range(100)],
+        "Resolution": ["Unresolved" for _ in range(100)],
     }
 
     return pd.DataFrame(data=data, columns=list(data.keys()))
@@ -165,7 +193,7 @@ def default_settings():
             {"name": "TimeToResolve", "is_default": True, "position": 4},
         ],
         "training": {
-            "mark_up_source": "",
+            "source_field": "",
             "mark_up_entities": [],
             "bug_resolution": [],
         },
@@ -213,7 +241,7 @@ def new_settings():
             {"name": "TestField", "is_default": False, "position": 5},
         ],
         "training": {
-            "mark_up_source": "test_mark_up_source",
+            "source_field": "test_mark_up_source",
             "mark_up_entities": [
                 {
                     "area_of_testing": "test_area_1",
@@ -280,8 +308,87 @@ def default_filters(request):
     ]
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(scope="class")
 def JQL(request):
     request.cls.JQL = (
         'issuetype = Bug AND priority = "Minor" AND assignee in (EMPTY)'
     )
+
+
+@pytest.fixture
+def correct_result_statistics():
+    return {
+        "Comments": {
+            "minimum": "0",
+            "maximum": "99",
+            "mean": "50",
+            "std": "29",
+        },
+        "Attachments": {
+            "minimum": "0",
+            "maximum": "99",
+            "mean": "50",
+            "std": "29",
+        },
+        "Time to Resolve": {
+            "minimum": "0",
+            "maximum": "99",
+            "mean": "50",
+            "std": "29",
+        },
+    }
+
+
+@pytest.fixture(scope="class")
+def result_significant_metrics(request):
+    request.cls.result_significant_terms = {
+        "chosen_metric": "Resolution Unresolved",
+        "metrics": [
+            "Resolution Unresolved",
+            "Resolution Done",
+            "Resolution Rejected",
+            "Priority Minor",
+            "Priority Major",
+        ],
+        "terms": {"description_tr": 0.0},
+    }
+
+
+@pytest.fixture(scope="class")
+def settings_aot_metrics(request):
+    request.cls.settings_for_aot = {
+        "source_field": "Priority",
+        "mark_up_entities": [
+            {"area_of_testing": "AOT1", "entities": ["Major"]}
+        ],
+    }
+
+
+@pytest.fixture(scope="class")
+def report_fields(request):
+    request.cls.report_fields = [
+        "Project",
+        "Key",
+        "Status",
+        "Priority",
+        "Created",
+        "Reporter",
+        "Assignee",
+    ]
+
+
+@pytest.fixture(scope="class")
+def chatbot_url(request):
+    request.cls.chatbot_url = "http://localhost:5005/webhooks/rest/"
+
+
+@pytest.fixture(scope="class")
+def predictions_table_fields(request):
+    request.cls.predictions_table_fields = [
+        "Issue Key",
+        "Priority",
+        "Area of Testing",
+        "Time to Resolve",
+        "Summary",
+        "Resolution: Done",
+    ]

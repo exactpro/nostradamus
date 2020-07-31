@@ -2,10 +2,12 @@ import {
 	QAMetricsData,
 	QAMetricsResolutionChartData,
 	QAMetricsStorePart,
+	QAMetricsRecordsCount,
 } from 'app/common/store/qa-metrics/types';
 import { HttpStatus } from 'app/common/types/http.types';
 
 export interface QAMetricsAllData {
+	records_count: QAMetricsRecordsCount;
 	predictions_table: QAMetricsData[];
 	prediction_table_rows_count: number;
 	areas_of_testing_chart: QAMetricsData;
@@ -33,4 +35,8 @@ export const setQAMetricsAllData = (data: QAMetricsAllData) => ({
 export const setQAMetricsTable = (tableData: QAMetricsData[]) => ({
 	type: 'SET_QA_METRICS_PAGE_TABLE',
 	tableData,
+} as const);
+
+export const clearQAMetricsData = () => ({
+	type: "CLEAR_QA_METRICS_DATA"
 } as const);

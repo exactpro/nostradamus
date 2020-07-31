@@ -15,23 +15,29 @@ import cn from 'classnames';
 import React from 'react';
 import { connect, ConnectedProps } from 'react-redux';
 import { Link, RouteComponentProps } from 'react-router-dom';
-
+import Tooltip from "app/common/components/tooltip/tooltip";
+import { setStatusTrainModelQAMetrics, clearQAMetricsData } from "app/common/store/qa-metrics/actions"; 
+import { clearSettingsData } from "app/common/store/settings/thunks";
+ 
 enum SideBarTabs {
 	settings = 'Settings',
 	virtualAssistant = 'Ask Nostradamus',
-	usualPage = 'Usual Page',
 }
 
-interface IProps extends RouteComponentProps {
+interface SideBarState{
+	isOpen: boolean,
+	actionsBlockOpened: boolean,
 }
 
-class Sidebar extends React.Component<Props> {
+class Sidebar extends React.Component<Props, SideBarState> {
 
 	state = {
 		isOpen: false,
 		actionsBlockOpened: false,
-		activeTab: SideBarTabs.usualPage,
 	};
+
+	settingsRef: React.RefObject<HTMLUListElement> = React.createRef();
+	virtualAssistantRef: React.RefObject<HTMLUListElement>  = React.createRef();
 
 	toggleNav = (opened: boolean) => () => {
 		this.setState({
@@ -48,25 +54,34 @@ class Sidebar extends React.Component<Props> {
 		});
 	};
 
-	activateTab = (tabName: SideBarTabs, dispatchFunction?: any) => () => {
-		this.setState({ activeTab: tabName });
-		this.closeUnnecessarySlidingWindows(tabName);
-
-		if (dispatchFunction) dispatchFunction();
+	activateTab = (dispatchFunction: any) => () => {
+		this.closeSlidingWindow();
+		dispatchFunction();
 	};
 
-	closeUnnecessarySlidingWindows = async (tabName: SideBarTabs) => {
-		if (tabName !== SideBarTabs.settings && this.props.isSettingsOpen) await this.props.activateSettings();
-		if (tabName !== SideBarTabs.virtualAssistant && this.props.isVirtualAssistantOpen) await this.props.activateVirtualAssistant();
+	checkSideBarClickTarget = (e: any) => {
+		if(!(	(this.settingsRef.current && this.settingsRef.current.contains(e.target)) ||
+					(this.virtualAssistantRef.current && this.virtualAssistantRef.current.contains(e.target)))) this.closeSlidingWindow();
+	}
+
+	closeSlidingWindow = () => {
+		if (this.props.isSettingsOpen) this.props.activateSettings();
+		if (this.props.isVirtualAssistantOpen) this.props.activateVirtualAssistant();
+	}
+	logOut = () => {
+		this.props.deleteUser();
+		this.props.clearQAMetricsData();
+		this.props.clearSettingsData();
 	};
 
 	render() {
 		const { pathname } = this.props.location;
-
+		
 		return (
 			<div
 				className={cn('navigation-bar', { 'navigation-bar_opened': this.state.isOpen })}
 				onMouseEnter={this.toggleNav(true)} onMouseLeave={this.toggleNav(false)}
+				onClick = {this.checkSideBarClickTarget}
 			>
 				<div className="navigation-bar__inner">
 
@@ -115,7 +130,7 @@ class Sidebar extends React.Component<Props> {
 							}
 
                 <button
-                    onClick={this.props.deleteUser}
+                    onClick={this.logOut}
                     className="navigation-bar__actions-item"
                 >
                     <Icon
@@ -132,7 +147,6 @@ class Sidebar extends React.Component<Props> {
 						<ul>
 							<Link
 								to={RouterNames.analysisAndTraining}
-								onClick={this.activateTab(SideBarTabs.usualPage)}
 								className={cn('navigation-bar__menu-item', { 'navigation-bar__menu-item_active': pathname === RouterNames.analysisAndTraining })}
 							>
 								<div className="navigation-bar__menu-item-icon">
@@ -147,78 +161,84 @@ class Sidebar extends React.Component<Props> {
 								</div>
 							</Link>
 
+								<Link
+									to={RouterNames.descriptionAssessment}
+									className={cn('navigation-bar__menu-item', 
+												{ 'navigation-bar__menu-item_active': pathname === RouterNames.descriptionAssessment })}
+								>
+									<div className="navigation-bar__menu-item-icon">
+											<Icon type={IconType.description}
+														size={IconSize.big}/>
+									</div>
 
-							{/*excluded section*/}
-							{/*<Link*/}
-							{/*	to={RouterNames.descriptionAssessment}*/}
-							{/*	onClick={this.activateTab(SideBarTabs.usualPage)}*/}
-							{/*	className={cn('navigation-bar__menu-item', { 'navigation-bar__menu-item_active': pathname === RouterNames.descriptionAssessment })}*/}
-							{/*>*/}
-							{/*	<div className="navigation-bar__menu-item-icon">*/}
-							{/*			<Icon type={IconType.description}*/}
-							{/*						size={IconSize.big}/>*/}
-							{/*	</div>*/}
+									<div className="navigation-bar__menu-item-text">
+										Description Assessment
+									</div>
+								</Link>
+							
+								<Link
+									to={RouterNames.qaMetrics}
+									className={cn('navigation-bar__menu-item', 
+												{ 'navigation-bar__menu-item_active': pathname === RouterNames.qaMetrics })}
+								>
 
-							{/*	<div className="navigation-bar__menu-item-text">*/}
-							{/*		Description Assessment*/}
-							{/*	</div>*/}
-							{/*</Link>*/}
+									<div className="navigation-bar__menu-item-icon">
+										<Icon
+											type={IconType.QAMetrics}
+											size={IconSize.big}
+										/>
+									</div>
 
-							<Link
-								to={RouterNames.qaMetrics}
-								onClick={this.activateTab(SideBarTabs.usualPage)}
-								className={cn('navigation-bar__menu-item', { 'navigation-bar__menu-item_active': pathname === RouterNames.qaMetrics })}
-							>
-								<div className="navigation-bar__menu-item-icon">
-									<Icon
-										type={IconType.QAMetrics}
-										size={IconSize.big}
-									/>
-								</div>
+									<div className="navigation-bar__menu-item-text">
+										QA Metrics
+									</div>
+								</Link>
 
-								<div className="navigation-bar__menu-item-text">
-									QA Metrics
-								</div>
-							</Link>
 						</ul>
 					</nav>
 
 					<nav className="navigation-bar__menu navigation-bar__menu_position_bottom">
+						
+						<ul ref={this.virtualAssistantRef}>
+								
+								<li
+									className={cn('navigation-bar__menu-item', 
+												  { 'navigation-bar__menu-item_active': this.props.isVirtualAssistantOpen })}
+									onClick={this.activateTab(this.props.activateVirtualAssistant)}
+								>
+									<div className="navigation-bar__menu-item-icon">
+										<Icon
+											type={IconType.chatBeta}
+											size={IconSize.big}
+										/>
+									</div>
 
-						<ul>
-							<li
-								className={cn('navigation-bar__menu-item', { 'navigation-bar__menu-item_active': this.state.activeTab === SideBarTabs.virtualAssistant })}
-								onClick={this.activateTab(SideBarTabs.virtualAssistant, this.props.activateVirtualAssistant)}
-							>
-								<div className="navigation-bar__menu-item-icon">
-									<Icon
-										type={IconType.chat}
-										size={IconSize.big}
-									/>
-								</div>
-
-								<div className="navigation-bar__menu-item-text">
-									{SideBarTabs.virtualAssistant}
-								</div>
-							</li>
+									<div className="navigation-bar__menu-item-text">
+										{SideBarTabs.virtualAssistant}
+									</div>
+								</li>
 						</ul>
 
-						<ul>
-							<li
-								className={cn('navigation-bar__menu-item', { 'navigation-bar__menu-item_active': this.state.activeTab === SideBarTabs.settings })}
-								onClick={this.activateTab(SideBarTabs.settings, this.props.activateSettings)}
-							>
-								<div className="navigation-bar__menu-item-icon">
-									<Icon
-										type={IconType.settings}
-										size={IconSize.big}
-									/>
-								</div>
+						<ul ref={this.settingsRef}>
+							<Tooltip message="Uploading data. Please wait a few minutes." isDisplayed={!this.props.isCollectingFinished} duration={1}>
+								<li
+									className={cn('navigation-bar__menu-item', 
+												{ 'navigation-bar__menu-item_active': this.props.isSettingsOpen },
+												{ 'navigation-bar__menu-item_disabled': !this.props.isCollectingFinished })}
+									onClick={this.activateTab(this.props.activateSettings)}
+								>
+									<div className="navigation-bar__menu-item-icon">
+										<Icon
+											type={IconType.settings}
+											size={IconSize.big}
+										/>
+									</div>
 
-								<div className="navigation-bar__menu-item-text">
-									{SideBarTabs.settings}
-								</div>
-							</li>
+									<div className="navigation-bar__menu-item-text">
+										{SideBarTabs.settings}
+									</div>
+								</li>
+							</Tooltip>
 						</ul>
 
 					</nav>
@@ -230,14 +250,18 @@ class Sidebar extends React.Component<Props> {
 
 const mapStateToProps = (store: RootStore) => ({
 	user: store.auth.user,
-	isSettingsOpen: store.settings.isOpen,
+	isSettingsOpen: store.settings.settingsStore.isOpen,
 	isVirtualAssistantOpen: store.virtualAssistant.isOpen,
+	isCollectingFinished: store.settings.settingsStore.isCollectingFinished,
 });
 
 const mapDispatchToProps = {
 	deleteUser,
 	activateSettings,
 	activateVirtualAssistant,
+	setStatusTrainModelQAMetrics,
+	clearQAMetricsData,
+	clearSettingsData
 };
 
 const connector = connect(
@@ -247,6 +271,6 @@ const connector = connect(
 
 type PropsFromRedux = ConnectedProps<typeof connector>
 
-type Props = PropsFromRedux & IProps;
+type Props = PropsFromRedux & RouteComponentProps;
 
 export default connector(Sidebar);

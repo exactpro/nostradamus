@@ -3,6 +3,7 @@ from collections import OrderedDict
 
 from apps.analysis_and_training.main.common import get_stop_words
 from utils.stemmed_tfidf_vectorizer import StemmedTfidfVectorizer
+from utils.warnings import LittleDataToCalculate
 
 
 def calculate_frequently_terms(df: pd.DataFrame) -> list:
@@ -25,7 +26,7 @@ def calculate_frequently_terms(df: pd.DataFrame) -> list:
     try:
         tfidf.fit_transform(descriptions)
     except ValueError:
-        return "Oops! Too little data to calculate."
+        raise LittleDataToCalculate
 
     idf = tfidf.idf_
     freq_terms = dict(zip(tfidf.get_feature_names(), idf))

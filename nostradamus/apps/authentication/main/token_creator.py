@@ -47,7 +47,7 @@ class TokenCreator:
 
         return payload
 
-    def __check_password(self):
+    def __check_password(self) -> bool:
         """" Checks that user and user password are valid.
 
         Returns:

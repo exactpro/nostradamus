@@ -15,8 +15,8 @@ export default function MessageInput(props: MessageInputProps)
       <input className="message-input__input"
              placeholder="Type a message here"
              value={props.message}
-             onChange={(e)=>props.inputMessage(e.target.value)}
-             onKeyPress={(e)=>{if(e.key==="Enter" && props.message.length) props.sendMessage()}}/>
+             onChange={(event)=>props.inputMessage(event.target.value)}
+             onKeyPress={(event)=>{if(event.key==="Enter" && props.message.length) props.sendMessage()}}/>
       <button className="message-input__send-button"
               onClick={props.sendMessage}
               disabled={!props.message.length}>

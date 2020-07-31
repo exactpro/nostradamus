@@ -14,7 +14,7 @@
   }
   &__title{
     font-weight: 500;
-    font-size: 18px;
+    font-size: 20px;
     line-height: 22px;
     color: $deepDarkBlue;
   }
@@ -79,7 +79,7 @@
 
 
   &-main{
-    margin-top: 15px; 
+    margin-top: 15px;
     box-sizing: border-box;
 
     &__section-edit-wrapper{
@@ -99,6 +99,10 @@
 
       &:hover{
         opacity: 1;
+
+        &:disabled{
+          cursor: not-allowed;
+        }
       }
     }
 

@@ -61,11 +61,12 @@
       align-items: center;
     }
 
-    &__section-filters {}
+    &__section-filters {
+      z-index: 0;
+    }
 
     &__filters {
-      //margin-top: 20px;
-      margin-top: -60px;
+      margin-top: 20px;
       width: 100%;
     }
   }

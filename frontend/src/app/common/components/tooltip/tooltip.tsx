@@ -20,7 +20,8 @@ interface TooltipProps{
   duration: number,
   message: string,
   position: TooltipPosition,
-  children: React.ReactNode
+  children: React.ReactNode,
+  isDisplayed: boolean
 }
 
 interface TooltipState{
@@ -37,6 +38,7 @@ class Tooltip extends React.Component<TooltipProps, TooltipState> {
   static defaultProps = {
     duration: 2000, 
     position: TooltipPosition.top,
+    isDisplayed: true,
   }
 
   timer: any = {};
@@ -65,20 +67,23 @@ class Tooltip extends React.Component<TooltipProps, TooltipState> {
       return(
         <div className="tooltip">
 
-            <div className="tooltip__wrapped-object"
+            <div className={cn({"tooltip__wrapped-object":this.props.isDisplayed})}
                  onMouseEnter={this.displayTooltip}
                  onMouseLeave={this.timer.resume}>
               {this.props.children}
             </div>
+            
+            {
+              this.props.isDisplayed && 
+              <div className={cn("tooltip-wrapper", "tooltip-wrapper_"+this.props.position, "tooltip-wrapper_"+this.state.wrapperDisplayStyle)}
+                  onMouseEnter={this.timer.pause}
+                  onMouseLeave={this.timer.resume}>
 
-            <div className={cn("tooltip-wrapper", "tooltip-wrapper_"+this.props.position, "tooltip-wrapper_"+this.state.wrapperDisplayStyle)}
-                 onMouseEnter={this.timer.pause}
-                 onMouseLeave={this.timer.resume}>
+                  <div className="tooltip-wrapper__content">{this.props.message}</div>
+                  <div className={cn("tooltip-wrapper__triangle", "tooltip-wrapper__triangle_"+this.props.position)}></div>
 
-                <div className="tooltip-wrapper__content">{this.props.message}</div>
-                <div className={cn("tooltip-wrapper__triangle", "tooltip-wrapper__triangle_"+this.props.position)}></div>
-
-            </div>
+              </div>
+            }
 
         </div>
       )

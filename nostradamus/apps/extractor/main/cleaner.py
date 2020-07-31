@@ -1,7 +1,7 @@
 from re import sub, compile
 from itertools import chain
 
-regular_expressions = {
+REGULAR_EXPRESSIONS = {
     "basic": [
         # symbols enclosed in {} brackets and placed {}between{} brackets.
         compile(r"{.*}\n[\s\S]*\n{.*}"),
@@ -41,7 +41,7 @@ regular_expressions = {
 
 
 def clean_text(
-    text: str, regular_expressions: list = regular_expressions
+    text: str, regular_expressions: list = REGULAR_EXPRESSIONS
 ) -> str:
     """Cleans up handled text.
 

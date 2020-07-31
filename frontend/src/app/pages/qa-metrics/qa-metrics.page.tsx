@@ -1,3 +1,4 @@
+import Button, { ButtonStyled } from 'app/common/components/button/button';
 import { CustomBarChart } from 'app/common/components/charts/bar-chart/bar-chart';
 import DonutChart, {
 	DonutChartColorSchemes,
@@ -5,6 +6,7 @@ import DonutChart, {
 } from 'app/common/components/charts/donut-chart/donut-chart';
 import { TagCloud } from 'app/common/components/charts/tag-cloud/tag-cloud';
 import CircleSpinner from 'app/common/components/circle-spinner/circle-spinner';
+import { IconType } from 'app/common/components/icon/icon';
 import {
 	updateQAMetricsData,
 	updateQAMetricsFilters,
@@ -33,6 +35,7 @@ import ttrPreview from 'assets/images/dAssessment__ttr__preview.png';
 
 import './qa-metrics.page.scss';
 import { connect, ConnectedProps } from 'react-redux';
+import MainStatistic from 'app/modules/main-statistic/main-statistic';
 
 interface State {
 	filters: FilterFieldBase[]
@@ -104,7 +107,10 @@ class QAMetricsPage extends React.Component<PropsFromRedux, State> {
 
 		return (
 			<div className="qa-metrics-page">
-				<Header pageTitle="QA Metrics" />
+				<Header pageTitle="QA Metrics">
+					<MainStatistic className="qa-metrics-page__main-statistic"
+								   statistic={this.props.records_count}/>
+				</Header>
 
 				{
 					!this.props.isModelTrained &&
@@ -124,14 +130,27 @@ class QAMetricsPage extends React.Component<PropsFromRedux, State> {
 							status={this.props.statuses.filters}
 							className="qa-metric-filters qa-metrics-page__card"
 						>
-							{
-								this.state.filters.length > 0 &&
-                <Filters
-                    filters={this.state.filters}
-                    applyFilters={this.applyFilters}
-                    resetFilters={this.resetFilters}
-                />
-							}
+							<div className="qa-metric-filters__container">
+
+								<Button
+									className="qa-metric-filters__section-filters"
+									text="Filter"
+									icon={IconType.filter}
+									styled={ButtonStyled.Flat}
+									selected
+								/>
+
+								{
+									this.state.filters.length > 0 &&
+									<Filters
+										className="qa-metric-filters__filter"
+										filters={this.state.filters}
+										applyFilters={this.applyFilters}
+										resetFilters={this.resetFilters}
+									/>
+								}
+
+							</div>
 						</Card>
 
 						<Card
@@ -139,7 +158,10 @@ class QAMetricsPage extends React.Component<PropsFromRedux, State> {
 							status={this.props.statuses.data}
 							className="probability qa-metrics-page__card"
 						>
-							<TagCloud tags={this.props.areas_of_testing_chart as Terms} />
+							<TagCloud
+								tags={this.props.areas_of_testing_chart as Terms}
+								percentage
+							/>
 						</Card>
 
 					</div>
@@ -152,14 +174,13 @@ class QAMetricsPage extends React.Component<PropsFromRedux, State> {
 							hoverHeader
 						>
 							<div className="bug-resolution__charts">
-
 								{
 									Object.values(this.props.resolution_chart).map((data, index) => (
 										<DonutChart
 											key={index}
 											className="bug-resolution__chart"
 											data={data as DonutChartData}
-											colorSchema={index % 2 === 0 ? DonutChartColorSchemes.greenBlue : DonutChartColorSchemes.orangeViolete}
+											colorSchema={index % 2 === 0 ? DonutChartColorSchemes.greenBlue : DonutChartColorSchemes.orangeViolet}
 										/>
 									))
 								}
@@ -224,6 +245,7 @@ const mapStateToProps = (state: RootStore) => ({
 	priority_chart: state.qaMetricsPage.priority_chart,
 	ttr_chart: state.qaMetricsPage.ttr_chart,
 	resolution_chart: state.qaMetricsPage.resolution_chart,
+	records_count: state.qaMetricsPage.records_count,
 });
 
 const mapDispatchToProps = {

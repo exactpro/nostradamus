@@ -28,11 +28,11 @@ export interface OutboundData{
 export interface InboundData{
   recipient_id: string,
   text?: string,
-  buttons?: InboundButton[],
+  buttons?: InboundChoiceList[],
   custom?: InboundReport,
 }
 
-export type InboundButton = {
+export type InboundChoiceList = {
   payload: string,
   title: string
 }

@@ -1,112 +1,109 @@
 import React, {Component} from "react";
-import {PredictionTableType} from "app/common/store/settings/types";
+import {PredictionTableData} from "app/common/store/settings/types";
 import Icon, {IconSize, IconType} from "app/common/components/icon/icon";
 import cn from "classnames";
 import {FilterElementType} from "app/modules/settings/elements/elements-types";
 import "app/modules/settings/elements/input-predictions-element/input-predictions-element.scss";
 
 interface InputPredictionsElementProps{
-  values: PredictionTableType[],
+  values: PredictionTableData[],
   onClear: (index: number) => () => void,
   onChange: (index: number, name: string) => void,
   onChangeOrder: (indexDrag: number, indexPaste: number) => void
 }
 
-export default class InputPredictionsElement extends Component<InputPredictionsElementProps>{
+interface InputPredictionsElementState{
+  valueBlockType: FilterElementType,
+  valueBlockIndex: number|null,
+  valueBlockContent: string,
+}
 
-  state={
-    type:FilterElementType.simple,
-    editIndex: null,
-    name: ""
+export default class InputPredictionsElement extends Component<InputPredictionsElementProps,InputPredictionsElementState>{
+
+  constructor(props: InputPredictionsElementProps){
+    super(props);
+    this.state = this.getDefaultStateObject();
   }
 
-  dragRef: any = undefined
+  valueBlockRef: any = undefined;
 
-  startContentEdition = (index: number) => () => {
+  startValueBlockContentEdition = (index: number) => () => {
     if(this.props.values[index].is_default) return
     this.setState({
-      type: FilterElementType.edited,
-      editIndex: index,
-      name: this.props.values[index].name})
+      valueBlockType: FilterElementType.edited,
+      valueBlockIndex: index,
+      valueBlockContent: this.props.values[index].name})
   }
 
-  stopContentEdition = () => {
-    if(!this.state.name) return
-    this.props.onChange(this.state.editIndex as unknown as number, this.state.name)
-    this.setState({
-      type: FilterElementType.simple,
-      editIndex: null,
-      name: ""
-    })
+  stopValueBlockContentEdition = () => {
+    if(!this.state.valueBlockContent) return
+    this.props.onChange(this.state.valueBlockIndex as unknown as number, this.state.valueBlockContent)
+    this.setState(this.getDefaultStateObject())
   }
 
-  editContent = ({target}: any) => {
-    this.setState({name: target.value})
+  editValueBlockContent = ({target}: any) => {
+    this.setState({valueBlockContent: target.value})
   }
 
-  dragStart = (e: any) => {
-    this.dragRef=e.target
+  valueBlockDragStart = (e: any) => {
+    this.valueBlockRef=e.target
     e.target.style.opacity="0.25"
   }
 
-  dragEnd = (e: any) => {
+  valueBlockDragEnd = (e: any) => {
     e.target.style.opacity="1"
   }
 
-  dragOver = (e: any) => {
+  valueBlockDragOver = (e: any) => {
     e.preventDefault()
   }
 
-  dragEnter = (e: any) => {
-    //if(e.target.classList.contains(this.dragRef.classList[0]) && e.target!==this.dragRef) e.target.style.marginLeft="50px";
-  }
-
-  dragLeave = (e: any) => {
-    //if(e.target.classList.contains(this.dragRef.classList[0]) && e.target!==this.dragRef) e.target.style.marginLeft="0";
-  }
-
-  onDrop = (e: any) => {
+  valueBlockDrop = (e: any) => {
     let {target} = e
-    while(target.classList[0] !== this.dragRef.classList[0]) target=target.parentNode
+    while(target.classList[0] !== this.valueBlockRef.classList[0]) target=target.parentNode
     this.props.onChangeOrder(
-        Array.from(target.parentNode.children).indexOf(this.dragRef),
+        Array.from(target.parentNode.children).indexOf(this.valueBlockRef),
         Array.from(target.parentNode.children).indexOf(target))
   }
+
+  getDefaultStateObject = () => ({
+    valueBlockType: FilterElementType.simple,
+    valueBlockIndex: null,
+    valueBlockContent: ""
+  })
 
   render(){
     return(
       <div  className="input-predictions-element"
-            onDragOver={this.dragOver}>
+            onDragOver={this.valueBlockDragOver}>
         {
           this.props.values.map((item,index)=>(
             <div  key={index}
-                  onDragStart={this.dragStart}
-                  onDragEnter={this.dragEnter}
-                  onDragLeave={this.dragLeave}
-                  onDragEnd={this.dragEnd}
-                  onDrop={this.onDrop}
+                  onDragStart={this.valueBlockDragStart}
+                  onDragEnd={this.valueBlockDragEnd}
+                  onDrop={this.valueBlockDrop}
                   draggable={true}
                   tabIndex={1}
                   className={cn("input-predictions-element-block",
                                 {"input-predictions-element-block_lock": item.is_default},
-                                {"input-predictions-element-block_edited": index===this.state.editIndex && this.state.type === FilterElementType.edited})}>
+                                {"input-predictions-element-block_edited": index===this.state.valueBlockIndex && this.state.valueBlockType === FilterElementType.edited})}>
               <p className="input-predictions-element-block__position">{item.position}</p>
 
               {
-                index!==this.state.editIndex &&
+                index!==this.state.valueBlockIndex &&
                 <p  className="input-predictions-element-block__content"
-                    onClick={this.startContentEdition(index)}>
+                    onClick={this.startValueBlockContentEdition(index)}>
                       {item.name}
                 </p>
               }
 
               {
-                index===this.state.editIndex &&
+                index===this.state.valueBlockIndex &&
                 <input  className={cn("input-predictions-element-block__input","input-predictions-element-block__content")}
-                        value={this.state.name}
-                        style={{width:this.state.name.length+"ch"}}
-                        onBlur={this.stopContentEdition}
-                        onChange={this.editContent}/>
+                        value={this.state.valueBlockContent}
+                        style={{width:this.state.valueBlockContent.length+"ch"}}
+                        onBlur={this.stopValueBlockContentEdition}
+                        onChange={this.editValueBlockContent}/>
               }
               <button className="input-predictions-element-block__button"
                       onClick={item.is_default? undefined: this.props.onClear(index)}>

@@ -10,10 +10,11 @@ export class TagCloudGenerator {
 	private transformToList = (terms: Terms): Tag[] => {
 		return Object.entries(terms).map(([key, value]) => ({
 			name: key,
-			value: value * 100,
+			absoluteValue: value,
+			relatedValue: value * 100,
 			size: 0,
 			color: this.AVAILABLE_COLORS[0],
-		}));
+		})).sort((a, b) => b.relatedValue - a.relatedValue);
 	};
 
 	private generateRandomColorCollection = (lengthCollection: number): TagColor[] => {
@@ -37,15 +38,15 @@ export class TagCloudGenerator {
 		let colorsCollection = this.generateRandomColorCollection(termsList.length);
 
 		let
-			max: number = termsList[0].value,
-			min: number = termsList[termsList.length - 1].value;
+			max: number = termsList[0].relatedValue,
+			min: number = termsList[termsList.length - 1].relatedValue;
 		let step = (max - min) / (this.MAX_SIZE - this.MIN_SIZE);
 
-		termsList.forEach(({ name, value }, index) => {
-			let size = this.MIN_SIZE + (value - min) / step
+		termsList.forEach(({ name, relatedValue, absoluteValue }, index) => {
+			let size = this.MIN_SIZE + (relatedValue - min) / step
 			if(!size) size = (this.MAX_SIZE + this.MIN_SIZE)/2
 			result[index % 4].push({
-				name, value,size,
+				name, relatedValue, absoluteValue, size,
 				color: colorsCollection[index],
 			} as Tag);
 		});

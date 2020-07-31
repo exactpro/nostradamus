@@ -92,6 +92,16 @@ class EntityListSerializer(serializers.ListField):
     entity = serializers.CharField(max_length=128)
 
 
+class QAMetricsFiltersSettingsSerializer(serializers.Serializer):
+    filter_settings = UserQAMetricsFilterSerializer()
+    names = EntityListSerializer()
+
+
+class PredictionsTableSettingsSerializer(serializers.Serializer):
+    predictions_table_settings = UserPredictionsTableSerializer()
+    field_names = EntityListSerializer()
+
+
 class MarkUpEntitySerializer(serializers.Serializer):
     area_of_testing = serializers.CharField(max_length=128)
     entities = EntityListSerializer()
@@ -103,6 +113,40 @@ class BugResolutionSerializer(serializers.Serializer):
 
 
 class UserTrainingSerializer(serializers.Serializer):
-    mark_up_source = serializers.CharField(max_length=128, allow_blank=True)
     mark_up_entities = MarkUpEntitySerializer(many=True)
     bug_resolution = BugResolutionSerializer(many=True)
+
+
+class TrainingSettingsPostSerializer(UserTrainingSerializer):
+    source_field = serializers.CharField(max_length=128)
+
+
+class SourceFieldSerializer(serializers.Serializer):
+    source_field = serializers.CharField(max_length=128, required=True)
+
+
+class SourceFieldNamesSerializer(serializers.ListField):
+    names = serializers.CharField(max_length=128)
+
+
+class SourceFieldGetViewSerializer(SourceFieldSerializer):
+    source_field_names = SourceFieldNamesSerializer()
+
+
+class EntitiesListSerializer(serializers.ListField):
+    entities = serializers.CharField(max_length=128)
+
+
+class MarkUpEntiitiesSerializer(serializers.Serializer):
+    mark_up_entities = MarkUpEntitySerializer(many=True)
+    entity_names = EntitiesListSerializer()
+
+
+class BugResolutionSettingsSerializer(serializers.Serializer):
+    resolution_settings = BugResolutionSerializer()
+    resolution_names = EntitiesListSerializer()
+
+
+class FiltersSettingsSerializer(serializers.Serializer):
+    filter_settings = UserFilterSerializer()
+    names = EntitiesListSerializer()

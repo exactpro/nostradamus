@@ -52,7 +52,7 @@ def read_from_archive(conf_path: Path, filename: str) -> Optional:
 
 
 def update_training_config(conf_path: str, settings: bytes) -> None:
-    """ Updates user's training settings in archive.
+    """ Updates training settings in archive.
 
     Parameters:
     ----------
@@ -65,7 +65,7 @@ def update_training_config(conf_path: str, settings: bytes) -> None:
     old_archive = Path(old_path.parent, "old.zip")
     old_path.rename(old_archive)
 
-    # To update one file in archive need to create new archive
+    # Necessary to create new archive in order to update one file in archive
     with ZipFile(old_archive, "r") as old_archive_:
         with ZipFile(conf_path, "w") as new_archive:
             for file in old_archive_.filelist:
@@ -87,6 +87,8 @@ def init_archive(instance: Model) -> None:
     instance:
         Instance of User or Team model.
     """
+
+    # To avoid a circular dependency
     from apps.settings.main.common import init_training_settings
 
     path = get_archive_path(instance)
@@ -101,7 +103,7 @@ def is_file_in_archive(archive_path: str, file_name: str) -> bool:
     Parameters:
     ----------
     archive_path:
-        Absolute path to an archive;
+        Absolute path to an archive.
     file_name:
         file name.
     
@@ -125,7 +127,7 @@ def delete_training_data(archive_path: str) -> None:
     old_archive = Path(old_path.parent, "old.zip")
     old_path.rename(old_archive)
 
-    # To update one file in archive need to create new archive
+    # Necessary to create new archive in order to update one file in archive
     with ZipFile(old_archive, "r") as old_archive_:
         with ZipFile(archive_path, "w") as new_archive:
             for file in old_archive_.filelist:

@@ -2,6 +2,7 @@ import pickle
 
 from django.db.models import Model, Max
 
+from apps.extractor.main.connector import get_issue_count
 from apps.settings.main.archiver import (
     get_archive_path,
     read_from_archive,
@@ -16,6 +17,9 @@ from utils.exceptions import (
     IncorrectPredictionsTableOrder,
     NotFilledDefaultFields,
 )
+from utils.warnings import BugsNotFoundWarning
+
+from itertools import chain
 
 
 def init_filters(model: Model, settings: Model) -> None:
@@ -77,8 +81,12 @@ def init_predictions_table(model: Model, settings: Model) -> None:
 
 def init_training_settings() -> bytes:
     """ Creates a default training settings.
+
+    Returns:
+    ----------
+        A pickled representation of training settings.
     """
-    data = {"mark_up_source": "", "mark_up_entities": [], "bug_resolution": []}
+    data = {"source_field": "", "mark_up_entities": [], "bug_resolution": []}
     return pickle.dumps(data)
 
 
@@ -147,7 +155,7 @@ def update_predictions_table(
         if len(DEFAULT_PREDICTIONS_TABLE_FIELDS) != len(default_fields):
             raise NotFilledDefaultFields
 
-    def _validate_positions():
+    def _validate_positions() -> None:
         """ Checks that there are no duplicated positions.
         """
         positions = set([field["position"] for field in fields])
@@ -181,7 +189,7 @@ def update_training_settings(training_settings: dict, user: Model) -> None:
             if isinstance(obj, list):
                 training_settings[obj] = [dict(value) for value in obj]
 
-    def _check_by_changing():
+    def _check_by_changing() -> None:
         """ Checks that training data hasn't been edited.
         """
         current_settings = read_from_archive(
@@ -191,7 +199,7 @@ def update_training_settings(training_settings: dict, user: Model) -> None:
         is_changed = False
 
         for key, obj in current_settings.items():
-            if key == "mark_up_source":
+            if key == "source_field":
                 if obj != training_settings[key]:
                     is_changed = True
                     break
@@ -204,7 +212,7 @@ def update_training_settings(training_settings: dict, user: Model) -> None:
                 if current_metrics.difference(new_metrics):
                     is_changed = True
                     break
-            else:
+            elif key == "mark_up_entities":
                 old_areas_of_testing = {
                     entity["area_of_testing"]: entity["entities"]
                     for entity in obj
@@ -342,6 +350,7 @@ def update_resolutions(request_data: dict, user: Model) -> None:
                 settings=user_settings, name=resolution
             ).delete()
 
+    # To avoid a circular dependency
     from apps.settings.models import UserPredictionsTable
     from apps.settings.models import UserSettings
 
@@ -373,3 +382,64 @@ def update_resolutions(request_data: dict, user: Model) -> None:
                 + 1,
                 is_default=True,
             )
+
+
+def check_loaded_issues() -> None:
+    """ Raises warning if issues don't exist in db.
+    """
+    if not get_issue_count():
+        raise BugsNotFoundWarning
+
+
+def split_values(values: list) -> set:
+    """ Makes a set of unique elements.
+
+    Parameters:
+    ----------
+    values:
+        A list of values by a field from db.
+
+    Returns:
+    ----------
+        Unique elements.
+    """
+    values = [
+        [
+            splitted_value
+            for splitted_value in value.split(",")
+            if splitted_value
+        ]
+        if isinstance(value, str)
+        else value
+        for value in values
+        if value
+    ]
+    if values and isinstance(values[0], list):
+        return set(chain(*values))
+
+    return set(values)
+
+
+def check_filters_equality(new_filters: list, old_filters: list) -> bool:
+    """ Compares new filters and cached filters.
+
+    Parameters:
+    ----------
+    new_filters:
+        Received filters.
+    old_filters:
+        Cached filters.
+
+    Returns:
+    ----------
+        Equality of filters.
+    """
+    for new_filter in new_filters:
+        for old_filter in old_filters:
+            if new_filter["name"] == old_filter["name"]:
+                if new_filter.get("current_value") != old_filter.get(
+                    "current_value"
+                ):
+                    return False
+
+    return True

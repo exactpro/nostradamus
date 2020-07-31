@@ -5,19 +5,60 @@
   display: flex;
   justify-content: space-between;
 
-  &__legend {
-    width: 200px;
+  &-legend {
+    width: 50%;
+    align-self: flex-end;
+    margin-right: 15px;
 
-    svg > g > g:nth-child(1) {
-      display: none;
+    &__wrapper{
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+
+      &:not(:last-child){
+        margin-bottom: 25px;
+      }
+
+    }
+
+    &__circle-pointer{
+      width: 20px !important;
+      height: 20px !important;
+      flex-shrink: 0;
+      border-radius: 100%;
+
+      margin-right: 15px;
+    }
+
+    &__title{
+      font-family: Quicksand;
+      font-style: normal;
+      font-weight: 500;
+      font-size: 15px;
+      line-height: 19px;
+      font-feature-settings: 'cpsp' on, 'liga' off;
+      width: 100%;
     }
   }
 
-  text {
-    font-size: 18px !important;
-    font-family: 'Quicksand', sans-serif !important;
-    font-feature-settings: 'cpsp' on, 'liga' off;
-    font-weight: 600;
+  &-wrapper{
+    width: 50%;
+    position: relative;
+    
+    &__percentage-block{
+      position: absolute;
+      top:50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      opacity: 0;
+      transition: opacity .2s ease-out;
+
+      &_visible{
+        opacity: 1;
+      }
+    }
   }
+
+
 
 }

@@ -11,7 +11,7 @@ from utils.exceptions import SmallNumberRepresentatives
 
 
 def test_compare_resolutions_positive(train_df):
-    resolutions = ["Duplicated", "Fixed"]
+    resolutions = ["Duplicated", "Resolved"]
     assert not compare_resolutions(train_df, resolutions)
 
 
@@ -22,9 +22,7 @@ def test_compare_resolutions_positive_2(train_df):
 
 def test_compare_resolutions_negative(train_df):
     resolutions = ["Duplicated", "Fixed", "Resolved"]
-    assert compare_resolutions(train_df, resolutions) == set(
-        ["Resolution_Resolved"]
-    )
+    assert compare_resolutions(train_df, resolutions) == set(["Fixed"])
 
 
 def test_get_k_neighbors_positive(train_df):
@@ -76,7 +74,7 @@ def test_stringify_ttr_intervals_positive():
         pd.Interval(6, 9),
         pd.Interval(9, 10),
     ]
-    expected_result = str(["0-4", "5-6", "7-9", ">9"])
+    expected_result = ["0-4", "5-6", "7-9", ">9"]
     assert stringify_ttr_intervals(intervals) == expected_result
 
 
@@ -87,5 +85,5 @@ def test_stringify_ttr_intervals_negative():
         pd.Interval(6, 9),
         pd.Interval(9, 10),
     ]
-    expected_result = str(["0-4", "5-6", "7-9", ">9"])
+    expected_result = ["0-4", "5-6", "7-9", ">9"]
     assert stringify_ttr_intervals(intervals) == expected_result

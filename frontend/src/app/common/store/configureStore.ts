@@ -5,20 +5,19 @@ import thunk from 'redux-thunk';
 import {composeWithDevTools} from "redux-devtools-extension";
 import {connectRouter, routerMiddleware} from 'connected-react-router';
 
-import {analysisAndTrainingStore} from 'app/common/store/analysis-and-training/reducers';
 import {authReducer} from "app/common/store/auth/reducers";
-import {settingsReducer} from "app/common/store/settings/reducers";
+import {generalSettingsStore} from "app/common/store/settings/reducers";
 import {virtualAssistantReducer} from "app/common/store/virtual-assistant/reducers";
 import {createBrowserHistory, History} from "history";
 import {RootStore} from "app/common/types/store.types";
+import { settingsTrainingReducer } from 'app/modules/settings/fields/settings_training/store/reducer';
 
 export const history = createBrowserHistory();
 
 const rootReducers = (history: History) => combineReducers({
-  analysisAndTraining: analysisAndTrainingStore,
   toasts: toastsReducers,
   auth: authReducer,
-  settings: settingsReducer,
+  settings: generalSettingsStore, 
   virtualAssistant: virtualAssistantReducer,
   qaMetricsPage: qaMetricsPageReducer,
   router: connectRouter(history),

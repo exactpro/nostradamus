@@ -26,4 +26,30 @@
     background-size: contain;
     height: 100%;
   }
+
+  &__warning {
+    &-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 10;
+      height: 100%;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    &-icon {
+      color: $yellowStrong;
+    }
+
+    &-message {
+      margin-top: 16px;
+      font-size: 19px;
+      line-height: 12px;
+      color: $darkGray;
+    }
+  }
 }

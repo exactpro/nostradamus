@@ -1,9 +1,9 @@
 import React, { Component } from "react";
 import cn from "classnames";
-import {MessageDataUnion, MessageSendingType, InboundData, OutboundData, InboundButton, InboundReport} from "app/common/store/virtual-assistant/types";
+import {MessageDataUnion, MessageSendingType, InboundData, OutboundData, InboundChoiceList, InboundReport} from "app/common/store/virtual-assistant/types";
 import Icon, { IconSize, IconType } from 'app/common/components/icon/icon';
 import "app/modules/virtual-assistant/message-viewer/message-viewer.scss";
-// import chatPicture from "assets/images/chatPicture.png";
+import chatPicture from "assets/images/chatPicture.png";
 
 interface Props{
   messages: MessageDataUnion[],
@@ -16,27 +16,29 @@ export default class MessageViewer extends Component<Props>{
     isChoiceListVisible: true,
   }
 
-  renderMessage = (item: MessageDataUnion, index: number) => {
-    let str: string | undefined = (item.content as OutboundData).message || (item.content as InboundData).text;
-    if(!str) return;
+  renderMessage = (messageItem: MessageDataUnion, index: number) => {
+    let message: string | undefined = (messageItem.content as OutboundData).message || (messageItem.content as InboundData).text;
+    if(!message) return;
     let linkArr: any;
-    let linkRx: RegExp = /\[.*?\]\(.*?\)/g;
+    // the common pattern to render app's link is [link text](link ref), example: [follow the link](http://localhost/)
+    let linkRegex: RegExp = /\[.*?\]\(.*?\)/g;
 
-    linkArr=str.match(linkRx);
+    linkArr=message.match(linkRegex);
 
+    // if link is found in message, then divide initial message by the link pattern and render in pairs [text that isn't the link that has been gotten by the division] - [the link]
     if(linkArr)
     {
-      let paragraphArr: string[] = str.split(linkRx).filter(Boolean);
-      let linkTextRx: RegExp = /[^[]+(?=\])/g, linkRefRx: RegExp = /[^(]+(?=\))/g;
+      let textArr: string[] = message.split(linkRegex);
+      let linkTextRegex: RegExp = /[^[]+(?=\])/g, linkRefRegex: RegExp = /[^(]+(?=\))/g;
       return(
         <div key={index}
-           className={cn("message-viewer-message",`message-viewer-message_${item.messageType}`)}>
+           className={cn("message-viewer-message",`message-viewer-message_${messageItem.messageType}`)}>
            {
-             paragraphArr.map((item:string, index: number)=>{
+             textArr.map((item:string, index: number)=>{
                let linkText: string | null = null, linkRef: string | null = null, link: any = linkArr[index];
                if(link) {
-                 linkText = link.match(linkTextRx)[0];
-                 linkRef = link.match(linkRefRx)[0];
+                 linkText = link.match(linkTextRegex)[0];
+                 linkRef = link.match(linkRefRegex)[0];
                }
                return(
                  <React.Fragment key={index}>
@@ -51,17 +53,22 @@ export default class MessageViewer extends Component<Props>{
 
     return(
       <p key={index}
-         className={cn("message-viewer-message",`message-viewer-message_${item.messageType}`)}>
-         {str}
+         className={cn("message-viewer-message",`message-viewer-message_${messageItem.messageType}`)}>
+         {message}
       </p>)
   }
 
-  renderChoiceList = (buttons: InboundButton[]) => (
+  selectChoiceListItem = (message: string) => () => {
+    this.setState({ isChoiceListVisible: false });
+    setTimeout(this.props.selectItem(message), 200);
+  }
+
+  renderChoiceList = (choiceList: InboundChoiceList[]) => (
     <div className={cn("message-viewer-choice-list",{"message-viewer-choice-list_hidden": !this.state.isChoiceListVisible})}>
       {
-        buttons.map((item,index)=>(
+        choiceList.map((item,index)=>(
           <button key={index} className="message-viewer-choice-list__item"
-                  onClick={()=>{this.setState({isChoiceListVisible:false}); this.props.selectItem(item.title)();}}>
+                  onClick={this.selectChoiceListItem(item.title)}>
             {item.title}
           </button>
         ))}
@@ -72,7 +79,7 @@ export default class MessageViewer extends Component<Props>{
       <a className={"message-viewer-file-upload__title"}
          href={link} download>
         <button className={"message-viewer-file-upload__button"}>
-          <Icon size={IconSize.normal} type={IconType.send}/>
+          <Icon size={IconSize.normal} type={IconType.file}/>
         </button>
       </a>
       <div className={"message-viewer-file-upload__wrapper"}>
@@ -89,14 +96,13 @@ export default class MessageViewer extends Component<Props>{
   )
 
   shouldComponentUpdate = (nextProps: Props) => {
-    if(!this.state.isChoiceListVisible && this.props.messages.length !== nextProps.messages.length) this.setState({isChoiceListVisible:true})
+    if(!this.state.isChoiceListVisible && this.props.messages.length !== nextProps.messages.length) this.setState({isChoiceListVisible:true});
     return true;
   }
 
   render(){
     let messages = this.props.messages.slice().reverse();
-    let buttons = messages[0]? (messages[0].content as InboundData).buttons: undefined;
-
+    let choiceList = messages[0]? (messages[0].content as InboundData).buttons: undefined; 
     return(
       <React.Fragment>
         <div className="message-viewer">
@@ -107,15 +113,16 @@ export default class MessageViewer extends Component<Props>{
               if(report) return this.renderUploadFile(report, index);
               return this.renderMessage(item, index);
             })
-            :<div className="message-viewer__layout-image" />
-            // style={{backgroundImage: `url(${chatPicture})`}}
+            :<img className="message-viewer__layout-image"
+                  src={chatPicture}
+                  alt="Robot"/>
           }
         </div>
 
         <div className="message-viewer-choice-wrapper">
           {
-            buttons &&
-            this.renderChoiceList(buttons)
+            choiceList &&
+            this.renderChoiceList(choiceList)
           }
         </div>
       </React.Fragment>

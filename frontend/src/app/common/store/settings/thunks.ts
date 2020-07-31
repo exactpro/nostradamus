@@ -1,36 +1,53 @@
 import {uploadData, setSettingsStatus} from "app/common/store/settings/actions";
 import {SettingsSections, SettingsDataUnion} from "app/common/store/settings/types"
-import {SettingsApi} from "app/common/api/settings.api"; 
-import { getDashboardData } from "app/common/store/analysis-and-training/thunks";
+import {SettingsApi} from "app/common/api/settings.api";
 import { HttpError, HttpStatus } from 'app/common/types/http.types';
 import { addToast } from "app/modules/toasts-overlay/store/actions";
 import { ToastStyle } from "app/modules/toasts-overlay/store/types";
+import { clearSettingsTrainingData } from "app/modules/settings/fields/settings_training/store/actions";
+import { clearSettings } from "app/common/store/settings/actions";
 
-export const uploadSettings = (section: SettingsSections) => {
+export const uploadSettingsData = (section: SettingsSections) => {
   return async (dispatch: any) => {
     dispatch(setSettingsStatus(section,HttpStatus.RELOADING))
     try{
-      let res = await SettingsApi.getSettingsData(section)
-      dispatch(uploadData(section, res))
-      dispatch(setSettingsStatus(section, HttpStatus.FINISHED))
+      let res = await SettingsApi.getSettingsData(section);
+      
+      if(res.warning) { 
+        dispatch(addToast(res.warning.detail, ToastStyle.Warning));
+        dispatch(setSettingsStatus(section, HttpStatus.FAILED));
+      }
+      else{
+        dispatch(uploadData(section, res));
+        dispatch(setSettingsStatus(section, HttpStatus.FINISHED));
+      }
     }
     catch(e)
     {
-			dispatch(setSettingsStatus(section, HttpStatus.FINISHED));
-			dispatch(addToast((e as HttpError).detail || e.message, ToastStyle.Error))
+			dispatch(setSettingsStatus(section, HttpStatus.FAILED));
+			dispatch(addToast((e as HttpError).detail || e.message, ToastStyle.Error));
     }
   }
 }
 
-export const sendSettings =(section: SettingsSections, data: SettingsDataUnion) => {
+export const sendSettingsData =(section: SettingsSections, data: SettingsDataUnion | any) => {
   return async (dispatch: any) => {
     try{
       await SettingsApi.sendSettingsData(section, data);
       dispatch(uploadData(section, data))
-      if(section === SettingsSections.filters) dispatch(getDashboardData());
+      // if(section === SettingsSections.filters) dispatch(getDashboardData());
     }
     catch(e){
 			dispatch(addToast((e as HttpError).detail || e.message, ToastStyle.Error))
     }
   }
 }
+
+export const clearSettingsData = () => {
+  return (dispatch: any) => {
+    dispatch(clearSettings());
+    dispatch(clearSettingsTrainingData());
+  }
+} 
+
+

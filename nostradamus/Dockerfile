@@ -20,9 +20,11 @@ RUN apt-get update \
 && apt-get install gcc -y \
 && apt-get clean \
 && pip install --upgrade pip && pip install flake8 && pip install Cython
-COPY . /usr/src/app/
 COPY ./requirements.txt .
 RUN pip wheel --no-cache-dir --no-deps --wheel-dir /usr/src/app/wheels -r requirements.txt
+
+# copy source code
+COPY . /usr/src/app/
 COPY ./docker-entrypoint.sh .
 
 #########
@@ -46,9 +48,8 @@ COPY --from=builder /usr/src/app/wheels /wheels
 COPY --from=builder /usr/src/app/requirements.txt .
 RUN pip install --upgrade pip && pip install --no-cache /wheels/*
 
+# copy the project
 COPY --from=builder /usr/src/app/docker-entrypoint.sh .
-
-# copy project
 COPY . $APP_HOME
 
 EXPOSE 8000

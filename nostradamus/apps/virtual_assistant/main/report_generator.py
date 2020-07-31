@@ -3,8 +3,6 @@ import os
 
 from datetime import datetime
 from pathlib import Path
-
-
 from pandas import DataFrame
 
 from apps.extractor.main.connector import get_issues
@@ -56,13 +54,11 @@ def make_report(
     with open(file_path, "w") as report:
         report.write(created_issues + resolved_issues)
 
-    size = get_file_size(file_path)
-
     filename = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%f%z")
     filename = f"{filename.strftime('%Y-%m-%d')}.csv"
 
     return {
-        "size": size,
+        "size": get_file_size(file_path),
         "filename": filename,
         "format": "csv",
         "link": make_report_link(filename),
@@ -180,31 +176,6 @@ def make_report_link(filename: str) -> str:
     path = "/virtual_assistant/reports/"
 
     return domain + hostname + path + filename
-
-
-def get_datetime_range(date: str) -> tuple:
-    """ Makes one day period by received date.
-
-    Parameters
-    ----------
-    date:
-        Date for report generating.
-
-    Returns
-    -------
-        Datetime range.
-    """
-    date = datetime.strptime(date, "%Y-%m-%d")
-
-    from_date = date.strftime("%Y-%m-%dT%H:%M:%S.%f%z") + "Z"
-    to_date = (
-        date.replace(hour=23, minute=59, second=59).strftime(
-            "%Y-%m-%dT%H:%M:%S.%f%z"
-        )
-        + "Z"
-    )
-
-    return from_date, to_date
 
 
 def get_issues_for_report(fields, filters):

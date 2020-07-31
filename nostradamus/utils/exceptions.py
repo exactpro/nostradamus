@@ -68,9 +68,9 @@ class NotFilledDefaultFields(BaseAPIException):
     default_code = "incorrect_default_fields"
 
 
-class InvalidMarkUpSource(BaseAPIException):
-    default_detail = "Mark Up Source isn't presented in your data"
-    default_code = "invalid_mark_up_source"
+class InvalidSourceField(BaseAPIException):
+    default_detail = "Source field isn't presented in your data"
+    default_code = "invalid_source_field"
 
 
 class InconsistentGivenData(BaseAPIException):

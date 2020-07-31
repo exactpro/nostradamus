@@ -6,9 +6,13 @@ import {activateVirtualAssistant} from "app/common/store/virtual-assistant/actio
 import {sendVirtualAssistantMessage} from "app/common/store/virtual-assistant/thunks";
 import "app/modules/virtual-assistant/virtual-assistant.scss";
 import MessageInput from "app/modules/virtual-assistant/message-input/message-input";
-import MessageViewer from "app/modules/virtual-assistant/message-viewer/message-viewer"; 
+import MessageViewer from "app/modules/virtual-assistant/message-viewer/message-viewer";
 
-class VirtualAssistant extends Component<Props>{
+interface VirtualAssistantState{
+  message: string
+}
+
+class VirtualAssistant extends Component<VirtualAssistantProps, VirtualAssistantState>{
 
   state={
     message:"",
@@ -18,18 +22,19 @@ class VirtualAssistant extends Component<Props>{
     this.props.activateVirtualAssistant()
   }
 
-  onInputMessage = (message: string) => {
-    this.setState({message})
-  }
-
-  onSelectItem = (message: string) => () => {
-    this.setState({message})
-  }
-
-  onSendMessage = () => {
+  sendMessage = () => {
     this.props.sendVirtualAssistantMessage(this.state.message)
     this.setState({message:""})
   }
+
+  inputMessage = (message: string) => {
+    this.setState({message})
+  }
+
+  selectChoiceListItem = (message: string) => () => {
+    this.props.sendVirtualAssistantMessage(message)
+  }
+
 
   render(){
     return(
@@ -39,10 +44,10 @@ class VirtualAssistant extends Component<Props>{
 
           <div className="virtual-assistant">
             <MessageViewer messages={this.props.messages}
-                           selectItem={this.onSelectItem}/>
+                           selectItem={this.selectChoiceListItem}/>
             <MessageInput message={this.state.message}
-                          inputMessage={this.onInputMessage}
-                          sendMessage={this.onSendMessage}/>
+                          inputMessage={this.inputMessage}
+                          sendMessage={this.sendMessage}/>
           </div>
         </SlidingWindow>
     )
@@ -62,6 +67,6 @@ const mapDispatchToProps = {
 const connector = connect(mapStateToProps, mapDispatchToProps)
 
 type PropsFromRedux = ConnectedProps<typeof connector>;
-type Props = PropsFromRedux & {};
+type VirtualAssistantProps = PropsFromRedux & {};
 
 export default connector(VirtualAssistant);

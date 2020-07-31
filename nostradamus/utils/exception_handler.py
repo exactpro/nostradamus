@@ -1,8 +1,6 @@
 from rest_framework.views import exception_handler as old_exception_handler
 from rest_framework.response import Response
 
-from utils.const import DEFAULT_ERROR_CODE, DEFAULT_WARNING_CODE
-
 
 def exception_handler(exc: Exception, context: dict) -> Response:
     """ Creates response that will be returned for any exception.
@@ -34,7 +32,7 @@ def exception_handler(exc: Exception, context: dict) -> Response:
 
 
 def parse_validation_errors(response: Response):
-    """ Makes response data more readable.
+    """ Parses response data.
 
     Parameters:
     ----------

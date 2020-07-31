@@ -1,4 +1,4 @@
-import { UpdateFieldFunction } from 'app/modules/filters/filters.class';
+ import { UpdateFieldFunction } from 'app/modules/filters/filters.class';
 import cn from 'classnames';
 import React from 'react';
 

@@ -1,5 +1,4 @@
 import { HttpClient } from 'app/common/api/http-client';
-import { QAMetricsAllData } from 'app/common/store/qa-metrics/actions';
 import { FilterFieldBase } from 'app/modules/filters/field/field-type';
 
 export class QaMetricsApi {

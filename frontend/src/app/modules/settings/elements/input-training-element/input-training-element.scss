@@ -3,12 +3,10 @@
 .input-training-element
 {
   width: 100%;
-  position: relative;
-  overflow-x: hidden;
+  position: relative; 
 
   &-block-container{
-    height: 0;
-    min-height: 40px;
+    height: 40px;
 
     font-weight: 500;
     font-size: 16px;
@@ -44,26 +42,42 @@
       }
     }
 
-    &__placeholder{
+    &_disabled{
       pointer-events: none;
-      position: absolute;
-      color: $gray;
-      top: 50%;
-      left: 10px;
+      cursor: pointer;
+      background-color: $veryLightGray;
+      border-bottom: 1px solid $deepDarkBlue;
+    }
+
+    &__placeholder{ 
+      pointer-events: none;
+      color: $gray; 
+      margin-top: 20px;
+      margin-left: 10px;
       transform: translateY(-50%);
     }
   }
 
   &-value-block{
-    padding: 5px;
-    max-width: 90%;
+    width: 40%;
 
     background-color: $grayDisabled;
-    display: inline-flex;
-    align-items: center;
+    display: inline-block;
+    position: relative;
     border-radius: 4px;
     height: 30px;
     margin: 5px;
+
+    &__wrapper{
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      padding: 5px;
+      display: inline-flex;
+      align-items: center;
+    }
 
     &__number{
       color: $darkBlue;
@@ -90,8 +104,7 @@
   }
 
   &__spread-button{
-    position: absolute;
-    display: none;
+    position: absolute; 
     font-size: 12px;
     top: 20px;
     transform: translateY(-50%);
@@ -102,5 +115,13 @@
     &__number{
       display: inline;
     }
+  }
+
+  &__select-window{
+    position: absolute;
+    z-index: 10;
+    top: 100%;
+    right: 0; 
+    width: 75%;   
   }
 }

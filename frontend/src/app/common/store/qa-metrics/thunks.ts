@@ -2,7 +2,8 @@ import { QaMetricsApi } from 'app/common/api/qa-metrics.api';
 import {
 	setQAMetricsAllData,
 	setQaMetricsStatus,
-	setQAMetricsTable, setStatusTrainModelQAMetrics,
+	setQAMetricsTable, 
+	setStatusTrainModelQAMetrics,
 } from 'app/common/store/qa-metrics/actions';
 import { HttpError, HttpStatus } from 'app/common/types/http.types';
 import { FilterFieldBase } from 'app/modules/filters/field/field-type';
@@ -28,7 +29,7 @@ export const updateQAMetricsFilters = () => {
 			if (code === 209) {
 				dispatch(setQaMetricsStatus('filters', HttpStatus.PREVIEW));
 				dispatch(setStatusTrainModelQAMetrics(false));
-				dispatch(addToast(body.warning.detail || body.warning.message, ToastStyle.Error));
+				dispatch(addToast(body.warning.detail || body.warning.message, ToastStyle.Warning));
 				return []
 			}
 
@@ -37,6 +38,8 @@ export const updateQAMetricsFilters = () => {
 				dispatch(setStatusTrainModelQAMetrics(false));
 				return []
 			}
+
+			dispatch(setStatusTrainModelQAMetrics(true));
 
 			return body.map((field: FilterFieldBase) => ({
 				...field,
@@ -60,7 +63,12 @@ export const updateQAMetricsData = (filters: FilterFieldBase[]) => {
 			);
 			let code = response.status;
 			let body = await response.json();
-
+			if(!body.records_count.filtered) {
+				dispatch(setQaMetricsStatus('data', HttpStatus.FINISHED));
+				dispatch(addToast("Data isn't found. Try to change filter", ToastStyle.Warning));
+				return;
+			}
+			
 			if (code === 209) {
 				dispatch(setQaMetricsStatus('data', HttpStatus.PREVIEW));
 				dispatch(setStatusTrainModelQAMetrics(false));
@@ -68,8 +76,13 @@ export const updateQAMetricsData = (filters: FilterFieldBase[]) => {
 				return;
 			}
 
-			dispatch(setQAMetricsAllData(body));
-			dispatch(setQaMetricsStatus('data', HttpStatus.FINISHED));
+			if (Object.values(body).length) {
+				dispatch(setQAMetricsAllData(body));
+				dispatch(setQaMetricsStatus('data', HttpStatus.FINISHED));
+			} else {
+				dispatch(addToast('Data cannot be found. Please change filters.', ToastStyle.Warning));
+				dispatch(setQaMetricsStatus('data', HttpStatus.PREVIEW));
+			}
 		} catch (e) {
 			dispatch(addToast((e as HttpError).detail || e.message, ToastStyle.Error));
 			dispatch(setQaMetricsStatus('data', HttpStatus.FAILED));

@@ -4,12 +4,13 @@
   display: flex;
   flex-direction: column;
 
+  overflow: hidden;
+
   &__scroll-container {
-    height: 420px;
+    height: 100%;
     overflow-y: scroll;
 
     padding: 10px 30px 10px 10px;
-    padding-top: 80px; // for don't overlapping tooltip
   }
 
   &__filter {

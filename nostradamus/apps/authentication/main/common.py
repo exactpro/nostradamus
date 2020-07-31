@@ -2,7 +2,7 @@ from apps.authentication.models import Role, TeamMember
 from utils.const import DEFAULT_ROLE
 
 
-def bind_user_to_team(user_instance, team):
+def bind_user_to_team(user_instance, team) -> None:
     """ Binds user with team.
 
     Parameters:
@@ -18,7 +18,7 @@ def bind_user_to_team(user_instance, team):
     team_member_instance.save()
 
 
-def get_default_role():
+def get_default_role() -> None:
     """ Returns default role.
     """
     return Role.objects.get(name=DEFAULT_ROLE)

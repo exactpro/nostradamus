@@ -9,22 +9,22 @@ import AnalysisAndTrainingSection from 'app/modules/settings/sections/analysis-a
 import QAMetricsSection from 'app/modules/settings/sections/qa-metrics-section/qa-metrics-section';
 import SlidingWindow from "app/common/components/sliding-window/sliding-window";
 
-enum Tab{
+enum SettingsTab{
   analysisAndTraining = "Analysis & Training",
   QAMetrics = "QA Metrics",
 }
 
 interface State{
-  activeTab: Tab,
+  activeTab: SettingsTab,
 }
 
 class Settings extends Component<Props, State> {
 
   state={
-    activeTab: Tab.analysisAndTraining,
+    activeTab: SettingsTab.analysisAndTraining,
   }
 
-  selectTab = (tab: Tab) => () => {
+  selectTab = (tab: SettingsTab) => () => {
     this.setState({
       ...this.state,
       activeTab: tab,
@@ -52,27 +52,27 @@ class Settings extends Component<Props, State> {
                         text="Analysis & Training"
                         icon={IconType.analysis}
                         styled={ButtonStyled.Flat}
-                        selected={this.state.activeTab === Tab.analysisAndTraining}
-                        disabled={this.state.activeTab === Tab.analysisAndTraining}
-                        onClick={this.selectTab(Tab.analysisAndTraining)}/>
+                        selected={this.state.activeTab === SettingsTab.analysisAndTraining}
+                        disabled={this.state.activeTab === SettingsTab.analysisAndTraining}
+                        onClick={this.selectTab(SettingsTab.analysisAndTraining)}/>
 
                 <Button className="settings-block__button_shifted"
                         text="QA Metrics"
                         icon={IconType.QAMetrics}
                         styled={ButtonStyled.Flat}
-                        selected={this.state.activeTab === Tab.QAMetrics}
-                        disabled={this.state.activeTab === Tab.QAMetrics}
-                        onClick={this.selectTab(Tab.QAMetrics)}/>
+                        selected={this.state.activeTab === SettingsTab.QAMetrics}
+                        disabled={this.state.activeTab === SettingsTab.QAMetrics}
+                        onClick={this.selectTab(SettingsTab.QAMetrics)}/>
 
               </div>
 
               {
-                this.state.activeTab === Tab.analysisAndTraining &&
+                this.state.activeTab === SettingsTab.analysisAndTraining &&
                 <AnalysisAndTrainingSection/>
               }
 
               {
-                this.state.activeTab === Tab.QAMetrics &&
+                this.state.activeTab === SettingsTab.QAMetrics &&
                 <QAMetricsSection/>
               }
 
@@ -84,7 +84,7 @@ class Settings extends Component<Props, State> {
 }
 
 const mapStateToProps = ({settings}: RootStore) =>({
-  isOpen: settings.isOpen,
+  isOpen: settings.settingsStore.isOpen,
 });
 
 const mapDispatchToProps = {

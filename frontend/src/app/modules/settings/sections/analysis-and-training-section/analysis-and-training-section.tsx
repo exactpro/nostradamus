@@ -1,21 +1,23 @@
 import React, {Component} from "react";
 import CircleSpinner from 'app/common/components/circle-spinner/circle-spinner';
-import SettingsFilter from "app/modules/settings/fields/settings_filter/setings_filter";
-import SettingsTraining from "app/modules/settings/fields/settings_training/settings_training"
+import SettingsFilter from "app/modules/settings/fields/settings_filter/setings_filter"; 
 import "app/modules/settings/sections/analysis-and-training-section/analysis-and-training-section.scss";
 import {SettingsSections} from "app/common/store/settings/types";
-import {uploadSettings} from "app/common/store/settings/thunks";
+import {uploadSettingsData} from "app/common/store/settings/thunks";
+import {uploadSettingsTrainingData} from "app/modules/settings/fields/settings_training/store/thunks"; 
 import {connect, ConnectedProps} from "react-redux";
 import {RootStore} from "app/common/types/store.types";
 import { HttpStatus } from 'app/common/types/http.types';
+import SettingsTraining from "app/modules/settings/fields/settings_training/settings_training";
 
 class AnalysisAndTrainingSection extends Component<Props>{
 
   componentDidMount = () => {
-    this.props.uploadSettings(SettingsSections.filters)
-    this.props.uploadSettings(SettingsSections.training)
+    this.props.uploadSettingsData(SettingsSections.filters);
+    this.props.uploadSettingsTrainingData();
   }
-  render(){
+  render(){ 
+    
     return(
       <div className="analysis-and-training-section">
         {
@@ -31,13 +33,13 @@ class AnalysisAndTrainingSection extends Component<Props>{
           </div>
         }
         {
-          this.props.status[SettingsSections.training] === HttpStatus.FINISHED &&
+          Object.values(this.props.trainingStatus).reduce((prevVal, item)=>prevVal && item===HttpStatus.FINISHED, true) &&
           <div className="analysis-and-training-section__training">
             <SettingsTraining/>
           </div>
         }
         {
-          this.props.status[SettingsSections.training] === HttpStatus.RELOADING &&
+          Object.values(this.props.trainingStatus).reduce((prevVal, item)=>(prevVal || item===HttpStatus.RELOADING) && item!==HttpStatus.FAILED, false) &&
           <div className="analysis-and-training-section__spinner">
             <CircleSpinner alignCenter/>
           </div>
@@ -47,11 +49,13 @@ class AnalysisAndTrainingSection extends Component<Props>{
   }
 }
 const mapStateToProps = ({settings}: RootStore) => ({
-  status: settings.status,
+  status: settings.settingsStore.status,
+  trainingStatus: settings.settingsTrainingStore.status 
 })
 
 const mapDispatchToProps = {
-  uploadSettings,
+  uploadSettingsData,
+  uploadSettingsTrainingData,
 }
 
 

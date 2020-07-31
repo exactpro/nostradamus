@@ -3,6 +3,7 @@ export enum HttpStatus {
 	LOADING = 'loading',
 	FINISHED = 'finished',
 	RELOADING = 'reloading',
+	WARNING = 'warning',
 	FAILED = 'failed'
 }
 

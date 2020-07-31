@@ -1,6 +1,5 @@
 from typing import List, Dict
 from math import ceil
-from datetime import datetime as dt
 
 from jira import JIRA, JIRAError
 from django.conf import settings
@@ -27,6 +26,16 @@ class JAPI:
     base_jql : str
         service URL.
 
+    Methods
+    -------
+        get_extract_args:
+            Generates arguments for REST API requests.
+        get_update_args:
+            Generates arguments for REST API requests.
+        execute_jql:
+            Executes JQL to fetch issues from bug-tracker.
+        parse_issues:
+            Parses issues.
     """
 
     def __init__(
@@ -43,11 +52,11 @@ class JAPI:
 
     def __get_connection(self) -> JIRA:
         """ Creates connection object for communication
-        with Jira REST API service
+        with Jira REST API service.
 
         Returns:
         ----------
-            JIRA connection instance
+            JIRA connection instance.
         """
         credentials = (
             (self.username, self.password)
@@ -57,7 +66,7 @@ class JAPI:
 
         try:
             jira_connection = JIRA(
-                options={"server": self.url},
+                options={"server": self.url, "verify": False},
                 basic_auth=credentials,
                 max_retries=3,
             )
@@ -101,7 +110,7 @@ class JAPI:
         ]
         return request_args
 
-    def get_update_args(self, existing_issues: List[Dict]):
+    def get_update_args(self, existing_issues: List[Dict]) -> list:
         """ Generates arguments for REST API requests.
 
         Parameters:
@@ -135,7 +144,7 @@ class JAPI:
         return request_args
 
     def __get_issues_amount(self, jql: str) -> int:
-        """ Request total issues amount
+        """ Request total issues amount.
 
         Returns:
         ----------
@@ -145,13 +154,13 @@ class JAPI:
 
         return conn.search_issues(jql, maxResults=0, json_result=True)["total"]
 
-    def __get_step(self, step: int, block_size: int):
+    def __get_step(self, step: int, block_size: int) -> int:
         return step * block_size
 
     def execute_jql(
         self, jql: str, start: int = 0, step_size: int = 50
     ) -> dict:
-        """ Executes JQL to fetch issues from bug-tracker
+        """ Executes JQL to fetch issues from bug-tracker.
 
         Parameters:
         ----------
@@ -166,15 +175,15 @@ class JAPI:
         ----------
             Object that contains the following information:
                 expand:
-                    Extra information to fetch inside each resource
+                    Extra information to fetch inside each resource.
                 startAt:
-                    Index of the first issue to return
+                    Index of the first issue to return.
                 maxResults:
-                    Maximum number of issues to return
+                    Maximum number of issues to return.
                 total:
-                    Loaded issues amount
+                    Loaded issues amount.
                 issues:
-                    List containing loaded issues
+                    List containing loaded issues.
         """
         conn = self.__get_connection()
         return conn.search_issues(
@@ -189,29 +198,29 @@ class JAPI:
 
     @staticmethod
     def parse_issues(issue_block: dict) -> List[Dict]:
-        """ Parses issues
+        """ Parses issues.
 
         Parameters:
         ----------
         issues_blocks:
-            Object which contains information about loaded issues
+            Object which contains information about loaded issues.
 
         Returns:
         ----------
-            List ob parsed issues
+            List ob parsed issues.
         """
 
         def _map_field_names(raw_issue: dict) -> None:
-            """ Rename fields of loaded issues using mapper object
+            """ Rename fields of loaded issues using mapper object.
 
             Parameters:
             ----------
             raw_issue:
-                Issue for rename fields
+                Issue for rename fields.
 
             Returns:
             ----------
-                Issue with the renamed fields
+                Issue with the renamed fields.
             """
             for name in name_mapping:
                 if name in raw_issue["fields"]:
@@ -235,13 +244,19 @@ class JAPI:
             history = raw_issue.get("changelog").get("histories")
 
             parsed_issue = {
-                "Project": fields["Project"].get("name")
-                if fields.get("Project")
-                else "" or "",
+                "Project": (
+                    fields["Project"].get("name")
+                    if fields.get("Project")
+                    else ""
+                )
+                or "",
                 "Attachments": len(fields.get("Attachment") or []),
-                "Priority": fields["Priority"].get("name")
-                if fields.get("Priority")
-                else "" or "",
+                "Priority": (
+                    fields["Priority"].get("name")
+                    if fields.get("Priority")
+                    else "Unfilled"
+                )
+                or "Unfilled",
                 "Resolved": get_utc_datetime(fields["Resolved"])
                 if fields.get("Resolved")
                 else None,
@@ -259,7 +274,12 @@ class JAPI:
                 else "Unresolved",
                 "Description": fields["Description"] or "",
                 "Components": ",".join(
-                    [component["name"] for component in fields["Component/s"]]
+                    [
+                        component.get("name")
+                        for component in fields.get("Component/s")
+                    ]
+                    if fields.get("Component/s")
+                    else []
                 ),
                 "Version": ",".join([el["name"] for el in fields["Versions"]])
                 if fields.get("Versions")
@@ -315,4 +335,5 @@ class JAPI:
                 _map_field_names(issue)
 
             issues.append(_parse_issue(issue))
+
         return issues

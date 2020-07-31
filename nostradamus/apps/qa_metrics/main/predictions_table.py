@@ -1,39 +1,40 @@
-import multiprocessing
+import concurrent.futures
 from pathlib import Path
+from typing import List
 
 import pandas as pd
 import numpy as np
 
-from math import ceil
-
 from django.db.models import Model
 
 from apps.settings.main.archiver import get_archive_path, read_from_archive
-from apps.extractor.main.connector import get_issues, update_issues
-from apps.extractor.models import Bug
-from apps.settings.main.common import get_qa_metrics_settings
+from apps.settings.main.common import (
+    get_qa_metrics_settings,
+    get_predictions_table_settings,
+)
 from utils.const import (
     TRAINING_PARAMETERS_FILENAME,
     BINARY_CLASSES,
     PREDICTIONS_TABLE_FIELD_MAPPING,
-    PREDICTION_FIELDS,
     UNRESOLVED_BUGS_FILTER,
     MANDATORY_FIELDS,
 )
 from apps.authentication.models import User
+from apps.extractor.main.preprocessor import get_issues_dataframe
 from utils.predictions import get_probabilities
-from utils.warnings import PredictionsNotReadyWarning
 
 
-def get_predictions_table(settings, filters, offset, limit) -> pd.DataFrame:
-    """ Reads bugs predictions for according user settings.
+def get_predictions_table(
+    issues, fields_settings, offset, limit
+) -> pd.DataFrame:
+    """ Reads issues predictions for according user settings.
 
     Parameters:
     ----------
-    settings:
-        Predictions table settings.
-    filters:
-        Filters.
+    issues:
+        Bug reports.
+    fields_settings:
+        Predictions table fields settings.
     offset:
         Start index to read bugs.
     limit:
@@ -41,29 +42,20 @@ def get_predictions_table(settings, filters, offset, limit) -> pd.DataFrame:
 
     Returns:
     ----------
-        Bugs predictions.
+        Predictions.
     """
-    filters = [UNRESOLVED_BUGS_FILTER] + filters
-
-    bugs = pd.DataFrame(get_issues(filters=filters))
-
-    if bugs.empty:
-        return pd.DataFrame()
-
     if offset is not None and limit is not None:
-        bugs = paginate_bugs(bugs, offset, limit)
+        issues = paginate_bugs(issues, offset, limit)
 
-    prediction_table_fields = [field["name"] for field in settings]
-
-    for field in prediction_table_fields:
+    for field in fields_settings:
         if field.startswith("Resolution:"):
             class_ = field.replace("Resolution: ", "")
 
-            bugs[field] = bugs["Resolution_prediction"].apply(
+            issues[field] = issues["Resolution_prediction"].apply(
                 lambda value: max(value.get(class_), key=value.get(class_).get)
             )
         else:
-            bugs[field] = bugs[
+            issues[field] = issues[
                 PREDICTIONS_TABLE_FIELD_MAPPING.get(field, field)
             ].apply(
                 lambda value: max(value, key=value.get)
@@ -71,96 +63,126 @@ def get_predictions_table(settings, filters, offset, limit) -> pd.DataFrame:
                 else value
             )
 
-    bugs = bugs[prediction_table_fields]
+    issues = issues[fields_settings]
 
-    return bugs
+    return issues
 
 
-def append_predictions(user: User) -> None:
+def get_predictions(user: User, issues: pd.DataFrame) -> pd.DataFrame:
     """ Appends predictions for each issue.
 
     Parameters:
     ----------
     user:
         User instance.
+    issues:
+        Bug reports.
+
+    Returns:
+    ----------
+        Issues dataframe with predictions.
     """
-
-    bugs = pd.DataFrame(
-        get_issues(
-            fields=["Key", "Description_tr"], filters=[UNRESOLVED_BUGS_FILTER]
-        )
-    )
-
-    # Split DF to process its chunks asynchronously.
-    chunk_size = ceil(len(bugs) / multiprocessing.cpu_count())
+    chunks = issues.groupby(np.arange(len(issues)) // 1000)
 
     archive_path = get_archive_path(user)
     training_parameters = read_from_archive(
         archive_path, TRAINING_PARAMETERS_FILENAME
     )
+    models = load_models(params=training_parameters, models_path=archive_path)
 
-    with multiprocessing.Pool() as pool:
-        df_predictions = [
-            pool.apply_async(
-                calculate_predictions,
-                args=(chunk, training_parameters, archive_path),
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        df_predictions = {
+            executor.submit(
+                calculate_predictions, chunk, training_parameters, models
             )
-            for chunk in np.array_split(bugs, chunk_size)
-        ]
+            for ind, chunk in chunks
+        }
+        predictions = pd.concat(
+            [
+                prediction.result()
+                for prediction in concurrent.futures.as_completed(
+                    df_predictions
+                )
+            ]
+        )
 
-        df_predictions = [prediction.get() for prediction in df_predictions]
-
-    df_predictions = pd.concat(df_predictions)
-    del df_predictions["Description_tr"]
-
-    update_issues(df_predictions.T.to_dict().values())
+        return predictions
 
 
-def calculate_predictions(
-    df: pd.DataFrame, training_parameters: dict, archive_path: Path
-) -> pd.DataFrame:
-    """ Calculates predictions for received DataFrame.
+def load_models(params: dict, models_path: Path) -> dict:
+    """ Read models.
 
     Parameters:
     ----------
-    df:
-        Bugs.
-    training_parameters:
+    params:
         Training parameters.
-    archive_path:
-        Path to user archive.
+    models_path:
+        Path to models storage.
 
     Returns:
     ----------
-        DataFrame with calculated predictions.
+        Object containing models' pipelines.
+    """
+    models = {}
+    for param in params:
+        if param in ["Time to Resolve", "Priority"]:
+            models[param] = read_from_archive(models_path, param + ".sav")
+        elif param == "Resolution":
+            models[param] = {
+                class_: read_from_archive(models_path, class_ + ".sav")
+                for class_ in params[param]
+            }
+        elif param == "areas_of_testing":
+            models[param] = {
+                class_: read_from_archive(models_path, class_ + ".sav")
+                for class_ in params[param]
+            }
+    return models
+
+
+def calculate_predictions(
+    issues: pd.DataFrame, training_parameters: dict, models: dict
+) -> pd.DataFrame:
+    """ Calculates predictions for received DataFrame and writes them to the DB.
+
+    Parameters:
+    ----------
+    issues:
+        Bug reports.
+    training_parameters:
+        Training parameters.
+    models:
+        Models' pipelines.
+
+    Returns:
+    ----------
+        Predictions.
     """
     for parameter in training_parameters:
         if parameter == "Time to Resolve":
-            df[parameter + "_prediction"] = df["Description_tr"].apply(
+            issues[parameter + "_prediction"] = issues["Description_tr"].apply(
                 lambda descr: get_probabilities(
-                    descr,
-                    training_parameters[parameter],
-                    read_from_archive(archive_path, parameter + ".sav"),
+                    descr, training_parameters[parameter], models[parameter],
                 )
             )
         elif parameter == "Resolution":
-            df[parameter + "_prediction"] = df["Description_tr"].apply(
+            issues[parameter + "_prediction"] = issues["Description_tr"].apply(
                 lambda descr: calculate_resolution_predictions(
-                    descr, training_parameters[parameter], archive_path
+                    descr, training_parameters[parameter], models[parameter]
                 )
             )
         elif parameter == "areas_of_testing":
-            df[parameter + "_prediction"] = df["Description_tr"].apply(
+            issues[parameter + "_prediction"] = issues["Description_tr"].apply(
                 lambda descr: calculate_area_of_testing_predictions(
-                    descr, training_parameters[parameter], archive_path
+                    descr, training_parameters[parameter], models[parameter]
                 )
             )
 
-    return df
+    return issues
 
 
 def calculate_resolution_predictions(
-    text: str, classes: list, archive_path: Path
+    text: str, classes: dict, models: dict
 ) -> dict:
     """ Calculates predictions for defect resolutions.
 
@@ -178,16 +200,14 @@ def calculate_resolution_predictions(
         Calculated predictions.
     """
     prediction = {
-        parameter: get_probabilities(
-            text, classes, read_from_archive(archive_path, parameter + ".sav")
-        )
+        parameter: get_probabilities(text, classes, models[parameter])
         for parameter, classes in classes.items()
     }
     return prediction
 
 
 def calculate_area_of_testing_predictions(
-    text: str, classes: list, archive_path: Path
+    text: str, classes: list, models: dict
 ) -> dict:
     """ Calculates area of testing predictions.
 
@@ -205,11 +225,9 @@ def calculate_area_of_testing_predictions(
         Calculated predictions.
     """
     prediction = {
-        parameter: get_probabilities(
-            text,
-            BINARY_CLASSES,
-            read_from_archive(archive_path, parameter + ".sav"),
-        )[1]
+        parameter: get_probabilities(text, BINARY_CLASSES, models[parameter],)[
+            1
+        ]
         for parameter in classes
     }
     return prediction
@@ -217,29 +235,6 @@ def calculate_area_of_testing_predictions(
 
 def paginate_bugs(df: pd.DataFrame, offset: int, limit: int) -> pd.DataFrame:
     return df.iloc[offset : offset + limit]
-
-
-def delete_old_predictions() -> None:
-    """ Deletes old bugs predictions.
-
-    Parameters:
-    ----------
-    bugs:
-        Bugs.
-    path_to_saving:
-        Path to where file will be saved.
-    """
-    fields = {"unset__" + field_name: True for field_name in PREDICTION_FIELDS}
-    Bug.objects.update(**fields)
-
-
-def check_predictions() -> None:
-    """ Raises warning if predictions haven't been written yet.
-    """
-    query = {"exists__" + field_name: True for field_name in PREDICTION_FIELDS}
-    result = [issues for issues in Bug.objects._collection.find(query)]
-    if not result:
-        raise PredictionsNotReadyWarning
 
 
 def get_qa_metrics_fields(user: Model) -> list:
@@ -260,3 +255,53 @@ def get_qa_metrics_fields(user: Model) -> list:
     fields = list(set(fields).union(set(MANDATORY_FIELDS)))
 
     return fields
+
+
+def get_predictions_table_fields(user: User) -> list:
+    """ Reads predictions table settings from db.
+
+    Parameters:
+    ----------
+    user:
+        User instance.
+
+    Returns:
+    ----------
+        Predictions table fields.
+    """
+    predictions_table_settings = get_predictions_table_settings(user)
+    predictions_table_fields = [
+        field["name"] for field in predictions_table_settings
+    ] + ["Description_tr", "Key"]
+
+    return predictions_table_fields
+
+
+def calculate_issues_predictions(
+    user: User, fields: List[str], filters: List[dict]
+) -> pd.DataFrame:
+    """ Appends predictions to issues.
+
+    Parameters:
+    ----------
+    user:
+        User instance.
+    fields:
+        Predictions table fields.
+    filters:
+        Filters.
+
+    Returns:
+    ----------
+        Issues.
+    """
+    filters = [UNRESOLVED_BUGS_FILTER] + filters
+
+    issues = get_issues_dataframe(fields=fields, filters=filters)
+
+    if issues.empty:
+        return pd.DataFrame()
+
+    issues = get_predictions(user, issues)
+
+    return issues

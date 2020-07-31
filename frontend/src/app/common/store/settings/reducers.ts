@@ -1,21 +1,32 @@
-import {SettingsStore, SettingsActionTypes} from "app/common/store/settings/types";
+import {SettingsStore, SettingsActionTypes, SettingsData} from "app/common/store/settings/types";
 import { HttpStatus } from 'app/common/types/http.types';
 import { InferValueTypes } from 'app/common/store/utils';
 import {copyData} from "app/common/functions/helper";
 import * as actions from './actions';
+import { combineReducers } from "redux";
+import {settingsTrainingReducer} from "app/modules/settings/fields/settings_training/store/reducer"; 
 
 const initialState: SettingsStore = {
   isOpen: false,
+  isCollectingFinished: false,
   status: {
-    filters:HttpStatus.FINISHED,
-    qa_metrics:HttpStatus.FINISHED,
-    predictions_table:HttpStatus.FINISHED,
-    training:HttpStatus.FINISHED,
+    filters:HttpStatus.PREVIEW,
+    qa_metrics:HttpStatus.PREVIEW,
+    predictions_table:HttpStatus.PREVIEW, 
   },
   defaultSettings:{
-    filters: [],
-    qa_metrics: [],
-    predictions_table: [],
+    filters: {
+      filter_settings: [],
+      names: []
+    },
+    qa_metrics: {
+      filter_settings: [],
+      names: []
+    },
+    predictions_table: {
+      predictions_table_settings:[],
+      field_names: [],
+    },
     training: {
       mark_up_source: "",
       mark_up_entities: [],
@@ -36,7 +47,7 @@ const initialState: SettingsStore = {
 type actionsUserTypes = ReturnType<InferValueTypes<typeof actions>>;
 
 export const settingsReducer = (state: SettingsStore = initialState, action: actionsUserTypes) => {
-  let defaultSettings = {...state.defaultSettings}, status = {...state.status}
+  let defaultSettings: SettingsData = {...state.defaultSettings}, status = {...state.status}
   switch (action.type) {
 
     case SettingsActionTypes.activateSettings:
@@ -46,12 +57,24 @@ export const settingsReducer = (state: SettingsStore = initialState, action: act
       status[action.section] = action.status
       return {...state, status}
 
-    case SettingsActionTypes.uploadData:
+    case SettingsActionTypes.uploadData: 
       defaultSettings[action.section] = copyData(action.settings)
       return {...state, defaultSettings}
 
+    case SettingsActionTypes.setCollectingDataStatus: 
+      return {...state, 
+              isCollectingFinished: action.isCollectionFinished}
+
+    case SettingsActionTypes.clearSettings:
+      return {...initialState};
+      
     default:
       return {...state}
 
   }
 }
+
+export const generalSettingsStore = combineReducers({
+  settingsStore: settingsReducer,
+  settingsTrainingStore: settingsTrainingReducer,
+})

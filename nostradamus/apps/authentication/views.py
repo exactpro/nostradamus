@@ -15,7 +15,6 @@ from apps.authentication.serializers import (
 )
 from apps.authentication.main.token_creator import TokenCreator
 from apps.authentication.models import Team
-from apps.extractor.consumers import ExtractorConsumer
 
 
 class AuthenticationView(APIView):
@@ -32,11 +31,7 @@ class AuthenticationView(APIView):
 
         token_payload = TokenCreator(credentials, password).create_jwt()
 
-        if token_payload:
-            return Response(token_payload)
-
-        # TODO raise error here: invalid credentials data
-        return Response()
+        return Response(token_payload)
 
 
 class RegistrationView(APIView):
@@ -56,7 +51,6 @@ class RegistrationView(APIView):
     def post(self, request):
         user_serializer = UserSerializer(data=request.GET)
 
-        # TODO catch exception correctly
         user_serializer.is_valid(raise_exception=True)
         team = user_serializer.get_team()
         user = user_serializer.save()
@@ -64,4 +58,3 @@ class RegistrationView(APIView):
         bind_user_to_team(user, team)
 
         return Response({"result": "success"})
-

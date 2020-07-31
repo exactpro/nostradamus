@@ -1,6 +1,6 @@
 import React, {Component} from "react";
 import {SettingsSections} from "app/common/store/settings/types";
-import {uploadSettings} from "app/common/store/settings/thunks";
+import {uploadSettingsData} from "app/common/store/settings/thunks";
 import {connect, ConnectedProps} from "react-redux";
 import {RootStore} from "app/common/types/store.types";
 import { HttpStatus } from 'app/common/types/http.types';
@@ -8,11 +8,12 @@ import CircleSpinner from 'app/common/components/circle-spinner/circle-spinner';
 import SettingsFilter from "app/modules/settings/fields/settings_filter/setings_filter";
 import SettingsPredictions from "app/modules/settings/fields/settings_predictions/settings_predictions"
 import "app/modules/settings/sections/qa-metrics-section/qa-metrics-section.scss";
+
 class QAMetricsSection extends Component<Props>{
 
   componentDidMount = () => {
-    this.props.uploadSettings(SettingsSections.qaFilters)
-    this.props.uploadSettings(SettingsSections.predictions)
+    this.props.uploadSettingsData(SettingsSections.qaFilters)
+    this.props.uploadSettingsData(SettingsSections.predictions)
   }
 
   render(){
@@ -48,12 +49,10 @@ class QAMetricsSection extends Component<Props>{
 }
 
 const mapStateToProps = ({settings}: RootStore) => ({
-  status: settings.status,
+  status: settings.settingsStore.status,
 })
 
-const mapDispatchToProps = {
-  uploadSettings,
-}
+const mapDispatchToProps = { uploadSettingsData }
 
 
 const connector = connect(mapStateToProps, mapDispatchToProps)

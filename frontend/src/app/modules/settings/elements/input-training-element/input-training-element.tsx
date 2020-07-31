@@ -1,7 +1,6 @@
 import React, {Component} from "react";
-import cn from "classnames"
-import InputElement from "app/modules/settings/elements/input-element/input-element";
-import {FilterElementType} from "app/modules/settings/elements/elements-types";
+import cn from "classnames" 
+import {FilterElementType, FilterDropdownType} from "app/modules/settings/elements/elements-types";
 import Icon, {IconSize, IconType} from "app/common/components/icon/icon";
 import "app/modules/settings/elements/input-training-element/input-training-element.scss";
 
@@ -10,150 +9,160 @@ interface InputTrainingElementProps{
   onChange: (value: string)=>void,
   onClear: (index: number) => void,
   values: string[],
-  id: number,
+  dropDownValues: string[],
 }
 
-export default class InputTrainingElement extends Component<InputTrainingElementProps>{
+interface InputTrainingElementState{
+  isSelectWindowOpen: boolean,
+  isSelectedListOpen: boolean,
+  quickSearchValue: string
+}
 
-  state = {
-    isOpen: false,
-    isWrapperOpen: false,
-    value: "",
+export default class InputTrainingElement extends Component<InputTrainingElementProps, InputTrainingElementState>{
+
+  constructor(props: InputTrainingElementProps){
+    super(props);
+
+    this.state = {
+      isSelectWindowOpen:false,
+      isSelectedListOpen: false,
+      quickSearchValue: "",
+    };
   }
-
-  spreadButtonRef: React.RefObject<HTMLButtonElement> = React.createRef();
-  valueBlocksWrapperRef: React.RefObject<HTMLDivElement> = React.createRef();
 
   static defaultProps={
     type: FilterElementType.simple,
-    values:[],
-    onChange: ()=>{},
-    onClear: ()=>{},
-    id: 0,
+    dropDownValues: Object.values(FilterDropdownType),
   }
 
-  onChangeHandler = (value: string) => {
-    this.setState({value})
+  timerID: NodeJS.Timeout | null = null;
+  inputTrainingElementRef: React.RefObject<HTMLDivElement> = React.createRef();
+  allowedEditing: boolean = false;
+
+  changeQuickSearchValue = (e: React.ChangeEvent<HTMLInputElement>) => {
+    this.setState({quickSearchValue: e.target.value});
   }
 
-  onClearHandler = () => {
-    this.setState({value:""})
-  }
+  onFocusTrainingElement = () => {
+    if(!this.allowedEditing) return;
+    if(this.timerID) clearTimeout(this.timerID);
+    this.setState({isSelectWindowOpen: true})
+  };
 
-  onFocusHandler = (e: any) => {
-    e.currentTarget === e.target &&
+  onBlurTrainingElement = () => {
+    this.timerID = setTimeout(()=>this.setState({isSelectWindowOpen: false,
+                                                 isSelectedListOpen: false}), 0)
+  };
+
+  openSelectedValuesList = () => {
     this.setState({
-      isOpen: true,
+      isSelectedListOpen: !this.state.isSelectedListOpen, 
     })
+  };
+
+  selectDropdownValue = (value: string, isChecked: boolean) => () => {
+    if(isChecked) { 
+      this.deleteValueBlock(this.props.values.findIndex(item=>item===value))();
+      return;
+    }
+    this.props.onChange(value);
   }
 
-  addValue=()=>{
-    this.state.value && this.props.onChange(this.state.value)
-    this.setState({
-      isOpen:false,
-      isWrapperOpen: false,
-      value: ""
-    })
+  deleteValueBlock = (index: number) => () => {
+    if(this.props.values.length===1 && this.state.isSelectedListOpen) this.inputTrainingElementRef.current?.blur();
+    this.props.onClear(index);
   }
 
-  onKeyPressHandler = (e: any) => {
-    if(e.key==="Enter") this.addValue()
-  }
-
-  onBlurHandler = (e: any) => {
-    if(![...e.currentTarget.children].includes(e.relatedTarget)) this.addValue()
-  }
-
-  renderValueBlock = (content: string, index: number, allowedEditing: boolean) => {
+  renderValueBlocks = (content: string, index: number) => {
     return (
       <div key={index} className="input-training-element-value-block">
-        <p className="input-training-element-value-block__number">{index+1}</p>
-        <p className="input-training-element-value-block__content">{content}</p>
-        {
-          allowedEditing &&
-          <button className="input-training-element-value-block__close"
-                onClick={this.clearValueBlock(index)}>
-          <Icon size={ IconSize.small } type={ IconType.close }/>
-          </button>
-        }
+        <div className="input-training-element-value-block__wrapper">
+          <p className="input-training-element-value-block__number">{index+1}</p>
+          <p className="input-training-element-value-block__content">{content}</p>
+          {
+            this.allowedEditing &&
+            <button className="input-training-element-value-block__close"
+                  onClick={this.deleteValueBlock(index)}>
+            <Icon size={ IconSize.small } type={ IconType.close }/>
+            </button>
+          }
+        </div>
       </div>
     )
   }
 
-  clearValueBlock = (index: number) => () => {
-    this.props.onClear(index)
-  }
-
-  activateOverflawWrapper = () => {
-    this.setState({isWrapperOpen:!this.state.isWrapperOpen})
-  }
-
-  valueBlockWrapperStatus = () => {
-    if(this.valueBlocksWrapperRef.current && this.spreadButtonRef.current)
-    {
-      let hiddenBlocksNumber: number = 0;
-      [].forEach.call(this.valueBlocksWrapperRef.current.children, (item: HTMLElement,_, array: HTMLElement[])=>{
-        if(item && item.offsetTop > array[0].offsetTop){
-          hiddenBlocksNumber++;
-        }
-      })
-
-      if(this.state.isWrapperOpen){
-        if(hiddenBlocksNumber){
-          this.spreadButtonRef.current.innerHTML=`hide`;
-        }
-        else{
-           this.spreadButtonRef.current.style.display="none";
-           this.activateOverflawWrapper()
-        }
-      }
-      else{
-
-        if(hiddenBlocksNumber){
-          this.spreadButtonRef.current.style.display="block";
-          this.spreadButtonRef.current.innerHTML=`+${hiddenBlocksNumber} more`
-        }
-        else this.spreadButtonRef.current.style.display="none";
-      }
-
-    }
-  }
-
-  componentDidUpdate = (prevprops: InputTrainingElementProps) => {
-    if(prevprops.type !== this.props.type && this.state.isWrapperOpen) this.setState({isWrapperOpen:false})
-    this.valueBlockWrapperStatus()
-  }
-
+  isStrIncludesSubstr = (str: string, substr: string) =>  str.toLowerCase().includes(substr.toLowerCase());
 
   render(){
-    let allowedEditing = [FilterElementType.simple, FilterElementType.edited].includes(this.props.type)
+    
+    this.allowedEditing = [FilterElementType.simple, FilterElementType.edited].includes(this.props.type)
+    
+    let values = this.props.values;
+    let dropdownValues = this.state.isSelectedListOpen? this.props.values: this.props.dropDownValues;
 
     return(
-      <div className="input-training-element">
-        <button ref={this.spreadButtonRef}
-                className="input-training-element__spread-button"
-                onClick={this.activateOverflawWrapper}/>
+      <div className="input-training-element"
+           tabIndex={0}
+           onFocus={this.onFocusTrainingElement}
+           onBlur={this.onBlurTrainingElement}
+           ref={this.inputTrainingElementRef}>
+
+        <div className={cn("input-training-element-block-container", "input-training-element-block-container_"+this.props.type)}>
+          {
+            values.length?
+              [...values].splice(0,2).map((item,index)=>this.renderValueBlocks(item, index))
+              :<p className="input-training-element-block-container__placeholder">Entities Name</p>
+          }
+        </div>
 
         {
-          this.state.isOpen?
-            <div className="input-training-element__input-wrapper">
-              <InputElement value={this.state.value}
-                            type={this.props.type}
-                            placeholder="Entities Name"
-                            onChange={this.onChangeHandler}
-                            onClear={this.onClearHandler}
-                            onBlur={this.onBlurHandler}
-                            onKeyPress={this.onKeyPressHandler}/>
-            </div>:
-            <div className={cn("input-training-element-block-container",`input-training-element-block-container_${this.props.type}`)}
-                 ref={this.valueBlocksWrapperRef}
-                 style={{height:this.state.isWrapperOpen? "auto": ""}}
-                 onClick={allowedEditing? this.onFocusHandler: undefined}>
-                    {!this.props.values.length && <p className="input-training-element-block-container__placeholder">Entities Name</p>}
-                    {this.props.values.map((item,index)=>this.renderValueBlock(item, index, allowedEditing))}
-            </div>
-       }
-       
+          values.length>2 && this.allowedEditing && 
+          <button className="input-training-element__spread-button"
+                  onClick={this.openSelectedValuesList}> 
+            + {values.length-2} more 
+          </button>
+        }
+
+        {
+          this.state.isSelectWindowOpen &&
+          <div className="input-training-element__select-window select-window">
+
+            {
+              !this.state.isSelectedListOpen && 
+              <input  type="text"
+                    value={this.state.quickSearchValue}
+                    onChange={this.changeQuickSearchValue} 
+                    onFocus={()=>this.timerID && clearTimeout(this.timerID)}
+                    className="select-window__search" 
+                    placeholder="Quick search"/>
+            }
+
+          {
+            dropdownValues.filter(str=>this.isStrIncludesSubstr(str.toString(), this.state.quickSearchValue)).map((item,index)=>{
+              let checked = values.findIndex(checkedItem => checkedItem === item) > -1;
+              return (
+                <label key={index} className="select-window__item">
+                  <input
+                    className="select-window__browser-checkbox"
+                    type="checkbox" 
+                    checked={checked}
+                    onChange={this.selectDropdownValue(item, checked)}
+                  />
+
+                  <span className="select-window__checkbox">
+                    {
+                      checked &&
+                      <Icon type={IconType.check} className="select-window__check-mark" size={IconSize.small} />
+                    }
+                  </span>
+
+                  {item}
+                </label>
+            )})
+          }
+        </div>
+        }
+        
       </div>
     )
   }

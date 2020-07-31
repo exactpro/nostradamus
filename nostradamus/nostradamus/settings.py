@@ -12,22 +12,15 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 
 import os
 
+from pathlib import Path
 from datetime import timedelta
 
-from celery.schedules import crontab
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY_DEFAULT = "v$1bx=+6#ibt4a$4i&5i8stwjqzm+3=tjsde9iku1a0w(u6bfy"
 SECRET_KEY = os.environ.get("SECRET_KEY", default=SECRET_KEY_DEFAULT)
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = int(os.environ.get("DEBUG", default=1))
 
 SERVER_NAME = (
@@ -42,7 +35,9 @@ ALLOWED_HOSTS = [
     "nostradamus-core",
     os.environ.get("SERVER_NAME"),
 ]
+
 CORS_ORIGIN_ALLOW_ALL = False
+
 CORS_ORIGIN_WHITELIST = [
     r"http://localhost:\d+",
     r"http://nostradamus-core:\d+",
@@ -76,7 +71,6 @@ LOGGING = {
         },
     },
 }
-
 
 # Application definition
 
@@ -156,14 +150,13 @@ TEMPLATES = [
     },
 ]
 
-
 # Database
-# https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
+DB_PATH = Path(__file__).parents[1].joinpath("data")
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+        "NAME": os.path.join(DB_PATH, "db.sqlite3"),
     }
 }
 
@@ -199,7 +192,6 @@ CHANNEL_LAYERS = {
 }
 
 # Password validation
-# https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -216,9 +208,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
-# https://docs.djangoproject.com/en/3.0/topics/i18n/
 
 LANGUAGE_CODE = "en-us"
 
@@ -230,9 +220,7 @@ USE_L10N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_ROOT = os.path.join(BASE_DIR, "api_static")
 STATIC_URL = "/api_static/"

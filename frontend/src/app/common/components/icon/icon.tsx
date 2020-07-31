@@ -35,6 +35,7 @@ export enum IconType {
 	send = 'icon-Send',
 	chatBeta = 'icon-chatbeta',
 	file = 'icon-file',
+	warning = 'icon-warning',
 }
 
 export enum IconSize {

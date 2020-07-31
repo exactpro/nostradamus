@@ -17,7 +17,9 @@ enum ShowCalendarField{
 interface Props {
 	className?: string
 	field: FilterFieldBase,
-	updateFunction: UpdateFieldFunction
+	updateFunction: UpdateFieldFunction,
+	minDateValue: Date,
+	maxDateValue: Date,
 }
 
 interface State{
@@ -36,6 +38,11 @@ class DateRange extends React.Component<Props, State> {
 		start: undefined,
 		end: undefined,
 	};
+
+	static defaultProps = {
+		minDateValue: new Date(0),
+		maxDateValue: new Date(2100, 0, 0),
+	}
 
 	constructor(props: Props) {
 		super(props);
@@ -78,16 +85,15 @@ class DateRange extends React.Component<Props, State> {
 		this.field.applyField();
 	}
 
-	handleChanges = async (value: Date) => {
-		await this.setState({[this.state.showCalendar as ShowCalendarField]: moment(value).format('DD.MM.YYYY'),
-									 			  showCalendar: undefined})
-
-		this.applyChanges()
+	handleChanges = (value: Date) => {
+		this.setState({[this.state.showCalendar as ShowCalendarField]: moment(value).format('DD.MM.YYYY'),
+						showCalendar: undefined},
+						this.applyChanges)
 	};
 
-	clearInputField = (field: ShowCalendarField) => async() => {
-		await this.setState({[field]:""})
-		this.applyChanges()
+	clearInputField = (field: ShowCalendarField) => () => {
+		this.setState({[field]:""},
+						this.applyChanges)
 	}
 
 	handleDirectChanges = (dateField: ShowCalendarField) => (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -98,15 +104,16 @@ class DateRange extends React.Component<Props, State> {
 		});
 	};
 
-	onBlurInput = (dateField: ShowCalendarField) =>async () => {
-		await this.setState({
+	onBlurInput = (dateField: ShowCalendarField) => () => {
+		let inputedDate = this.editZeroDate(this.state[dateField]);
+		let dateFieldMoment = moment( inputedDate, ['DD.MM.YY', 'DD.MM.YYYY'], true);
+		this.setState({
 			...this.state,
 			[dateField]: !this.state[dateField] ||
-										moment(this.editZeroDate(this.state[dateField]), ['DD.MM.YY', 'DD.MM.YYYY'], true).isValid()?
-										this.editZeroDate(this.state[dateField]):
-										'Invalid date'
-		});
-		this.applyChanges()
+						(dateFieldMoment.isValid() && dateFieldMoment.isBetween(this.props.minDateValue, this.props.maxDateValue, "day", "[]"))?
+						inputedDate:
+						'Invalid date'},
+			this.applyChanges);
 	};
 
 	onBlurCalendar = (event: any) => {
@@ -176,12 +183,14 @@ class DateRange extends React.Component<Props, State> {
 
 				{
 					this.state.showCalendar &&
-          <Calendar
-              locale="en-EN"
-              next2Label={false}
-              className="date-range__calendar"
+          				<Calendar
+							minDate={this.props.minDateValue}
+							maxDate={this.props.maxDateValue}
+							locale="en-EN"
+							next2Label={false}
+							className="date-range__calendar"
 							onClickDay={this.handleChanges}
-              showNeighboringMonth={false}/>
+              				showNeighboringMonth={false}/>
 				}
 			</div>
 		);

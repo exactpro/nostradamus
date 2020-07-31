@@ -144,3 +144,143 @@
     - utter_what_do_you_can
 * goodbye
     - utter_goodbye
+    
+## interactive_story_1
+* report
+    - report_form
+    - form{"name": "report_form"}
+    - slot{"requested_slot": "period"}
+* out_of_scope
+    - utter_cannot_help
+    - form: reset_slots
+    - form{"name": null}
+    - slot{"requested_slot": null}
+* report
+    - report_form
+    - form{"name": "report_form"}
+    - slot{"requested_slot": "period"}
+* form: inform{"period": "Today"}
+    - form: report_form
+    - form: reset_slots
+    - form{"name": null}
+    - slot{"requested_slot": null}
+
+## interactive_story_1
+* out_of_scope
+    - utter_cannot_help
+* report
+    - report_form
+    - form{"name": "report_form"}
+    - slot{"requested_slot": "period"}
+* form: inform{"period": "Today"}
+    - form: report_form
+    - form: reset_slots
+    - form{"name": null}
+    - slot{"requested_slot": null}
+    
+## interactive_story_2
+* report
+    - report_form
+    - form{"name": "report_form"}
+    - slot{"requested_slot": "period"}
+* out_of_scope
+    - utter_cannot_help
+    - form: reset_slots
+    - form{"name": null}
+    - slot{"requested_slot": null}
+* report
+    - report_form
+    - form{"name": "report_form"}
+    - slot{"requested_slot": "period"}
+* form: inform{"period": "Yesterday"}
+    - form: report_form
+    - form: reset_slots
+    - form{"name": null}
+    - slot{"requested_slot": null}
+
+## interactive_story_1
+* out_of_scope
+    - action_default_ask_affirmation
+* report
+    - report_form
+    - form{"name": "report_form"}
+    - slot{"requested_slot": "period"}
+* form: inform{"period": "Today"}
+    - form: report_form
+    - form: reset_slots
+    - form{"name": null}
+    - slot{"requested_slot": null}
+    
+## interactive_story_2
+* report
+    - report_form
+    - form{"name": "report_form"}
+    - slot{"requested_slot": "period"}
+* out_of_scope
+    - action_default_ask_affirmation
+    - form: reset_slots
+    - form{"name": null}
+    - slot{"requested_slot": null}
+* report
+    - report_form
+    - form{"name": "report_form"}
+    - slot{"requested_slot": "period"}
+* form: inform{"period": "Today"}
+    - form: report_form
+    - form: reset_slots
+    - form{"name": null}
+    - slot{"requested_slot": null}
+
+## interactive_story_3
+* report
+    - report_form
+    - form{"name": "report_form"}
+    - slot{"requested_slot": "period"}
+* out_of_scope
+    - action_default_ask_affirmation
+    - form: reset_slots
+    - form{"name": null}
+    - slot{"requested_slot": null}
+* report
+    - report_form
+    - form{"name": "report_form"}
+    - slot{"requested_slot": "period"}
+* form: inform{"period": "Today"}
+    - form: report_form
+    - form: reset_slots
+    - form{"name": null}
+    - slot{"requested_slot": null}
+
+## interactive_story_1
+* report
+    - report_form
+    - form{"name": "report_form"}
+    - slot{"requested_slot": "period"}
+* out_of_scope
+    - utter_cannot_help
+* report
+    - report_form
+    - slot{"requested_slot": "period"}
+* form: inform{"period": "Today"}
+    - form: report_form
+
+## interactive_story_1
+* report
+    - report_form
+    - form{"name": "report_form"}
+    - slot{"requested_slot": "period"}
+* out_of_scope
+    - utter_cannot_help
+* report
+    - report_form
+    - slot{"requested_slot": "period"}
+* out_of_scope
+    - utter_cannot_help
+* report
+    - report_form
+    - slot{"requested_slot": "period"}
+* out_of_scope
+    - utter_cannot_help
+* report
+    - report_form
+    - slot{"requested_slot": "period"}

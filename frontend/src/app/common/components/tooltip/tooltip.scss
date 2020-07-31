@@ -30,13 +30,13 @@ $verticalTriangleSize: 10px;
     &_bottom{
       bottom: 0;
       flex-direction: column-reverse;
-      transform: translate( 10% , calc(100% + #{$verticalTriangleSize}/2 ));
+      transform: translateY(calc(100% + #{$verticalTriangleSize}/2 ));
     }
 
     &_top{
       top: 0;
       flex-direction: column;
-      transform: translate( 10% , calc( -100% - #{$verticalTriangleSize}/2 ));
+      transform: translateY(calc( -100% - #{$verticalTriangleSize}/2 ));
     }
 
     &_left{
@@ -57,14 +57,14 @@ $verticalTriangleSize: 10px;
 
 
     &__content{
-      background: $lightOrange;
+      background: $smoothOrange;
       border-radius: 8px;
       padding: 12px 25px;
       white-space: nowrap;
 
       font-size: 15px;
       line-height: 19px;
-      color: $white;
+      color: $darkGray;
     };
 
 
@@ -77,25 +77,25 @@ $verticalTriangleSize: 10px;
       &_top{
         transform: translate(200%, -1px);
         border-width: $verticalTriangleSize $verticalTriangleSize 0 0;
-        border-color: $lightOrange transparent transparent transparent;
+        border-color: $smoothOrange transparent transparent transparent;
       }
 
       &_bottom{
         transform: translate(200%, 1px);
         border-width: $verticalTriangleSize 0 0 $verticalTriangleSize;
-        border-color: transparent transparent transparent $lightOrange;
+        border-color: transparent transparent transparent $smoothOrange;
       }
 
       &_right{
         margin-right: -1px;
         border-width: $horizontaTriangleSize $horizontaTriangleSize $horizontaTriangleSize 0;
-        border-color: transparent $lightOrange transparent transparent;
+        border-color: transparent $smoothOrange transparent transparent;
       }
 
       &_left{
         margin-left: -1px;
         border-width: $horizontaTriangleSize 0 $horizontaTriangleSize $horizontaTriangleSize;
-        border-color: transparent transparent transparent $lightOrange;
+        border-color: transparent transparent transparent $smoothOrange;
       }
     };
   }

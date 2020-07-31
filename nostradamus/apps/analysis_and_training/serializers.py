@@ -8,8 +8,13 @@ class FiltrationFieldRequestSerializer(serializers.Serializer):
     exact_match = serializers.BooleanField(required=False)
 
 
-class FilterRequestSerializer(serializers.Serializer):
+class FilterActionSerializer(serializers.Serializer):
     action = serializers.CharField()
+    filters = serializers.ListField(child=FiltrationFieldRequestSerializer())
+
+
+class FilterResultSerializer(serializers.Serializer):
+    records_count = serializers.DictField(child=serializers.IntegerField())
     filters = serializers.ListField(child=FiltrationFieldRequestSerializer())
 
 
@@ -21,7 +26,7 @@ class FiltrationFieldResponseSerializer(serializers.Serializer):
     )
 
 
-class FilterResponseSerializer(serializers.Serializer):
+class FilterContentSerializer(serializers.Serializer):
     filters = serializers.ListField(child=FiltrationFieldRequestSerializer())
 
 
@@ -40,19 +45,18 @@ class SignificantTermsResponseSerializer(serializers.Serializer):
     terms = serializers.DictField(child=serializers.IntegerField())
 
 
-class SignificantTermsRenderResponseSerializer(serializers.Serializer):
+class SignificantTermsRenderContentSerializer(serializers.Serializer):
     metrics = serializers.ListField(child=serializers.CharField())
     chosen_metric = serializers.CharField()
     terms = serializers.DictField(child=serializers.IntegerField())
 
 
+class SignificantTermsRenderSerializer(serializers.Serializer):
+    significant_terms = SignificantTermsRenderContentSerializer()
+
+
 class AnalysisAndTrainingSerializer(serializers.Serializer):
     records_count = serializers.DictField(child=serializers.IntegerField())
-    frequently_terms = serializers.ListField(child=serializers.CharField())
-    statistics = serializers.DictField(child=StatisticsSerializer())
-    submission_chart = serializers.DictField(child=serializers.IntegerField())
-    significant_terms = SignificantTermsRenderResponseSerializer()
-    filters = serializers.ListField(child=FiltrationFieldRequestSerializer())
 
 
 class BugTrackerLoginSerializer(serializers.Serializer):
@@ -66,4 +70,13 @@ class DefectSubmissionSerializer(serializers.Serializer):
 
 
 class DefectSubmissionResponseSerializer(serializers.Serializer):
-    submission_chart = serializers.DictField(child=serializers.IntegerField())
+    defect_submission = serializers.DictField(child=serializers.IntegerField())
+    period = serializers.CharField()
+
+
+class FrequentlyTermsResponseSerializer(serializers.Serializer):
+    frequently_terms = serializers.ListField(child=serializers.CharField())
+
+
+class StatisticsResponseSerializer(serializers.Serializer):
+    statistics = serializers.DictField(child=StatisticsSerializer())
