@@ -1,4 +1,3 @@
-import { AnalysisAndTrainingApi } from 'app/common/api/analysis-and-training.api';
 import { TagCloud } from 'app/common/components/charts/tag-cloud/tag-cloud';
 import CircleSpinner from 'app/common/components/circle-spinner/circle-spinner';
 import Icon, { IconType } from 'app/common/components/icon/icon';

@@ -148,7 +148,6 @@
 - report for [today](period) please
 - [Today](period)
 - [Yesterday](period)
-- [Today](period)
 
 ## intent:out_of_scope
 - please help with my ice cream it's dripping

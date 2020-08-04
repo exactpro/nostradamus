@@ -49,14 +49,13 @@ class SettingsTraining extends Component<Props, SettingsTrainingState>{
     data.entities.splice(index,1);
     this.setState({[keyField]:data});
   }
-  
 
   setSourceFieldData = (name: string, isAllowedEntitiesEditing: boolean = false) => {
     let {source_field} = this.state;
     source_field.source_field=name;
     this.setState({source_field, isAllowedEntitiesEditing}); 
     this.detectIsSettingsDefault();
-  } 
+  }
 
   setMarkUpSource = (name: string) => {
     this.setSourceFieldData(name);
@@ -65,18 +64,6 @@ class SettingsTraining extends Component<Props, SettingsTrainingState>{
                     if(isAllowedEntitiesEditing) {
                       this.setState({isAllowedEntitiesEditing});
                       this.props.uploadSettingsTrainingSubfieldData(TrainingSubSection.markup_entities).then(markup_entities=> markup_entities? this.setState({markup_entities}): this.setState({isAllowedEntitiesEditing:false}))
-                    }
-                  
-                  }),1000); 
-  }
-
-  setMarkUpSource = (name: string) => {
-    this.setSourceFieldData(name);
-    setTimeout(()=>this.props.sendTrainingData({source_field:name}, TrainingSubSection.source_field)
-                  .then(isAllowedEntitiesEditing=>{
-                    if(isAllowedEntitiesEditing) {
-                      this.setState({isAllowedEntitiesEditing});
-                      this.props.getTrainingDataSubField(TrainingSubSection.markup_entities).then(markup_entities=> markup_entities? this.setState({markup_entities}): this.setState({isAllowedEntitiesEditing:false}))
                     }
                   
                   }),1000); 

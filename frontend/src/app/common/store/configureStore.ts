@@ -10,7 +10,6 @@ import {generalSettingsStore} from "app/common/store/settings/reducers";
 import {virtualAssistantReducer} from "app/common/store/virtual-assistant/reducers";
 import {createBrowserHistory, History} from "history";
 import {RootStore} from "app/common/types/store.types";
-import { settingsTrainingReducer } from 'app/modules/settings/fields/settings_training/store/reducer';
 
 export const history = createBrowserHistory();
 
