@@ -129,11 +129,11 @@ class Predictor(APIView):
                     )
 
         redis_conn.set(
-            f"description_assessment:description:{request.user.id}",
+            f"user:{request.user.id}:description_assessment:description",
             dumps(description),
         )
         redis_conn.set(
-            f"description_assessment:probabilities:{request.user.id}",
+            f"user:{request.user.id}:description_assessment:probabilities",
             dumps(probabilities),
         )
 
@@ -153,7 +153,9 @@ class Highlighting(APIView):
         metric = request.data.get("metric")
         value = request.data.get("value")
         probabilities = loads(
-            redis_conn.get(f"description_assessment:probabilities:{user.id}")
+            redis_conn.get(
+                f"user:{user.id}:description_assessment:probabilities"
+            )
         )
         highlighted_terms = []
 
@@ -165,7 +167,9 @@ class Highlighting(APIView):
 
             archive_path = get_archive_path(user)
             description = loads(
-                redis_conn.get(f"description_assessment:description:{user.id}")
+                redis_conn.get(
+                    f"user:{user.id}:description_assessment:description"
+                )
             )
 
             index = value

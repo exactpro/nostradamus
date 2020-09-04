@@ -16,9 +16,9 @@ import React from 'react';
 import { connect, ConnectedProps } from 'react-redux';
 import { Link, RouteComponentProps } from 'react-router-dom';
 import Tooltip from "app/common/components/tooltip/tooltip";
-import { setStatusTrainModelQAMetrics, clearQAMetricsData } from "app/common/store/qa-metrics/actions"; 
+import { setStatusTrainModelQAMetrics, clearQAMetricsData } from "app/common/store/qa-metrics/actions";
 import { clearSettingsData } from "app/common/store/settings/thunks";
- 
+
 enum SideBarTabs {
 	settings = 'Settings',
 	virtualAssistant = 'Ask Nostradamus',
@@ -76,7 +76,7 @@ class Sidebar extends React.Component<Props, SideBarState> {
 
 	render() {
 		const { pathname } = this.props.location;
-		
+
 		return (
 			<div
 				className={cn('navigation-bar', { 'navigation-bar_opened': this.state.isOpen })}
@@ -163,7 +163,7 @@ class Sidebar extends React.Component<Props, SideBarState> {
 
 								<Link
 									to={RouterNames.descriptionAssessment}
-									className={cn('navigation-bar__menu-item', 
+									className={cn('navigation-bar__menu-item',
 												{ 'navigation-bar__menu-item_active': pathname === RouterNames.descriptionAssessment })}
 								>
 									<div className="navigation-bar__menu-item-icon">
@@ -175,10 +175,10 @@ class Sidebar extends React.Component<Props, SideBarState> {
 										Description Assessment
 									</div>
 								</Link>
-							
+
 								<Link
 									to={RouterNames.qaMetrics}
-									className={cn('navigation-bar__menu-item', 
+									className={cn('navigation-bar__menu-item',
 												{ 'navigation-bar__menu-item_active': pathname === RouterNames.qaMetrics })}
 								>
 
@@ -198,11 +198,11 @@ class Sidebar extends React.Component<Props, SideBarState> {
 					</nav>
 
 					<nav className="navigation-bar__menu navigation-bar__menu_position_bottom">
-						
+
 						<ul ref={this.virtualAssistantRef}>
-								
+
 								<li
-									className={cn('navigation-bar__menu-item', 
+									className={cn('navigation-bar__menu-item',
 												  { 'navigation-bar__menu-item_active': this.props.isVirtualAssistantOpen })}
 									onClick={this.activateTab(this.props.activateVirtualAssistant)}
 								>
@@ -220,9 +220,12 @@ class Sidebar extends React.Component<Props, SideBarState> {
 						</ul>
 
 						<ul ref={this.settingsRef}>
-							<Tooltip message="Uploading data. Please wait a few minutes." isDisplayed={!this.props.isCollectingFinished} duration={1}>
+							<Tooltip message="Uploading data. Please wait a few minutes."
+									 isDisplayed={!this.props.isCollectingFinished}
+									 style={{ marginLeft: 40, marginTop: 10}} 
+									 duration={1}>
 								<li
-									className={cn('navigation-bar__menu-item', 
+									className={cn('navigation-bar__menu-item',
 												{ 'navigation-bar__menu-item_active': this.props.isSettingsOpen },
 												{ 'navigation-bar__menu-item_disabled': !this.props.isCollectingFinished })}
 									onClick={this.activateTab(this.props.activateSettings)}
@@ -252,7 +255,7 @@ const mapStateToProps = (store: RootStore) => ({
 	user: store.auth.user,
 	isSettingsOpen: store.settings.settingsStore.isOpen,
 	isVirtualAssistantOpen: store.virtualAssistant.isOpen,
-	isCollectingFinished: store.settings.settingsStore.isCollectingFinished,
+	isCollectingFinished: store.common.isCollectingFinished,
 });
 
 const mapDispatchToProps = {

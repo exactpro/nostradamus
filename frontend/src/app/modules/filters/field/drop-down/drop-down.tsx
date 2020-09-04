@@ -38,9 +38,8 @@ class DropDown extends React.PureComponent<Props, State> {
 
 	constructor(props: Props) {
 		super(props);
-
 		this.field = new FilterField(this.props.field, this.props.updateFunction);
-
+		 
 		this.fieldRef = React.createRef();
 	}
 
@@ -188,14 +187,16 @@ class DropDown extends React.PureComponent<Props, State> {
 
 						{
 							!this.state.isCheckedVariantList &&
-              <input
-                  type="text"
-                  className="select-window__search"
-                  value={this.state.search}
-                  onFocus={this.stopHidden}
-                  onChange={this.changeSearchRequest}
-                  placeholder="Quick search"
-              />
+							<div className="select-window__search">
+								<input  type="text"
+										className="select-window__search-input"
+										value={this.state.search}
+										onFocus={this.stopHidden}
+										onChange={this.changeSearchRequest}
+										placeholder="Quick search"/>
+								<Icon type={IconType.find} size={IconSize.small} className="select-window__search-icon" />
+							</div>
+							
 						}
 
 						{
@@ -218,8 +219,9 @@ class DropDown extends React.PureComponent<Props, State> {
 													{checked &&
                           <Icon type={IconType.check} className="select-window__check-mark" size={IconSize.small} />}
 											</span>
-
-												{item}
+											
+												<p className = "select-window__title">{item}</p>
+												
 											</label>);
 									},
 								)

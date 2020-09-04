@@ -14,7 +14,7 @@
 
   &_vertical {
     flex-direction: row;
-    justify-content: space-around;
+    justify-content: space-around; 
     
     height: 100%;
 
@@ -22,6 +22,7 @@
       &__item {
         flex-direction: column-reverse;
         width: 100px;
+        margin: 0 0 9px 0; 
       }
 
       &__item-label {
@@ -54,6 +55,10 @@
 
     &:first-child{
       margin-top: 0;
+    }
+
+    &:last-child{
+      margin-top: 9px;
     }
 
     &:not(:last-child) {

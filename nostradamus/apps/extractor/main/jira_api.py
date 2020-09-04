@@ -1,14 +1,20 @@
-from typing import List, Dict
+import configparser
+
+from typing import List, Dict, Optional, Union
 from math import ceil
+from pathlib import Path
 
 from jira import JIRA, JIRAError
 from django.conf import settings
 
 from apps.extractor.main.cleaner import clean_text
-from utils.const import MAX_JIRA_BLOCK_SIZE, BASE_JQL
+from utils.const import MAX_JIRA_BLOCK_SIZE, BASE_JQL, PARSE_CONF_FILENAME
 from apps.extractor.main.preprocessor import calculate_ttr
+from apps.extractor.main.mapping import FUNCTION_MAPPING, REPLACE_MAPPING
 from utils.data_converter import get_utc_datetime
 from utils.exceptions import NonexistentJiraUser, IncorrectJiraCredentials
+
+CONFIG_PARSE = Path(__file__).parents[0].joinpath(PARSE_CONF_FILENAME)
 
 
 class JAPI:
@@ -210,6 +216,44 @@ class JAPI:
             List ob parsed issues.
         """
 
+        def _get_value(
+            path_values: list, raw_value: Optional, result=None
+        ) -> Optional[Union[dict, str, List[str]]]:
+            """ Get values using values path.
+
+            Parameters:
+            ----------
+            path_values:
+                Path to values from config.
+            raw_value:
+                Value from raw issue.
+            result:
+                Parsed field value.
+
+            Returns:
+            ----------
+                Parsed field value.
+            """
+            for path_piece in path_values:
+                if isinstance(raw_value, list):
+                    result = []
+                    for field in raw_value:
+                        result.append(
+                            _get_value(
+                                path_values[path_values.index(path_piece) :],
+                                field,
+                                result,
+                            )
+                        )
+                    break
+                elif isinstance(raw_value, (str, int, bool)):
+                    return raw_value
+                elif raw_value.get(path_piece) is not None:
+                    raw_value = raw_value.get(path_piece)
+                    result = raw_value
+
+            return result
+
         def _map_field_names(raw_issue: dict) -> None:
             """ Rename fields of loaded issues using mapper object.
 
@@ -240,78 +284,56 @@ class JAPI:
             ----------
                 Returns object containing parsed issue attributes.
             """
-            fields = raw_issue.get("fields")
+            issue = raw_issue.get("fields")
             history = raw_issue.get("changelog").get("histories")
+            parsed_issue = {}
 
-            parsed_issue = {
-                "Project": (
-                    fields["Project"].get("name")
-                    if fields.get("Project")
-                    else ""
+            config_parser = configparser.ConfigParser()
+            config_parser.read(CONFIG_PARSE)
+
+            for new_field in config_parser["DEFAULT"]:
+                new_field = new_field.capitalize()
+                maps = config_parser["DEFAULT"][new_field].split(".")
+
+                func = FUNCTION_MAPPING.get(new_field)
+                value = (
+                    _get_value(maps, issue[maps[0]])
+                    if maps[0] in issue and issue[maps[0]] is not None
+                    else None
                 )
-                or "",
-                "Attachments": len(fields.get("Attachment") or []),
-                "Priority": (
-                    fields["Priority"].get("name")
-                    if fields.get("Priority")
-                    else "Unfilled"
-                )
-                or "Unfilled",
-                "Resolved": get_utc_datetime(fields["Resolved"])
-                if fields.get("Resolved")
-                else None,
-                "Updated": get_utc_datetime(fields["Updated"])
-                if fields.get("Updated")
-                else None,
-                "Labels": ",".join(fields["Labels"] or ""),
-                "Created": get_utc_datetime(fields["Created"]),
-                "Comments": len(fields["Comment"].get("comments") or []),
-                "Status": fields["Status"]["name"],
-                "Key": raw_issue["key"] or "",
-                "Summary": fields["Summary"] or "",
-                "Resolution": fields["Resolution"].get("name", "Unresolved")
-                if fields.get("Resolution")
-                else "Unresolved",
-                "Description": fields["Description"] or "",
-                "Components": ",".join(
-                    [
-                        component.get("name")
-                        for component in fields.get("Component/s")
+                if value is not None and func:
+                    parsed_issue[new_field] = func(value)
+                else:
+                    parsed_issue[new_field] = (
+                        value
+                        if value is not None
+                        else REPLACE_MAPPING[new_field]
+                        if new_field in REPLACE_MAPPING.keys()
+                        else ""
+                    )
+
+            parsed_issue["Key"] = raw_issue["key"] or ""
+            parsed_issue["History"] = [
+                {
+                    "Author": snapshot.get("author").get("displayName")
+                    if snapshot.get("author")
+                    else "",
+                    "Created": get_utc_datetime(snapshot.get("created"))
+                    if snapshot.get("created")
+                    else "",
+                    "Items": [
+                        {
+                            "Field": item.get("field"),
+                            "From": item.get("fromString"),
+                            "To": item.get("toString"),
+                        }
+                        for item in snapshot.get("items")
                     ]
-                    if fields.get("Component/s")
-                    else []
-                ),
-                "Version": ",".join([el["name"] for el in fields["Versions"]])
-                if fields.get("Versions")
-                else "",
-                "Assignee": fields.get("Assignee").get("displayName")
-                if fields.get("Assignee")
-                else "" or "",
-                "Reporter": fields.get("Reporter").get("displayName")
-                if fields.get("Reporter")
-                else "" or "",
-                "History": [
-                    {
-                        "Author": snapshot.get("author").get("displayName")
-                        if snapshot.get("author")
-                        else "",
-                        "Created": get_utc_datetime(snapshot.get("created"))
-                        if snapshot.get("created")
-                        else "",
-                        "Items": [
-                            {
-                                "Field": item.get("field"),
-                                "From": item.get("fromString"),
-                                "To": item.get("toString"),
-                            }
-                            for item in snapshot.get("items")
-                        ]
-                        if snapshot.get("items")
-                        else "",
-                    }
-                    for snapshot in history
-                ],
-            }
+                    if snapshot.get("items")
+                    else "",
+                }
+                for snapshot in history
+            ]
 
             parsed_issue["Description_tr"] = clean_text(
                 parsed_issue["Description"]
@@ -320,9 +342,9 @@ class JAPI:
                 parsed_issue["Resolved"], parsed_issue["Created"]
             )
 
-            for key in fields:
+            for key in issue:
                 if key not in parsed_issue:
-                    parsed_issue[key] = str(fields[key])
+                    parsed_issue[key] = str(issue[key])
 
             return parsed_issue
 

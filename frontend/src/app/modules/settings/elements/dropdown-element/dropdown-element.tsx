@@ -3,6 +3,7 @@ import  {FilterElementType} from "app/modules/settings/elements/elements-types"
 import Icon, {IconSize, IconType} from "app/common/components/icon/icon";
 import cn from "classnames"
 import "app/modules/settings/elements/dropdown-element/dropdown-element.scss";
+import { caseInsensitiveStringCompare } from "app/common/functions/helper";
 
 interface DropdownProps{
   type: FilterElementType,
@@ -77,14 +78,13 @@ class DropdownElement extends Component<DropdownProps, DropdownState>{
     let isInputEditable: boolean = allowedOpening && this.props.writable;
 
     // Simplify condition
-    let dropDownOptions = isInputEditable? 
+    let dropDownOptions = (isInputEditable? 
                           this.props.dropDownValues.filter((substr: string)=>!this.state.inputValue.length? 
                                                                               this.isStrIncludesSubstr(substr, this.state.inputValue): 
                                                                               this.isStrIncludesSubstr(substr,this.state.inputValue) && 
                                                                               !this.props.excludeValues?.includes(substr)):
-                          this.props.dropDownValues; 
-    
-    dropDownOptions.sort();
+                          this.props.dropDownValues)
+                          .sort((a, b) => caseInsensitiveStringCompare(a,b));
 
     return (
       <div className="dropdown-element" tabIndex={1}

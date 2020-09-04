@@ -34,8 +34,9 @@ REGULAR_EXPRESSIONS = {
         compile(r"( the | a | an | at | in | on | by | for )"),
         compile(r"[$-/:-?{-~!\"^_`\[\]◾╙“”‘’​–•\#@]+"),  # special characters
         compile(r"[\d]+"),  # digits
-        compile(r"[\s]{2,}"),  # spaces
         compile(r"[\n\t]+"),  # line breakers, tabs
+        compile(r"\b[A-Za-z]{1}\b"),
+        compile(r"[\s]{2,}"),  # spaces
     ],
 }
 

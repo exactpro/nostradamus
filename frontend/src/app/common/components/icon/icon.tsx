@@ -36,6 +36,8 @@ export enum IconType {
 	chatBeta = 'icon-chatbeta',
 	file = 'icon-file',
 	warning = 'icon-warning',
+	find = 'icon-find',
+	leftArrow = 'icon-Left-Arrow',
 }
 
 export enum IconSize {

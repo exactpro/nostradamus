@@ -55,11 +55,10 @@
 
     &__arrow-left,&__inscription, &__check{
       color: $orange; 
-      margin: 0 10px;
+      margin: 0 20px;
     }
 
-    &__arrow-left{
-      font-size: 60px; 
+    &__arrow-left{ 
       animation: arrow_move 1s ease-in-out both alternate infinite;
     }
 
@@ -195,9 +194,9 @@
 
 @keyframes arrow_move{
   from{
-    transform: translate(10px, -13px);
+    transform: translateX(10px);
   }
   to{
-    transform: translate(-10px, -13px);
+    transform: translateX(-10px);
   }
 }

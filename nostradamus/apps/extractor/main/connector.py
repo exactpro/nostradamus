@@ -7,22 +7,18 @@ from django.conf import settings
 from pymongo import MongoClient, UpdateOne
 
 from apps.extractor.consumers import ExtractorConsumer
-from utils.redis import clear_cache_by_keys
+from utils.redis import clear_cache
 
 CLIENT = MongoClient(host=settings.MONGODB_HOST, port=settings.MONGODB_PORT)
 
 DB = CLIENT[settings.MONGODB_NAME].bug
 
 
-def get_issues(
-    fields: list = None, filters: list = None, query: dict = None
-) -> list:
-    """ Query bugs from the db with specific conditions.
+def build_query(filters: list = None, query: dict = None) -> dict:
+    """ Builds mongodb query.
 
     Parameters
     ----------
-    fields:
-        Issue fields.
     filters:
         Filters to be applied.
     query:
@@ -30,7 +26,7 @@ def get_issues(
 
     Returns
     -------
-        Bugs.
+        Mongodb query.
     """
 
     def _build_filtration_conditions(
@@ -63,7 +59,7 @@ def get_issues(
             if exact_match:
                 query_field = f_value
             else:
-                query_field["$regex"] = rf"{f_value}"
+                query_field["$regex"] = rf"{re.escape(f_value)}"
                 query_field["$options"] = "i"
 
         elif f_type == "date":
@@ -102,15 +98,38 @@ def get_issues(
                 )
         return query_
 
+    if filters:
+        query = _build_find_query()
+    query = query if query else {}
+
+    return query
+
+
+def get_issues(
+    fields: list = None, filters: list = None, query: dict = None
+) -> list:
+    """ Query bugs from the db with specific conditions.
+
+    Parameters:
+    ----------
+    fields:
+        Issue fields.
+    filters:
+        Filters to be applied.
+    query:
+        MongoDB's native query.
+
+    Returns:
+    ----------
+        Bugs
+    """
     fields = {field: 1 for field in fields} if fields else None
     if fields:
         fields["_id"] = 0
     else:
         fields = {"_id": 0}
 
-    if filters:
-        query = _build_find_query()
-    query = query if query else {}
+    query = build_query(filters, query)
 
     issues = DB.find(query, fields)
     return [issue for issue in issues]
@@ -155,27 +174,6 @@ def get_largest_keys() -> list:
     return []
 
 
-def insert_issues(issues: list) -> None:
-    """ Insert issues to database.
-
-    Parameters
-    ----------
-    issues:
-        Issues to be inserted.
-    """
-    if issues:
-        DB.insert_many(documents=issues, ordered=False)
-
-        cache_keys = [
-            "analysis_and_training:defect_submission",
-            "qa_metrics:predictions_page",
-            "qa_metrics:predictions_table",
-        ]
-        clear_cache_by_keys(cache_keys)
-
-        ExtractorConsumer.loader_notification()
-
-
 def update_issues(issues: list) -> None:
     """ Update issues in the db.
 
@@ -201,13 +199,25 @@ def update_issues(issues: list) -> None:
             "qa_metrics:predictions_page",
             "qa_metrics:predictions_table",
         ]
-        clear_cache_by_keys(cache_keys)
+        clear_cache(cache_keys)
 
         ExtractorConsumer.loader_notification()
 
 
-def get_issue_count():
-    return DB.count()
+def get_issue_count(filters: list = None) -> int:
+    """ Get count bugs
+
+    Parameters
+    ----------
+    filters:
+        Filters to be applied.
+
+    Returns
+    -------
+        Count bugs
+    """
+    query = build_query(filters)
+    return DB.count_documents(query)
 
 
 def get_fields() -> list:

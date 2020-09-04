@@ -1,3 +1,4 @@
+import { CommonStore } from 'app/common/store/common/types';
 import { QAMetricsStore } from 'app/common/store/qa-metrics/types';
 import { AuthStore } from 'app/common/store/auth/types';
 import { SettingsStore } from 'app/common/store/settings/types';
@@ -13,5 +14,6 @@ export interface RootStore {
 		settingsTrainingStore: SettingTrainingStore
 	}
 	virtualAssistant: VirtualAssistantStore,
-	qaMetricsPage: QAMetricsStore
+	qaMetricsPage: QAMetricsStore,
+	common: CommonStore
 }

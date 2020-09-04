@@ -50,6 +50,12 @@ class SettingsTraining extends Component<Props, SettingsTrainingState>{
     this.setState({[keyField]:data});
   }
 
+  clearAllMarkUpEntitiesBlockValueData = (keyField: "markUpEntitiesInputData" | "markUpEntitiesEditData") => () => {
+    let data = this.state[keyField];
+    data.entities=[];
+    this.setState({[keyField]:data});
+  }
+
   setSourceFieldData = (name: string, isAllowedEntitiesEditing: boolean = false) => {
     let {source_field} = this.state;
     source_field.source_field=name;
@@ -63,9 +69,16 @@ class SettingsTraining extends Component<Props, SettingsTrainingState>{
                   .then(isAllowedEntitiesEditing=>{
                     if(isAllowedEntitiesEditing) {
                       this.setState({isAllowedEntitiesEditing});
-                      this.props.uploadSettingsTrainingSubfieldData(TrainingSubSection.markup_entities).then(markup_entities=> markup_entities? this.setState({markup_entities}): this.setState({isAllowedEntitiesEditing:false}))
-                    }
-                  
+                      this.props.uploadSettingsTrainingSubfieldData(TrainingSubSection.markup_entities)
+                      .then(markup=> {
+                        if(markup){
+                          let {markup_entities} = this.state;
+                          markup_entities.entity_names = [...markup.entity_names];
+                          
+                          this.setState({markup_entities});
+                        }
+                        else this.setState({isAllowedEntitiesEditing:false})  
+                      })}
                   }),1000); 
   }
 
@@ -227,9 +240,11 @@ class SettingsTraining extends Component<Props, SettingsTrainingState>{
                            onClear={this.clearMarkUpSource}
                            style={{width:"30%"}}/>
 
-          { this.state.isAllowedEntitiesEditing? 
-              <Icon type={IconType.check} className="settings-training-source__check"/>: 
-              <span className="settings-training-source__arrow-left">&larr;</span>}
+          { 
+            this.state.isAllowedEntitiesEditing? 
+            <Icon type={IconType.check} className="settings-training-source__check"/>: 
+            <Icon type={IconType.leftArrow} size={IconSize.big} className="settings-training-source__arrow-left" />
+          }
         
           <span className={cn("settings-training-source__inscription",{"settings-training-source__inscription_success": this.state.isAllowedEntitiesEditing})}>
             { this.state.isAllowedEntitiesEditing? <>Source Field Saved</>: <>Set Source Field first to add Entities</>}
@@ -258,6 +273,7 @@ class SettingsTraining extends Component<Props, SettingsTrainingState>{
                 <InputTrainingElement type={this.state.isAllowedEntitiesEditing? FilterElementType.simple: FilterElementType.disabled}
                                       onChange={this.setMarkUpEntitiesData("markUpEntitiesInputData", "entities")}
                                       onClear={this.clearMarkUpEntitiesBlockValueData("markUpEntitiesInputData")}
+                                      onClearAll={this.clearAllMarkUpEntitiesBlockValueData("markUpEntitiesInputData")}
                                       dropDownValues={this.state.markup_entities.entity_names}
                                       values={this.state.markUpEntitiesInputData.entities}/>
                 <button className={cn("settings-training__add-position", "settings-training__button")}
@@ -288,6 +304,7 @@ class SettingsTraining extends Component<Props, SettingsTrainingState>{
               <InputTrainingElement type={this.state.status[index]}
                                     onChange={this.setMarkUpEntitiesData("markUpEntitiesEditData" ,"entities")}
                                     onClear={this.clearMarkUpEntitiesBlockValueData("markUpEntitiesEditData")}
+                                    onClearAll={this.clearAllMarkUpEntitiesBlockValueData("markUpEntitiesEditData")}
                                     dropDownValues={this.state.markup_entities.entity_names}
                                     values={this.state.status[index]===FilterElementType.edited? this.state.markUpEntitiesEditData.entities:item.entities}/>
               {

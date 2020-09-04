@@ -5,13 +5,14 @@ import { HttpError } from 'app/common/types/http.types';
 import { addToast } from "app/modules/toasts-overlay/store/actions";
 import { ToastStyle } from "app/modules/toasts-overlay/store/types";
 
-export const sendVirtualAssistantMessage = (message: string) => {
+export const sendVirtualAssistantMessage = (outboundMessage: string, outboundRenderMessage?: string) => {
   return async (dispatch:any) =>{
     try{
-      dispatch(activateMessage({sender: "user", message}))
-      let response: InboundData[] = await VirtualAssistantApi.SendMessage({sender: "user", message})
+      dispatch(activateMessage({sender: "user", message: outboundRenderMessage? outboundRenderMessage: outboundMessage}));
+      let response: InboundData[] = await VirtualAssistantApi.SendMessage({sender: "user", message: outboundMessage});
+      
       if(response.length)
-      response.forEach((element: InboundData) => {
+      (response as InboundData[]).forEach((element: InboundData) => {
         dispatch(activateMessage(element, MessageSendingType.inbound));
       });
 

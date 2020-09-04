@@ -17,6 +17,7 @@ export type DonutChartSector = {
 	value: number,
 	label: string,
 	id: string,
+	color: string,
 }
 
 interface IProps {
@@ -49,46 +50,75 @@ class DonutChart extends React.Component<IProps, iState> {
 		isPercentageDataVisible: false,
 	};
 
-	timerId: any = 0;
+	constructor(props: IProps){
+		super(props);
+		 
+		this.data = 
+			Object.entries(this.props.data)
+			.map(([sectorName, value], index) => ({
+				label: sectorName,
+				id: sectorName,
+				value: Math.round(value),
+				color: this.props.colorSchema![index]
+			}));
+	}
+ 
+	data: DonutChartSector[] = [];
+	pieRef: React.RefObject<HTMLDivElement> = React.createRef(); 
 
-	pieMouseEnterEffect = ({id, label ,value}: any) => {
-		if(this.timerId) return;
+	getMidAngle = (segmentId: string) => {
+		let midAngle: number = 0; 
+		const percentageRadian: number = Math.PI/50;
+		for(let i of this.data){
+			if(i.id === segmentId){
+				midAngle+=percentageRadian*i.value/2;
+				break;
+			}
+			midAngle+=percentageRadian*i.value; 
+		}
 
-		let colorIndex = Object.keys(this.props.data).findIndex((item:string)=>item===label);
+		return midAngle;
+	}
+
+	shiftDonutSegment = (segmentId: string, target: SVGClipPathElement ,dl: number = 2) => {
+
+		const midAngle = this.getMidAngle(segmentId); 
+		const dx = dl*Math.cos(midAngle);
+		const dy = -dl*Math.sin(midAngle); 
+
+		target.style.transform=`translate(${dx}px,${dy}px)`;
+	}
+
+	pieMouseEnterEffect = ({id, label ,value, color}: any, {target}: any) => {  
 		
+		if(value !== 100) this.shiftDonutSegment(id, target, 3);
+
 		this.setState({
 			isPercentageDataVisible: true,
-			percentageData:{
-				value: value,
-				color: this.props.colorSchema![colorIndex], 
-			}});
+			percentageData:{ value, color }});
 	}
 	
-	pieMouseLeaveEffect = () => {
-		if(this.timerId) return;
-		
+	pieMouseLeaveEffect = ({id, value}: any, {target}: any) => { 
+		if(value !== 100) this.shiftDonutSegment(id, target, 0);
+
 		this.setState({
 			isPercentageDataVisible: false,
 			percentageData:{
 				value: 0,
 				color: "#FFFFFF"}
 			});
-	};
+	}; 
 
-	render() {
-		let data: DonutChartSector[] = Object.entries(this.props.data)
-			.map(([sectorName, value]) => ({
-				label: sectorName,
-				id: sectorName,
-				value,
-			}));
-			
+	render() { 
+		
+		let chartData = this.data.filter(item=>item.value!==0);
+
 		return (
 			<div className={cn('donut-chart', this.props.className)}>
 				{/*legend*/}
 				<div className="donut-chart-legend">
 					{
-						data.map((item, index)=> {
+						this.data.map((item, index)=> {
 							let bgColor = this.props.colorSchema? this.props.colorSchema[index]: "transparent";
 							return( 
 								<div className="donut-chart-legend__wrapper" key={index}>
@@ -100,7 +130,7 @@ class DonutChart extends React.Component<IProps, iState> {
 				</div>
 
 				{/*chart*/}
-				<div className="donut-chart-wrapper">
+				<div className="donut-chart-wrapper" ref={this.pieRef}>
 					{
 						<p  style={{color: this.state.percentageData.color}} 
 							className={cn("donut-chart-wrapper__percentage-block", 
@@ -112,8 +142,8 @@ class DonutChart extends React.Component<IProps, iState> {
 					<ResponsivePie
 						onMouseEnter={this.pieMouseEnterEffect}
 						onMouseLeave={this.pieMouseLeaveEffect}
-						colors={this.props.colorSchema}
-						data={data}
+						colors={chartData.map(item=>item.color)}
+						data={chartData}
 						innerRadius={0.65}
 						padAngle={4}
 						startAngle={90}
@@ -123,6 +153,7 @@ class DonutChart extends React.Component<IProps, iState> {
 						enableSlicesLabels={false}
 						enableRadialLabels={false}
 						animate={true}
+						margin={ { left: 5, right: 5, top: 5, bottom: 5 } }
 						theme={{ tooltip: { container: { display: "none" } } } }
 					/>
 				</div>

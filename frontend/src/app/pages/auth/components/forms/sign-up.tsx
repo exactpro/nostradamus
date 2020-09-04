@@ -71,16 +71,16 @@ class SignUp extends React.Component<SignUpProps, SignUpState> {
     }
 
     // email contain @ and dot in domain and doesn't contain space symbols
-    if (!email.match(/^\S+@\S+\.\S+$/i)) {
+    if (!email.match(/[a-zA-Z0-9_\-.]+@([a-zA-Z0-9_\-.]+\.)+[a-zA-Z0-9_\-.]{1,10}$/i)) {
       return false
     }
 
     // name have not only space symbols
-    if (!name.match(/\S/i)) {
+    if (!name.match(/^[a-zA-Z0-9_.]+$/i)) {
       return false
     }
 
-    if (password.length < 6 || !password.match(/\S/i)) {
+    if (password.length < 6 || !password.match(/^[a-zA-Z0-9_.\-]+$/i)) {
       return false;
     }
 

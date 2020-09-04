@@ -12,8 +12,16 @@ type toastsTermStoreActionsType = ReturnType<InferValueTypes<typeof actions>>;
 export const toastsReducers = (state: ToastStore = initialState, action: toastsTermStoreActionsType) => {
 	switch (action.type) {
 		case 'TOASTS_ADD_TOAST':
-			if(!!state.toastList.find((item)=>item.message===action.toast.message && item.style===action.toast.style)) return {...state}
-		 	return {
+
+			if(!!state.toastList.find((item)=>{
+				if(item.message===action.toast.message && item.style===action.toast.style){
+					if(action.toast.outerId) item.outerId = action.toast.outerId;
+					return true;
+				}
+				return false;
+			})) return {...state};
+			
+			return {
 				...state,
 				newToastId: ++state.newToastId,
 				toastList: [{
@@ -26,6 +34,12 @@ export const toastsReducers = (state: ToastStore = initialState, action: toastsT
 			return {
 				...state,
 				toastList: state.toastList.filter(toast => toast.id !== action.toastId)
+			};
+
+		case 'TOASTS_REMOVE_TOAST_BY_OUTER_ID':
+			return {
+				...state,
+				toastList: state.toastList.filter(toast => toast.outerId !== action.toastId)
 			};
 
 		default:

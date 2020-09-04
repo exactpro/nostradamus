@@ -8,6 +8,7 @@ import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import moment from 'moment';
 import './date-range.scss';
+import PopupComponent, { ChildPosition } from 'app/common/components/popup-component/popup-component';
 
 enum ShowCalendarField{
 	startDate="start",
@@ -105,13 +106,13 @@ class DateRange extends React.Component<Props, State> {
 	};
 
 	onBlurInput = (dateField: ShowCalendarField) => () => {
-		let inputedDate = this.editZeroDate(this.state[dateField]);
-		let dateFieldMoment = moment( inputedDate, ['DD.MM.YY', 'DD.MM.YYYY'], true);
+		let inputtedDate = this.editZeroDate(this.state[dateField]);
+		let dateFieldMoment = moment( inputtedDate, ['DD.MM.YY', 'DD.MM.YYYY'], true);
 		this.setState({
 			...this.state,
 			[dateField]: !this.state[dateField] ||
 						(dateFieldMoment.isValid() && dateFieldMoment.isBetween(this.props.minDateValue, this.props.maxDateValue, "day", "[]"))?
-						inputedDate:
+						inputtedDate:
 						'Invalid date'},
 			this.applyChanges);
 	};
@@ -133,65 +134,74 @@ class DateRange extends React.Component<Props, State> {
 
 		return (
 			<div className="date-range" tabIndex={0} onBlur={this.onBlurCalendar}>
-				<div className="field date-range__field">
-					<input
-						type="text"
-						className={cn('date-range__input', 'free-input', { 'date-range__input_empty': !start }, this.props.className)}
-						name={field.name + '__start'}
-						placeholder={this.state.start==="" || this.state.start===undefined? 'Date' : 'Invalid Date'}
-						onChange={this.handleDirectChanges(ShowCalendarField.startDate)}
-						onBlur={this.onBlurInput(ShowCalendarField.startDate)}
-						value={this.state.start===undefined? startDate: this.state.start}
-					/>
+				<PopupComponent isChildDisplayed={!!this.state.showCalendar}
+								childPosition={ChildPosition.bottom_right}
+								parent={
+									<div className="date-range__pop-up-parent">
+										<div className="field date-range__field">
+											<input
+												type="text"
+												className={cn('date-range__input', 'free-input', { 'date-range__input_empty': !start }, this.props.className)}
+												name={field.name + '__start'}
+												placeholder={this.state.start==="" || this.state.start===undefined? 'Date' : 'Invalid Date'}
+												onChange={this.handleDirectChanges(ShowCalendarField.startDate)}
+												onBlur={this.onBlurInput(ShowCalendarField.startDate)}
+												value={this.state.start===undefined? startDate: this.state.start}
+											/>
 
-					<button className="date-range__icon-button_clear"
-							 		onClick={this.clearInputField(ShowCalendarField.startDate)}>
-						<Icon type={IconType.close} size={16} />
-					</button>
+											<button className="date-range__icon-button_clear"
+															onClick={this.clearInputField(ShowCalendarField.startDate)}>
+												<Icon type={IconType.close} size={16} />
+											</button>
 
-					<button className="date-range__icon-button"
-									onClick={this.changeVisibleCalendar(ShowCalendarField.startDate)}>
-						<Icon type={IconType.calendar} size={16} />
-					</button>
-				</div>
+											<button className="date-range__icon-button"
+															onClick={this.changeVisibleCalendar(ShowCalendarField.startDate)}>
+												<Icon type={IconType.calendar} size={16} />
+											</button>
+										</div>
 
-				<span className="date-range__separator">
-					—
-				</span>
+										<span className="date-range__separator">
+											—
+										</span>
 
-				<div className="field date-range__field">
-					<input
-						type="text"
-						className={cn('date-range__input', 'free-input', { 'date-range__input_empty': !end }, this.props.className)}
-						name={field.name + '__end'}
-						placeholder="Date"
-						onChange={this.handleDirectChanges(ShowCalendarField.endDate)}
-						onBlur={this.onBlurInput(ShowCalendarField.endDate)}
-						value={this.state.end || endDate}
-					/>
+										<div className="field date-range__field">
+											<input
+												type="text"
+												className={cn('date-range__input', 'free-input', { 'date-range__input_empty': !end }, this.props.className)}
+												name={field.name + '__end'}
+												placeholder="Date"
+												onChange={this.handleDirectChanges(ShowCalendarField.endDate)}
+												onBlur={this.onBlurInput(ShowCalendarField.endDate)}
+												value={this.state.end || endDate}
+											/>
 
-					<button className="date-range__icon-button_clear"
-							 		onClick={this.clearInputField(ShowCalendarField.endDate)}>
-						<Icon type={IconType.close} size={16} />
-					</button>
+											<button className="date-range__icon-button_clear"
+															onClick={this.clearInputField(ShowCalendarField.endDate)}>
+												<Icon type={IconType.close} size={16} />
+											</button>
 
-					<button className="date-range__icon-button"
-							 		onClick={this.changeVisibleCalendar(ShowCalendarField.endDate)}>
-						<Icon type={IconType.calendar} size={16} />
-					</button>
-				</div>
-
-				{
-					this.state.showCalendar &&
-          				<Calendar
-							minDate={this.props.minDateValue}
-							maxDate={this.props.maxDateValue}
-							locale="en-EN"
-							next2Label={false}
-							className="date-range__calendar"
-							onClickDay={this.handleChanges}
-              				showNeighboringMonth={false}/>
-				}
+											<button className="date-range__icon-button"
+															onClick={this.changeVisibleCalendar(ShowCalendarField.endDate)}>
+												<Icon type={IconType.calendar} size={16} />
+											</button>
+										</div>
+									</div>
+								}
+							child={
+								<div className="date-range__pop-up-child">
+								{
+									this.state.showCalendar &&
+									<Calendar
+										minDate={this.props.minDateValue}
+										maxDate={this.props.maxDateValue}
+										locale="en-EN"
+										next2Label={false}
+										className="date-range__calendar"
+										onClickDay={this.handleChanges}
+										showNeighboringMonth={false}/>
+								}
+								</div>
+							}/>   
 			</div>
 		);
 	}

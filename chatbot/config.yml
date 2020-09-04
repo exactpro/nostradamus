@@ -11,14 +11,15 @@ pipeline:
     min_ngram: 1
     max_ngram: 4
   - name: DIETClassifier
+    epochs: 100
   - name: EntitySynonymMapper
 
 policies:
+  - name: KerasPolicy
   - name: MemoizationPolicy
+    max_history: 1
   - name: MappingPolicy
-  - name: TEDPolicy
   - name: FormPolicy
-  - name: TwoStageFallbackPolicy
+  - name: FallbackPolicy
     nlu_threshold: 0.8
-    fallback_core_action_name: "utter_cannot_help"
-    fallback_nlu_action_name: "utter_cannot_help"
+    fallback_action_name: "action_custom_fallback"

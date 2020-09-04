@@ -1,3 +1,4 @@
+import { commonReducer } from 'app/common/store/common/reducers';
 import { qaMetricsPageReducer } from 'app/common/store/qa-metrics/reducers';
 import { toastsReducers } from 'app/modules/toasts-overlay/store/reducer';
 import {applyMiddleware, combineReducers, createStore} from 'redux';
@@ -16,10 +17,11 @@ export const history = createBrowserHistory();
 const rootReducers = (history: History) => combineReducers({
   toasts: toastsReducers,
   auth: authReducer,
-  settings: generalSettingsStore, 
+  settings: generalSettingsStore,
   virtualAssistant: virtualAssistantReducer,
   qaMetricsPage: qaMetricsPageReducer,
   router: connectRouter(history),
+  common: commonReducer,
 });
 
 function configureStore(preloadedState?: RootStore) {

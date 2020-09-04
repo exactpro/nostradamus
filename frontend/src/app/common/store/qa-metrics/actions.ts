@@ -7,7 +7,6 @@ import {
 import { HttpStatus } from 'app/common/types/http.types';
 
 export interface QAMetricsAllData {
-	records_count: QAMetricsRecordsCount;
 	predictions_table: QAMetricsData[];
 	prediction_table_rows_count: number;
 	areas_of_testing_chart: QAMetricsData;
@@ -25,6 +24,11 @@ export const setQaMetricsStatus = (part: QAMetricsStorePart, newStatus: HttpStat
 	type: 'SET_QA_METRICS_PAGE_STATUS',
 	newStatus,
 	part
+} as const);
+
+export const setQaMetricsRecordsCount = (records_count: QAMetricsRecordsCount) => ({
+	type: 'SET_QA_METRICS_RECORDS_COUNT',
+	records_count,
 } as const);
 
 export const setQAMetricsAllData = (data: QAMetricsAllData) => ({

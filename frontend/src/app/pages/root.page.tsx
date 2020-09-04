@@ -1,28 +1,35 @@
+import { checkCollectingDataFinished } from 'app/common/store/common/thunks';
+
+import { RouterNames } from 'app/common/types/router.types';
+import { RootStore } from 'app/common/types/store.types';
+
+import Settings from 'app/modules/settings/settings';
+
+import Sidebar from 'app/modules/sidebar/sidebar';
+import VirtualAssistant from 'app/modules/virtual-assistant/virtual-assistant';
 import AnalysisAndTrainingPage from 'app/pages/analysis-and-training/analysis-and-training.page';
 import DescriptionAssessmentPage from 'app/pages/description-assessment/description-assessment.page';
 import QAMetricsPage from 'app/pages/qa-metrics/qa-metrics.page';
-import React from 'react';
-import { Redirect, Route, Switch, withRouter } from 'react-router-dom';
-
-import { RouterNames } from 'app/common/types/router.types';
-
-import Sidebar from 'app/modules/sidebar/sidebar';
-
-import Settings from "app/modules/settings/settings";
-import VirtualAssistant from "app/modules/virtual-assistant/virtual-assistant";
 
 import 'app/pages/root.page.scss';
+import React from 'react';
+import { connect, ConnectedProps } from 'react-redux';
+import { Redirect, Route, Switch, withRouter } from 'react-router-dom';
 
 const SidebarWithRouter = withRouter(props => <Sidebar {...props} />);
 
-class RootPage extends React.Component {
+class RootPage extends React.Component<Props> {
+
+	componentDidMount() {
+		this.props.checkCollectingDataFinished();
+	}
 
 	render() {
 		return (
 			<div className="root-page">
 				<SidebarWithRouter />
-        <Settings/>
-        <VirtualAssistant/>
+				<Settings />
+				<VirtualAssistant />
 
 				<Settings />
 				<div className="root-page__content">
@@ -55,4 +62,19 @@ class RootPage extends React.Component {
 	}
 }
 
-export default RootPage;
+const mapStateToProps = (store: RootStore) => ({});
+
+const mapDispatchToProps = {
+	checkCollectingDataFinished,
+};
+
+const connector = connect(
+	mapStateToProps,
+	mapDispatchToProps,
+);
+
+type PropsFromRedux = ConnectedProps<typeof connector>
+
+type Props = PropsFromRedux;
+
+export default connector(RootPage);

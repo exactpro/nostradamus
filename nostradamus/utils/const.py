@@ -31,8 +31,9 @@ dtype_conversions = {
     "int": "int32",
     "float": "float32",
     "unique": "category",
-    "string": "string",
-    "object": "string",
+    # It's more relative "string"
+    "string": str,
+    "object": str,
     "float64": "float32",
     "int64": "int32",
 }
@@ -169,3 +170,5 @@ MANDATORY_FIELDS = [
     "Reporter",
     "Key",
 ]
+
+PARSE_CONF_FILENAME = "parse.conf"

@@ -57,14 +57,7 @@ class SettingsPredictions extends Component<SettingsPredictionsProps, SettingsPr
 
     this.setState({predictions});
     this.fixPredictionOrder();
-  }
-
-  editPrediction = (index: number, name: string) => {
-    let {predictions} = this.state;
-
-    predictions[index].name= name;
-
-    this.setState({predictions});
+    this.detectIsSettingsDefault();
   }
 
   fixPredictionOrder = () => {
@@ -127,8 +120,7 @@ class SettingsPredictions extends Component<SettingsPredictionsProps, SettingsPr
 
         <div className="settings-predictions-main">
           <InputPredictionsElement  values={this.state.predictions}
-                                    onClear={this.deletePrediction}
-                                    onChange={this.editPrediction}
+                                    onDeletePrediction={this.deletePrediction}
                                     onChangeOrder={this.changePredictionsOrder}/>
         </div>
 

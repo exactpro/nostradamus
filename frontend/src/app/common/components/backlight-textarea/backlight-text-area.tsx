@@ -1,5 +1,5 @@
 import { Keywords } from 'app/modules/predict-text/predict-text';
-import React from 'react';
+import React, { ReactElement } from 'react';
 
 import './backlight-textarea.scss';
 
@@ -13,6 +13,7 @@ interface Props {
 class BacklightTextArea extends React.Component<Props> {
 
 	backdropContainerRef: React.RefObject<HTMLDivElement>;
+	textareaPlaceholder: string ="Copy or type your description here";
 
 	constructor(props: Props) {
 		super(props);
@@ -41,8 +42,13 @@ class BacklightTextArea extends React.Component<Props> {
 		this.props.onChangeText(e.target.value);
 	};
 
-	addBacklight = (text: string, keywords?: Keywords): string[] => {
-		let result: string[] = [];
+	componentDidUpdate() {
+		// need do, after appearing new term
+		this.syncScroll();
+	}
+
+	addBacklight = (text: string, keywords?: Keywords) => {
+		let result: any[] = [];
 
 		if (keywords) {
 			keywords.resolution.forEach((keyword) => {
@@ -69,13 +75,16 @@ class BacklightTextArea extends React.Component<Props> {
 
 				<div className="backlight-textarea__backdrop" ref={this.backdropContainerRef}>
 					{
-						this.addBacklight(this.props.text, this.props.keywords).map((text, index) => (
-							<pre
-								key={index}
-								className="backlight-textarea__text"
-								dangerouslySetInnerHTML={{ __html: text }}
-							>{/*text area text*/}</pre>
-						))
+						this.addBacklight(this.props.text, this.props.keywords).map((text, index) => 
+										<pre
+											key={index}
+											className="backlight-textarea__text">
+												{ 
+													text? 
+														text: 
+														<span className="backlight-textarea__placeholder">{this.textareaPlaceholder}</span> 
+												}
+										</pre>)
 					}
 
 					<textarea
@@ -84,6 +93,7 @@ class BacklightTextArea extends React.Component<Props> {
 						value={this.props.text}
 						onChange={this.onChange}
 						disabled={this.props.disabled}
+						placeholder="Copy or type your description here"
 					>{/*text area*/}</textarea>
 				</div>
 			</div>
@@ -95,23 +105,24 @@ class BacklightTextArea extends React.Component<Props> {
 export default BacklightTextArea;
 
 function wrapSubstrToColor(text: string, substr: string, color: string) {
-	let splitText = [];
+	let splitText: ReactElement[] = [];
 
 	let find = () => {
 		return text.toLowerCase().indexOf(substr.toLocaleLowerCase());
 	};
 
+	let key = 0;
 	while (find() > -1) {
 		let startPos = find();
 		splitText.push(
-			text.slice(0, startPos),
-			`<span class="color-${color}">${text.slice(startPos, startPos + substr.length)}</span>`,
+			<React.Fragment key={++key}>{text.slice(0, startPos)}</React.Fragment>,
+			<span key={++key} className={`color-${color}`}>{text.slice(startPos, startPos + substr.length)}</span>,
 		);
 
 		text = text.slice(startPos + substr.length);
 	}
 
-	splitText.push(text);
+	splitText.push(<React.Fragment key={++key}>{text}</React.Fragment>);
 
-	return splitText.join('');
+	return splitText;
 }

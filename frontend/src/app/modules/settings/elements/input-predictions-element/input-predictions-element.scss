@@ -15,14 +15,8 @@
       border-radius: 4px;
       max-width: 95%;
       cursor: pointer;
-      background-color: $grayDisabled;
-
-      &_edited{
-        border: 1px solid $seaBlue;
-        background-color: $lightSeaBlue;
-        box-sizing: border-box;
-      }
-
+      background-color: $grayDisabled; 
+      
       &_locked{
         cursor: not-allowed;
       }
@@ -51,7 +45,7 @@
         padding: 0;
       }
 
-      &:hover:not(&_edited):not(:focus){
+      &:hover{
         background-color: $seaBlue;
 
         *{

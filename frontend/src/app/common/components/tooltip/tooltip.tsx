@@ -1,12 +1,13 @@
-import React from "react"
+import React, { CSSProperties } from "react"
 import { Timer } from 'app/common/functions/timer';
+import PopupComponent, {ChildPosition} from "app/common/components/popup-component/popup-component";
 import cn from "classnames"
 
 import "./tooltip.scss"
 
 enum TooltipWrapperShowing{
   hide = "hided",
-  display = "displayed",
+  display = "visible",
 }
 
 export enum TooltipPosition{
@@ -21,12 +22,15 @@ interface TooltipProps{
   message: string,
   position: TooltipPosition,
   children: React.ReactNode,
-  isDisplayed: boolean
+  isDisplayed: boolean, 
+  style?: CSSProperties,
 }
 
 interface TooltipState{
   wrapperDisplayStyle: TooltipWrapperShowing
 }
+
+// Change tooltip adding approach
 
 class Tooltip extends React.Component<TooltipProps, TooltipState> {
 
@@ -38,10 +42,10 @@ class Tooltip extends React.Component<TooltipProps, TooltipState> {
   static defaultProps = {
     duration: 2000, 
     position: TooltipPosition.top,
-    isDisplayed: true,
+    isDisplayed: true, 
   }
 
-  timer: any = {};
+  timer: any = {}; 
 
   hideTooltip = () => {
 
@@ -52,7 +56,7 @@ class Tooltip extends React.Component<TooltipProps, TooltipState> {
   }
 
   displayTooltip = () => {
-
+    
     if( this.timer.timerId ) this.timer.close()
     this.timer = new Timer(this.hideTooltip , this.props.duration as number)
     this.timer.pause()
@@ -63,28 +67,32 @@ class Tooltip extends React.Component<TooltipProps, TooltipState> {
 
   }
 
-  render(){
+  render(){ 
       return(
         <div className="tooltip">
+          <PopupComponent isChildDisplayed={this.state.wrapperDisplayStyle === TooltipWrapperShowing.display}
+                          childPosition = {ChildPosition.top}
+                          parent={
+                            <div className={cn({"tooltip__wrapped-object":this.props.isDisplayed})}
+                                onMouseEnter={this.displayTooltip}
+                                onMouseLeave={this.timer.resume}>
+                              {this.props.children}
+                            </div>
+                          }
+                          child={
+                            <div className={cn("tooltip-wrapper",
+                                              {"tooltip-wrapper_displayed": this.props.isDisplayed},
+                                              "tooltip-wrapper_"+this.props.position, 
+                                              "tooltip-wrapper_"+this.state.wrapperDisplayStyle)} 
+                                  style={this.props.style}
+                                  onMouseEnter={this.timer.pause}
+                                  onMouseLeave={this.timer.resume}>
 
-            <div className={cn({"tooltip__wrapped-object":this.props.isDisplayed})}
-                 onMouseEnter={this.displayTooltip}
-                 onMouseLeave={this.timer.resume}>
-              {this.props.children}
-            </div>
-            
-            {
-              this.props.isDisplayed && 
-              <div className={cn("tooltip-wrapper", "tooltip-wrapper_"+this.props.position, "tooltip-wrapper_"+this.state.wrapperDisplayStyle)}
-                  onMouseEnter={this.timer.pause}
-                  onMouseLeave={this.timer.resume}>
+                              <div className="tooltip-wrapper__content">{this.props.message}</div>
+                              <div className={cn("tooltip-wrapper__triangle", "tooltip-wrapper__triangle_"+this.props.position)}></div>
 
-                  <div className="tooltip-wrapper__content">{this.props.message}</div>
-                  <div className={cn("tooltip-wrapper__triangle", "tooltip-wrapper__triangle_"+this.props.position)}></div>
-
-              </div>
-            }
-
+                            </div>
+                          }/>
         </div>
       )
   }

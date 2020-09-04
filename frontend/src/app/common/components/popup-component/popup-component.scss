@@ -1,0 +1,11 @@
+.pop-up-component{
+    &__child{
+        position: fixed; 
+        z-index: 100;  
+    }
+} 
+
+.component-parent{
+    width: 100%; 
+    position: relative;
+}

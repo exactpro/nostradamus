@@ -9,6 +9,14 @@
     width: 180px;
   }
 
+  &__pop-up-parent{
+    display: flex;
+  }
+  
+  &__pop-up-child{
+    width: 306px;
+  }
+
   &__input {
     padding-left: 12px;
     text-align: center;
@@ -63,6 +71,7 @@
   &__calendar {
     position: absolute;
     top: calc(100% + 3px);
+    width: 100%;
     right: 0;
 
     z-index: 10;
@@ -95,14 +104,34 @@
       height: 24px;
       margin-bottom: 14px;
       font-weight: 600;
+      align-items: center; 
 
       button {
         min-width: auto;
+        
+        &:enabled:hover,
+        &:enabled:active,
+        &:enabled:focus{
+          background: transparent;
+        }
+      }
+
+      &__label{
+        color: $darkGray;
+      }
+
+      &__arrow{
+        font-size: 25px;
+        transform: translateY(-10%);
       }
     }
 
     &__month-view__days {
       margin-top: 27px;
+
+      &__day{
+        border-radius: 100%;
+      }
     }
 
     &__month-view__weekdays {
@@ -118,48 +147,45 @@
       line-height: 21px;
       text-align: center;
       letter-spacing: 0.1px;
-      color: $darkGray;
+      color: $darkGray; 
     }
 
     &__navigation__prev2-button,
     &__navigation__next2-button {
       display: none;
-    }
+    } 
 
     &__tile {
       padding: 9.5px;
       color: $darkGray;
 
-      &:hover {
-        background-color: #e6e6e6;
-        border-radius: 0;
+      &:hover,
+      &--now { 
+        border-radius: 100% !important; 
+      }
+
+      &:hover{
+        background-color: $lightGray; 
       }
 
       // for checked range
-      &--active {
-        color: $white;
-        background-color: $blue;
-        border-radius: 0;
-      }
+      &:focus,
+      &--active,
+      &--active:enabled:hover, 
+      &--active:enabled:focus,
+      &--active:focus,
+      &--rangeStart,
+      &--rangeEnd
+      {
+        border-radius: 100% !important; 
+        color: $white !important;
+        background-color: $blue !important; 
+      } 
+
 
       &--hasActive {
         color: white;
-      }
-
-      &--rangeStart {
-        border-top-left-radius: 1000px;
-        border-bottom-left-radius: 1000px;
-      }
-
-      &--rangeEnd {
-        border-top-right-radius: 1000px;
-        border-bottom-right-radius: 1000px;
-      }
-
-      &:focus {
-        border-radius: 0;
-        background-color: $active;
-      }
+      }  
 
     }
   }

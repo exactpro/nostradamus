@@ -28,6 +28,25 @@ class DefectSubmission extends React.Component<Props> {
 		this.props.onChangePeriod(timeFilter);
 	};
 
+	componentDidMount = () => {
+		setTimeout(()=>{
+
+			if(!this.graphRef.current) return;
+
+				const tspanCollection = this.graphRef.current?.children[1].getElementsByTagName("tspan");
+				const tspanCalibrationCoefficient = 3;
+
+				const firstXAxisValueCoordinate = Number(tspanCollection.item(0)?.getAttribute("x"));
+				tspanCollection.item(0)?.setAttribute("x",`${firstXAxisValueCoordinate + tspanCalibrationCoefficient*tspanCollection.item(0)!.innerHTML.length}`);
+				
+				const lastXAxisValue = tspanCollection.length - 1;
+				const lastXAxisValueCoordinate = Number(tspanCollection.item(lastXAxisValue)?.getAttribute("x"));
+				tspanCollection.item(lastXAxisValue)?.setAttribute("x",`${lastXAxisValueCoordinate - tspanCalibrationCoefficient*tspanCollection.item(lastXAxisValue)!.innerHTML.length}`);		
+		
+		},0)
+		
+	}
+
 	render() {
 		let { activeTimeFilter } = this.props;
 
@@ -54,7 +73,7 @@ class DefectSubmission extends React.Component<Props> {
 							<YAxis axisLine={false}
 							       tickLine={false}
 							       tickMargin={10}
-							       domain={['dataMin', 'dataMax+100']}
+							       domain={['dataMin', dataMax=>dataMax+(0.1*dataMax>4?Math.ceil(0.1*dataMax):4)]}
 							       type="number" scale="linear"
 							       interval="preserveStart"
 							/>
@@ -66,12 +85,12 @@ class DefectSubmission extends React.Component<Props> {
 						<ResponsiveContainer width={potentialGraphWidth && scrollableGraphWidth<potentialGraphWidth? potentialGraphWidth: scrollableGraphWidth} height="100%">
 							<LineChart data={graphData}>
 								<CartesianGrid fill="#E5F2F9" horizontal={false} stroke="#FFFFFF" />
-								<XAxis axisLine={false} tickLine={false} dataKey="data" tickMargin={15} interval="preserveStartEnd" />
+								<XAxis axisLine={false} tickLine={false} dataKey="data" tickMargin={15} interval={0} />
 								<YAxis axisLine={false}
 								       tickLine={false}
 								       hide={true}
 								       tickMargin={10}
-								       domain={['dataMin', 'dataMax+100']}
+								       domain={['dataMin', dataMax=>dataMax+(0.1*dataMax>4?Math.ceil(0.1*dataMax):4)]}
 								       type="number" scale="linear"
 								       interval="preserveStartEnd"
 								/>

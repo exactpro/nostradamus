@@ -48,7 +48,7 @@ export const checkFieldIsFilled = (filtration_type: FiltrationType, value: Value
 		case FiltrationType.Numeric:
 		case FiltrationType.Date:
 			let valueTyped = value as FilterFieldNumberValue | FilterFieldDateValue;
-			return !!(valueTyped[0] || valueTyped[1]);
+			return valueTyped.length > 0 && (valueTyped[0] !== null || valueTyped[1] !== null);
 
 		case FiltrationType.Dropdown:
 			return !!(value as FilterFieldDropdownValue).length;

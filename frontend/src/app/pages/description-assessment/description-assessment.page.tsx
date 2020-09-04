@@ -28,6 +28,7 @@ import React from 'react';
 import './description-assessment.page.scss';
 import { addToast } from 'app/modules/toasts-overlay/store/actions';
 import { ToastStyle } from 'app/modules/toasts-overlay/store/types';
+import { fixTTRBarChartAxisDisplayStyle } from 'app/common/functions/helper';
 
 export interface DAProbabilitiesData {
 	[key: string]: unknown
@@ -88,19 +89,25 @@ class DescriptionAssessmentPage extends React.Component<PropsFromRedux, State> {
 		this.setState({ status: HttpStatus.LOADING });
 
 		DescriptionAssessmentApi.predictText(text)
-			.then(({ probabilities }) => {
+			.then((data) => { 
+				if(data.warning) throw new Error(data.warning.detail || data.warning.message);
+				let {probabilities} = data;
+				
 				this.setState({
 					status: HttpStatus.FINISHED,
 					probabilities: {
 						resolution: { ...probabilities.resolution },
 						areas_of_testing: { ...probabilities.areas_of_testing },
-						'Time to Resolve': { ...probabilities['Time to Resolve'] },
+						'Time to Resolve': { ...fixTTRBarChartAxisDisplayStyle(probabilities['Time to Resolve'])},
 						Priority: { ...probabilities.Priority },
 					},
 				});
 				this.getMetrics();
 			})
-			.catch(() => this.setState({ status: HttpStatus.FAILED }));
+			.catch(err =>{ 
+				this.props.addToast(err.message, ToastStyle.Error);
+				this.setState({ status: HttpStatus.FAILED });
+			});
 	};
 
 	clearAll = () => {

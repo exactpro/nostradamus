@@ -1,3 +1,4 @@
+
 export enum MessageSendingType{
   outbound = "outbound",
   inbound = "inbound",
@@ -25,11 +26,14 @@ export interface OutboundData{
   message: string,
 }
 
-export interface InboundData{
+export type InboundData = {
+  [key: string]: undefined | string | string[] | boolean | InboundChoiceList[] | InboundReport,
   recipient_id: string,
   text?: string,
   buttons?: InboundChoiceList[],
   custom?: InboundReport,
+  calendar?: boolean,
+  filters?: string[]
 }
 
 export type InboundChoiceList = {
@@ -38,10 +42,17 @@ export type InboundChoiceList = {
 }
 
 export type InboundReport = {
-  filename: string,
-  format:  string,
-  link:  string,
-  size:  string,
+  operation?: string,
+  values?: string[],
+  filename?: string,
+  format?:  string,
+  link?:  string,
+  size?:  string,
+  title?: string
+  filters?: {
+    period?: string[],
+    project?: string[]
+  }
 }
 
 export type MessageDataUnion = {

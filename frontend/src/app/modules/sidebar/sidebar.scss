@@ -184,6 +184,8 @@
 
     cursor: pointer;
 
+    opacity: .6;
+
     background-color: transparent;
     transition-property: background-color;
     transition-duration: .1s;
@@ -192,6 +194,7 @@
     &:hover:not(&_active) {
       background-color: rgba(255, 255, 255, 0.15);
       transition-duration: 0s;
+      opacity: 1;
     }
 
     &::before {
@@ -211,6 +214,7 @@
       background-color: rgba(255, 255, 255, 0.15);
       cursor: default;
       transition-duration: 0s;
+      opacity: 1;
 
       &::before {
         left: 0;

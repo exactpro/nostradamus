@@ -15,7 +15,9 @@
 - affirm
 - ok great!
 - okay
-- okb;d
+- yes
+- Yes
+- True
 
 ## intent:deny
 - I don't want to
@@ -59,6 +61,7 @@
 - nope
 - not really
 - None of these
+- False
 
 ## intent:report
 - what happened [yesterday](period)
@@ -119,6 +122,8 @@
 - report
 
 ## intent:inform
+- [All projects](project)
+- [Pick a project](project)
 - for [today](period) please
 - for [yesterday](period)
 - report for [today](period)
@@ -214,6 +219,14 @@
 - dfghjkl
 - ::::::
 - [][][][]
+- ["2020-08-12T20:59:59.000Z","2020-08-12T20:59:59.000Z"]
+- ["Lk"]
+- ["2020-08-06T20:59:59.000Z","2020-08-06T20:59:59.000Z"]
+- ["ActiveMQ Artemis"]
+- ["2020-08-05T20:59:59.000Z","2020-08-06T20:59:59.000Z"]
+- &
+- turu
+- ihoetaklsd
 
 ## intent:goodbye
 - Bye
@@ -414,6 +427,418 @@
 - who is Nostradamus?
 - What is Nostradamus?
 - what is nostradamus
+- what is nostradamus?
+- what is nostradamus ?
+
+## intent:ask_analysis_and_training
+- Analysis & Training
+- Analysis&Training
+- Analysis and Training
+- A&T
+- What is Analysis & Training?
+- What is Analysis&Training?
+- What is Analysis and Training?
+- What Analysis & Training does?
+- What Analysis and Training does?
+- What does analysis and training do?
+- What can analysis and training do?
+- What is A&T?
+- what is analysis and training?
+- Learn more about A&T
+- what's analysis and training?
+- What is analysis and training ?
+- What is analysis and training
+- what is ananlysis and training ?
+- what is analysis and training ?
+- what is analysis and training
+- what is a&t ?
+- what is a&t
+
+## intent:ask_bug_count
+- Bug count
+- Bugs count
+- What is bug count?
+- What bug count does?
+- What does bug count do?
+- What can bug count do?
+- What are bugs uploaded?
+- What is bugs uploaded?
+- What are bugs filtered?
+- What are the numbers at the top of the page?
+- What are the blue and orange numbers at the top of the page?
+
+## intent:ask_filter
+- Filter
+- What is Filter?
+- What filter is?
+- What filter does?
+- What filter do?
+- What does filter do?
+- What can filter do?
+- What can filter?
+- What filter can?
+- How can filter help?
+- How filter help?
+- What is filter for?
+- What for is filter?
+- what is filter?
+- what is filter ?
+- what is filter
+- What is filter
+- What is filter ?
+
+## intent:ask_filter_workflow
+- How does filter work?
+- How filter works?
+- How can filter work?
+- How is filter work?
+- What does the filter work?
+- What does the filter filter?
+- Why do I need the filter?
+- How do I filter?
+- What do I filter?
+- How to filter data?
+- How filter works ?
+- How filter works
+
+## intent:ask_filter_string_type
+- String type
+- String filtration type
+- What is string type?
+- What does string type do?
+- How does string type work?
+- How string type works?
+- What is string type used for?
+- What is string?
+- What is string filtration?
+- What is string type filtration?
+- String
+
+## intent:ask_filter_dropdown_type
+- drop-down type
+- drop-down filtration type
+- Drop down type
+- Drop down filtration type
+- What is drop-down type?
+- What does drop-down type do?
+- How does drop-down type work?
+- How drop-down type works?
+- What is drop-down type used for?
+- What is drop-down?
+- What is drop-down filtration?
+- What is drop-down type filtration?
+- Drop-down type
+- Drop-down
+
+## intent:ask_filter_date_type
+- Date type
+- Date filtration type
+- What is date type?
+- What does date type do?
+- What does date type?
+- What date type do?
+- What is date?
+- What is date filtration?
+- What is date type filtration?
+- What is date type used for?
+- What can date type do?
+- How does date type work?
+- How date type works?
+- How is date type work?
+- How can date type work?
+
+## intent:ask_filter_numeric_type
+- Numeric type
+- Numeric filtration type
+- What is numeric type?
+- What does numeric type do?
+- What does numeric type?
+- What numeric type do?
+- What is numeric?
+- What is numeric filtration?
+- What is numeric type used for?
+- What can numeric type do?
+- How does numeric type work?
+- How numeric type works?
+- How is numeric type work?
+- How can numeric type work?
+- How can numeric type help?
+
+## intent:ask_defect_submission
+- Defect submission
+- Defect Submission
+- Defect submission chart
+- What is a defect submission chart?
+- What defect submission does?
+- How does defect submission chart work?
+- How defect submission chart works?
+- What is defect submission chart used for?
+- What is defect submission chart for?
+- What is defect submission?
+- How does defect submission work?
+- How defect submission works?
+- How defect submission for?
+- What does defect submission show?
+- What defect submission shows?
+- What does defect submission chart show?
+- What statistics does defect submission chart show?
+- what is defect submission ?
+
+## intent:ask_frequently_terms
+- Frequently terms
+- Frequently used terms
+- What are frequently used terms?
+- What frequently used terms do?
+- What do frequently used terms do?
+- What is frequently used terms?
+- What is frequently used terms tiles?
+- What are frequently used terms for?
+- What do frequently used terms show?
+- How frequently used terms work?
+- What are frequently used terms used for?
+- What do frequently used terms display?
+- What statistics do frequently used terms show?
+- What statistics frequently used terms show?
+- Frequently Terms
+
+## intent:ask_frequently_terms_workflow
+- How are frequently used words calculated?
+- What's the process of calculating frequently used words?
+- What's the workflow for calculating frequently used words?
+- How do frequently used terms work?
+- How frequently used terms work?
+- How frequently used terms are calculated?
+- How to calculate frequently used terms?
+- How calculate frequently terms?
+- How frequently terms are calculated?
+
+## intent:ask_significant_terms
+- Significant Terms
+- What are significant terms?
+- What are these terms?
+- What significant terms do?
+- What's significant terms?
+- What do significant terms do?
+- What do significant terms mean?
+- What significant terms mean?
+- What's the point of significant terms?
+- What do significant terms stand for?
+
+## intent:ask_significant_terms_workflow
+- How significant terms are calculated?
+- How are significant terms calculated?
+- How significant terms calculated?
+- How do significant terms work?
+
+## intent:ask_statistics
+- Statistics
+- What is statistics?
+- What does statistics do?
+- What does statistics mean?
+- What does statistics stand for?
+- What statistics does?
+- What does statistics show?
+
+## intent:ask_training
+- Training
+- Train Models
+- Models training
+- What is training?
+- What does training do?
+- What training does?
+- What training do?
+- What training mean?
+- What training means?
+- What does train models do?
+- What train models does?
+- What train models do?
+- What train models mean?
+- What train models means?
+- What does training mean?
+- What does training stand for?
+- what is training?
+- Train models
+
+## intent:ask_training_purpose
+- What is training for?
+- What can I achieve with training?
+- Why should I train you?
+- Why should I train models?
+- What can be done with training?
+- What can be done with models?
+- What’s the purpose of training?
+- What’s the purpose of models?
+- Why would I train you?
+- What's the purpose of training?
+
+## intent:ask_training_workflow
+- How training works?
+- How train models works?
+- How models training works?
+- How training is performed?
+- How is training performed?
+- How does training work?
+- How do I train a model?
+- How do I train?
+- What do I need to do to train a model?
+- What do I need to do to be able to train a model?
+- What do I need to do to start training?
+- How do I start training?
+- What do I start with?
+- How can I start?
+- How is a model trained?
+- How does it work?
+
+## intent:ask_training_diy
+- How to train models?
+- How do I train models?
+- How do I do training?
+- How do I perform training?
+- How do I train?
+- How can I train?
+- How can I do training?
+- How can I perform training?
+- What do I have to do in order to train models?
+- What do I have to do to train models?
+- What do I do to train models?
+- What do I do to start training?
+
+## intent:ask_description_assessment
+- Description Assessment
+- description assessment purpose
+- Aim of description assessment
+- What is Description Assessment?
+- What does Description Assessment do?
+- What Description Assessment does?
+- What Description Assessment do?
+- What Description Assessment mean?
+- What Description Assessment means?
+- What does Description Assessment mean?
+- What does Description Assessment for?
+
+## intent:ask_qa_metrics
+- QA Metrics
+- Quality Assurance Metrics
+- qa metrics purpose
+- Aim of qa metrics
+- What is QA Metrics?
+- What are QA Metrics?
+- What does QA Metrics do?
+- What QA Metrics does?
+- What QA Metrics do?
+- What QA Metrics mean?
+- What QA Metrics means?
+- What does QA Metrics mean?
+- What does QA Metrics stand for?
+- What do QA Metrics stand for?
+
+## intent:ask_training_configuring
+- How can I configure training?
+- How to configure training?
+- How to configure train?
+- What should I do to train a model successfully?
+- How do I configure training?
+- How do I train the model?
+- How do I train my model?
+- How can I do training?
+- How can I perform training?
+- How to configure training ?
+- how to configure training ?
+- What's involved in training of models?
+- What's involved in model training?
+- What steps are there in model training?
+- How easy is it to train a model?
+- How simple is it to train a model?
+- How difficult is it to train a model?
+- How hard is it to train a model?
+- What is required for training a model?
+- What is the process of training a model?
+
+## intent:ask_source_field
+- What is the source field?
+- Tell me about source field
+- What is source field?
+- What source field is?
+- What is source field for?
+- What for is source field?
+- What do I put in Source Field?
+- Source Field
+
+## intent:ask_source_field_configuring
+- How to set up the source field?
+- How to set up source field?
+- How to configure source field?
+- Where can I set up source field?
+- Where can I configure source field?
+- What i need to do to configure source field?
+- How to specify a source field?
+- Tell me about how to configure source field
+- Tell me about got to set up sourced field
+- How do I set up source field?
+- How do I set up the source field?
+- How do I configure the source field?
+- Where do I configure the source field?
+- How Source field is configured?
+
+## intent:ask_area_of_testing
+- What is an area of testing?
+- Tell me about area of testing
+- What is area of testing?
+- What area of testing is?
+- What for is area of testing?
+- What is area of testing for?
+- Why do I need the area of testing?
+- What is the area of testing?
+- Area of Testing
+
+## intent:ask_area_of_testing_configuring
+- How to set up the Area of testing?
+- How to set up area of testing?
+- How to configure area of testing?
+- Where can I set up area of testing?
+- Where can I configure area of testing?
+- What i need to do to configure area of testing?
+- How to specify an area of testing?
+- Tell me about how to configure area of testing
+- Tell me how to configure area of testing
+- Tell me about got to set up area of testing
+- How do I set up the area of testing?
+- How to set up the murk up entities?
+- How to set up murk up entities?
+- How to configure murk up entities?
+- Where can I set up murk up entities?
+- Where can I configure murk up entities?
+- What i need to do to configure murk up entities?
+- How to specify a mark up entities?
+- Tell me about how to configure murk up entities
+- Tell me how to configure murk up entities
+- Tell me about got to set up murk up entities
+- Tell me got to set up murk up entities
+- How do I set up the markup entities?
+
+## intent:ask_bug_resolution
+- What is the bug resolution?
+- Tell me about bug resolution
+- What is bug resolution?
+- What bug resolution is?
+- What is bug resolution for?
+- What for is bug resolution?
+- Bug resolution
+
+## intent:ask_bug_resolution_configure
+- How to set up the bug resolution?
+- How do I set up bug resolution?
+- How to set up bug resolution?
+- How to configure bug resolution?
+- Where  can I set up bug resolution?
+- Where can I configure bug resolution?
+- What I need to do to configure bug resolution?
+- What do I need to do to configure bug resolution?
+- How to specify a bug resolution?
+- Tell me about how to configure bug resolution
+- Tell me how to configure bug resolution
+- Tell me about how to set up bug resolution
+- How Bug resolution is configured?
 
 ## regex:period
 - [0-9]{4}-[0-9]{2}-[0-9]{2}

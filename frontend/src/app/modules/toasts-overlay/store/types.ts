@@ -16,7 +16,8 @@ export interface ToastButton {
 }
 
 export interface Toast {
-	id: number
+	id: number,
+	outerId?: number,
 	message: string,
 	style: ToastStyle,
 	config: ToastConfig,

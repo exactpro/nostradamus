@@ -13,19 +13,18 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 # install dependencies
-RUN apt-get update \
-&& apt-get -y upgrade \
-&& dpkg --configure -a \
-&& apt-get install -y sqlite3 libsqlite3-dev \
-&& apt-get install gcc -y \
-&& apt-get clean \
-&& pip install --upgrade pip && pip install flake8 && pip install Cython
+RUN apt-get update
+RUN apt-get -y upgrade
+RUN dpkg --configure -a
+RUN apt-get install gcc -y \
+  build-essential libpq-dev libffi-dev --no-install-recommends
+RUN apt-get clean
+RUN pip install --upgrade pip && pip install flake8 && pip install Cython
 COPY ./requirements.txt .
 RUN pip wheel --no-cache-dir --no-deps --wheel-dir /usr/src/app/wheels -r requirements.txt
 
 # copy source code
 COPY . /usr/src/app/
-COPY ./docker-entrypoint.sh .
 
 #########
 # FINAL #
@@ -49,7 +48,6 @@ COPY --from=builder /usr/src/app/requirements.txt .
 RUN pip install --upgrade pip && pip install --no-cache /wheels/*
 
 # copy the project
-COPY --from=builder /usr/src/app/docker-entrypoint.sh .
 COPY . $APP_HOME
 
 EXPOSE 8000

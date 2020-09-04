@@ -18,7 +18,7 @@ def sql_conn():
 
 @pytest.fixture
 def host():
-    return "http://localhost:8000/"
+    return "http://localhost/api/"
 
 
 @pytest.fixture
@@ -392,3 +392,18 @@ def predictions_table_fields(request):
         "Summary",
         "Resolution: Done",
     ]
+
+
+@pytest.fixture()
+def qa_metrics_route():
+    return "qa_metrics/"
+
+
+@pytest.fixture()
+def analysis_and_training_route():
+    return "analysis_and_training/"
+
+
+@pytest.fixture()
+def settings_route():
+    return "settings/"

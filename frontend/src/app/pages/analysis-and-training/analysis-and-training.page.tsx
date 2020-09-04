@@ -37,6 +37,7 @@ import statisticsLoadingPreview from 'assets/images/statistics-loading-preview.p
 import { socket } from 'index';
 import React from 'react';
 import { connect, ConnectedProps } from 'react-redux';
+import { removeToastByOuterId } from "app/modules/toasts-overlay/store/actions";
 
 interface State {
 	loadingStatus: number,
@@ -73,6 +74,8 @@ class AnalysisAndTrainingPage extends React.Component<PropsFromRedux, State> {
 
 	interval: NodeJS.Timer | null = null;
 	timer: Timer | null = null;
+	isComponentMounted: boolean = false;
+	updateDataToastID: number = 0;
 
 	imageForCalculating: string;
 
@@ -135,6 +138,7 @@ class AnalysisAndTrainingPage extends React.Component<PropsFromRedux, State> {
 	};
 
 	componentDidMount(): void {
+		this.isComponentMounted = true;
 		this.uploadTotalStatistic()
 			.then(() => {
 				if (this.state.isCollectingFinished) {
@@ -149,27 +153,27 @@ class AnalysisAndTrainingPage extends React.Component<PropsFromRedux, State> {
 		this.startSocket();
 	}
 
+	componentWillUnmount = () => {  
+		this.isComponentMounted = false;
+		if(this.updateDataToastID) {
+			this.props.removeToastByOuterId(this.updateDataToastID);
+		} 
+	}
+
 	startSocket = () => {
 		socket.startMonitor('message', (val) => {
-			if (this.state.isCollectingFinished) {
+			if (this.state.isCollectingFinished && this.isComponentMounted) {  
+				++this.updateDataToastID;
 				this.props.addToastWithAction('Data has been updated', ToastStyle.Info, [
 					{
 						buttonName: 'Load',
 						callBack: () => {
-							this.uploadTotalStatistic();
-							this.setState({
-								statuses: {
-									filter: HttpStatus.LOADING,
-									frequentlyTerms: HttpStatus.LOADING,
-									defectSubmission: HttpStatus.LOADING,
-									statistic: HttpStatus.LOADING,
-									significantTerms: HttpStatus.LOADING
-								}
-							}, () => this.uploadDashboardData('full'));
+							this.uploadTotalStatistic().then(_=> this.uploadDashboardData('full'));
 						},
 					},
-				]);
-			} else {
+				], this.updateDataToastID);
+				
+			} else if(!this.state.isCollectingFinished){
 				document.location.reload();
 			}
 		});
@@ -210,7 +214,7 @@ class AnalysisAndTrainingPage extends React.Component<PropsFromRedux, State> {
 		try {
 			let { significant_terms } = await AnalysisAndTrainingApi.getSignificantTermsData();
 
-			if(this.validateUploadData(significant_terms, "significantTerms")) return;
+			if(this.validateUploadData(significant_terms, "significantTerms")) return; 
 
 			this.setState({
 				statuses: { ...this.state.statuses, significantTerms: HttpStatus.FINISHED },
@@ -501,7 +505,7 @@ class AnalysisAndTrainingPage extends React.Component<PropsFromRedux, State> {
 					<div className="at-page__column at-page__column_position_left" style={style}>
 
 						<Card
-							className="configuration-tab at-page__card"
+							className="configuration-tab at-page__card at-page__card_filter"
 							previewImage={filterLoadingPreview}
 							status={this.state.statuses.filter}
 						>
@@ -520,12 +524,12 @@ class AnalysisAndTrainingPage extends React.Component<PropsFromRedux, State> {
 
 								{
 									this.state.filters.length &&
-                  <Filters
-                      className="configuration-tab__filters"
-                      filters={this.state.filters}
-                      applyFilters={this.applyFilters}
-                      resetFilters={this.resetFilters}
-                  />
+									<Filters
+										className="configuration-tab__filters"
+										filters={this.state.filters}
+										applyFilters={this.applyFilters}
+										resetFilters={this.resetFilters}
+									/>
 								}
 							</div>
 						</Card>
@@ -590,6 +594,7 @@ const mapDispatchToProps = {
 	addToastWithAction,
 	addToast,
 	setCollectingDataStatus,
+	removeToastByOuterId
 };
 
 const connector = connect(

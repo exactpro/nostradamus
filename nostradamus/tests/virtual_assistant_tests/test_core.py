@@ -115,8 +115,8 @@ class TestCoreBot(unittest.TestCase):
 
         assert all(
             [
-                data[0]["custom"]["size"] == "130.0 bytes",
-                data[0]["custom"]["format"] == "csv",
+                data[0]["custom"]["size"] == "5.3 KB",
+                data[0]["custom"]["format"] == "xlsx",
                 "http://localhost/api/virtual_assistant/reports/"
                 in data[0]["custom"]["link"],
             ]

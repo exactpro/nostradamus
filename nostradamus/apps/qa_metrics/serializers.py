@@ -11,7 +11,6 @@ class RecordsCountSerializer(serializers.Serializer):
 
 
 class PredictionsInfoSerializer(serializers.Serializer):
-    records_count = RecordsCountSerializer()
     predictions_table = serializers.ListField(
         child=serializers.DictField(child=serializers.CharField())
     )
@@ -30,11 +29,18 @@ class PredictionsTableSerializer(serializers.ListSerializer):
     child = serializers.DictField(child=serializers.CharField())
 
 
-class QAMetricsFiltersSerializer(serializers.Serializer):
+class QAMetricsFiltersContentSerializer(serializers.Serializer):
     filters = FiltrationFieldRequestSerializer(many=True)
 
 
+class QAMetricsFiltersResultSerializer(QAMetricsFiltersContentSerializer):
+    records_count = RecordsCountSerializer()
+
+
 class QAMetricsTableRequestSerializer(serializers.Serializer):
-    filters = serializers.ListField(child=FiltrationFieldRequestSerializer())
     limit = serializers.IntegerField()
     offset = serializers.IntegerField()
+
+
+class QAMetricsSerializer(serializers.Serializer):
+    records_count = RecordsCountSerializer()

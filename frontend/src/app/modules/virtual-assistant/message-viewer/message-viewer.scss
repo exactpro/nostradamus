@@ -23,10 +23,10 @@
     display: block;
     width: max-content;
     max-width: 60%;
-    padding: 20px 10px;
+    padding: 10px 20px;
     margin: 10px 0;
 
-    color: black;
+    color: $black;
 
     font-weight: normal;
     font-size: 18px;
@@ -63,13 +63,29 @@
     }
   }
 
+  &-typing-preview{
+    display:flex; 
+    align-items: flex-end;
+    color: $grayDisabled;
+
+    &__title{
+      font-size: 16px;
+      line-height: 24px;
+    }
+
+    &__image{
+      width: 36px;
+      margin-left: 5px;
+    }
+  }
+
   &-file-upload{
     display: flex;
     flex-direction: row;
-    align-items: center;
+    align-items: flex-start;
 
     &__button{
-      padding: 15px 15px;
+      padding: 15px 15px; 
 
       box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.15);
       border-radius: 100%;
@@ -101,15 +117,23 @@
     &__info{
       display: flex;
       margin-top: 10px;
+      flex-direction: column;
+      color: $grayDisabled;
 
-      &-title{
-        color: $grayDisabled;
-        margin-left: 5px;
+      &-title{ 
+        display: flex;
+
+        p:not(:first-child){
+          margin-left: 5px; 
+        }
       }
 
-      &-title:first-child{
-        margin-left: 0;
+      &-filters{
+        margin-top: 10px;
+        font-size: 12px;
+        line-height: 16px;
       }
+ 
     }
 
   }
@@ -148,6 +172,171 @@
     margin-top: 15px;
   }
 
+  &-dropdown-list{ 
+
+    display: flex;
+    max-width: 40%;
+    max-height: 280px;
+
+    .select-window{
+      max-height: 100% !important;
+    }
+  }
+
+  &-calendar{
+    min-width: 300px;
+    width: 40%; 
+    padding: 10px 20px 15px 14px;
+
+    &__title{
+      margin-bottom: 10px;
+      padding-left: 6px;
+    }
+
+
+    &__calendar{
+       *{
+          font-family: Quicksand;
+          font-style: normal;
+          font-weight: normal;
+          font-size: 12px;
+          line-height: 15px;
+       }  
+
+      .react-calendar {
+        background-color: transparent; 
+        border: none;  
+
+        &__navigation{
+          margin-bottom: 0;
+          justify-content: space-between;
+
+          &__label{
+            font-size: 18px;
+            line-height: 25px;
+            text-align: start;
+            color: $darkBlue;  
+            order: -1; 
+          }
+
+          button:enabled:hover, 
+          button:enabled:focus{
+            background-color: transparent;
+          }
+
+          &__next2-button,
+          &__prev2-button{
+            display: none;
+          }
+
+          // Change after updating icons
+
+          &__prev-button, &__next-button{
+            color: $darkBlue; 
+          }
+        }
+        
+        &__tile{
+
+          padding: 11.5px 0 !important;
+
+          &:hover{
+            background: $lightGray !important;
+          }
+          
+          &--now{
+            color: $darkBlue !important;
+            background-color: transparent;
+            text-decoration: underline;
+          }
+          
+          &--hover{
+            border-radius: 100%;
+          } 
+
+          &--active,
+          &--active:enabled:hover, 
+          &--active:enabled:focus{
+            border-radius: 100%;
+            background-color: $blue !important;
+            color: white !important;
+          }
+        }
+
+        &__year-view__months__month{
+          border-radius: 0%;
+        }
+
+        &__year-view__months__month,
+        &__decade-view__years__year,
+        &__month-view__days__day,
+        &__century-view__decades__decade{
+          color: $black;
+        }
+        
+        &__month-view__days__day{
+          font-size: 12px;
+          line-height: 15px;
+
+          &--weekend{
+            color: $lightRed;
+          }
+
+          &:hover{
+            border-radius: 100%;
+          }
+        }
+        
+        &__month-view__weekdays__weekday{
+          color: $lightBlueText;
+
+          abbr{ 
+            text-transform: capitalize;
+
+            text-decoration: none;
+            font-size: 10px;
+            line-height: 24px;
+          }
+        }
+
+      }
+    }
+  }
+
+  &-widget{
+
+    &-buttons{
+      display: flex;
+      flex-direction: column;
+      margin-top: 10px;
+      
+      &__send{ 
+        align-self: flex-end;
+        color: white;
+        background-color: $blue;
+        font-weight: 500; 
+        margin-right: -10px;
+        
+        &_disabled{
+          color: white !important;
+          opacity: 1 !important;
+          background: $grayDisabled !important  ;
+        }
+
+        &:hover:not(&_disabled) {
+          background-color: $activeHover;
+        }
+      }
+    }
+  }
+
+}
+
+.icon-Left-Arrow{
+  font-size: 18px;
+  &__next{
+    transform: translateX(-15%) rotate(180deg);
+  }
 }
 
 @keyframes hideChoiceList{

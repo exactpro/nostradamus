@@ -1,32 +1,88 @@
 actions:
+- action_custom_fallback
 - action_default_ask_affirmation
+- action_faq_selector
+- respond_faq
+- utter_anything_else
+- utter_area_of_testing_options
 - utter_ask_help
+- utter_ask_more_details_analysis_and_training
+- utter_ask_more_details_settings
 - utter_ask_period
+- utter_ask_project
 - utter_ask_rephrase
+- utter_bug_resolution_options
 - utter_cannot_help
 - utter_describe_yourself
+- utter_filter_menu
+- utter_filtration_types
+- utter_frequently_terms_options
 - utter_goodbye
 - utter_greet
 - utter_intro_nostradamus
+- utter_more_details_analysis_and_training
+- utter_more_details_settings
 - utter_noworries
+- utter_significant_terms_options
+- utter_source_field_options
+- utter_training_diy_options
+- utter_training_options
+- utter_training_purpose_options
 - utter_what_do_you_can
 entities:
 - period
+- project
+- project_selection
 forms:
 - report_form
 intents:
-- out_of_scope
+- ask_filter
 - report
-- inform
+- ask_analysis_and_training
+- affirm
 - deny
+- ask_filter_workflow
+- ask_bug_resolution_configure
+- ask_filter_dropdown_type
+- ask_frequently_terms
+- ask_defect_submission
+- out_of_scope
+- greet
+- ask_training_configuring
+- ask_area_of_testing_configuring
+- ask_area_of_testing
+- ask_bug_resolution
+- ask_source_field_configuring
+- ask_source_field
+- intro_nostradamus
 - what_do_you_can
+- ask_significant_terms_workflow
+- ask_significant_terms
+- ask_filter_string_type
+- ask_bug_count
+- ask_filter_date_type
+- ask_training
+- ask_filter_numeric_type
+- ask_frequently_terms_workflow
+- ask_training_workflow
+- ask_statistics
+- ask_training_diy
+- ask_description_assessment
+- ask_qa_metrics
+- ask_training_purpose
+- faq
+- inform
 - goodbye
 - thanks
-- greet
 - describe_yourself
-- intro_nostradamus
-- affirm
 responses:
+  utter_anything_else:
+  - text: Ok. Anything else?
+  utter_area_of_testing_options:
+  - buttons:
+    - payload: How to set up the Area of testing?
+      title: How to set up the Area of testing?
+    text: Want to learn more about Area of testing?
   utter_ask_help:
   - buttons:
     - payload: What do you can?
@@ -36,6 +92,20 @@ responses:
     - payload: Status report
       title: Status report
     text: How can I help you?
+  utter_ask_more_details_analysis_and_training:
+  - buttons:
+    - payload: Yes
+      title: Yes
+    - payload: No
+      title: No
+    text: Do you want to learn more?
+  utter_ask_more_details_settings:
+  - buttons:
+    - payload: Yes
+      title: Yes
+    - payload: No
+      title: No
+    text: Do you want to learn more about settings?
   utter_ask_period:
   - buttons:
     - payload: today
@@ -43,14 +113,47 @@ responses:
     - payload: yesterday
       title: Yesterday
     text: For which day?
+  utter_ask_project:
+  - buttons:
+    - payload: '/inform{"project": "All projects"}'
+      title: All projects
+    - payload: '/inform{"project": "Pick a project"}'
+      title: Pick a project
+    text: Please select a Project
   utter_ask_rephrase:
   - text: Sorry, I didn't get you.
+  utter_bug_resolution_options:
+  - buttons:
+    - payload: How Bug resolution is configured?
+      title: How Bug resolution is configured?
+    text: Want to learn more about Bug resolution?
   utter_cannot_help:
   - text: Sorry, I don't get it.
   - text: I can't help you with that.
   - text: I'm sorry, I didn’t understand that.
   utter_describe_yourself:
   - text: I'm a virtual assistant.
+  utter_filter_menu:
+  - buttons:
+    - payload: How filter works?
+      title: How filter works?
+    text: Want to learn more about Filter?
+  utter_filtration_types:
+  - buttons:
+    - payload: String type
+      title: String
+    - payload: Drop-down type
+      title: Drop-down
+    - payload: Date type
+      title: Date
+    - payload: Numeric type
+      title: Numeric
+    text: Choose filtration type you're interested in
+  utter_frequently_terms_options:
+  - buttons:
+    - payload: How frequently terms are calculated?
+      title: How frequently terms are calculated?
+    text: Want to learn more about Frequently Used Terms?
   utter_goodbye:
   - text: See you later!
   - text: Have a good day.
@@ -62,10 +165,67 @@ responses:
   utter_intro_nostradamus:
   - text: Nostradamus is an application for analyzing software defect reports. To
       find out more please [follow the link](https://exactpro.com/ideas/white-papers/extent-2018-machine-learning-applied-defect-report-analysis)
+  utter_more_details_analysis_and_training:
+  - buttons:
+    - payload: Filter
+      title: Filter
+    - payload: Defect Submission
+      title: Defect Submission
+    - payload: Frequently Terms
+      title: Frequently Terms
+    - payload: Significant Terms
+      title: Significant Terms
+    - payload: Statistics
+      title: Statistics
+    - payload: Train models
+      title: Train models
+    - payload: Bug count
+      title: Bug count
+    text: What do you want to know?
+  utter_more_details_settings:
+  - buttons:
+    - payload: Source Field
+      title: Source Field
+    - payload: Area of Testing
+      title: Area of Testing
+    - payload: Bug resolution
+      title: Bug resolution
+    text: What do you want to know?
   utter_noworries:
   - text: My pleasure.
   - text: You are welcome!
   - text: Glad to help.
+  utter_significant_terms_options:
+  - buttons:
+    - payload: How significant terms are calculated?
+      title: How significant terms are calculated?
+    text: Want to learn more about Significant Terms?
+  utter_source_field_options:
+  - buttons:
+    - payload: How Source field is configured?
+      title: How Source field is configured?
+    text: Want to learn more about Source field?
+  utter_training_diy_options:
+  - buttons:
+    - payload: How to filter data?
+      title: How filter works?
+    text: Want to learn more?
+  utter_training_options:
+  - buttons:
+    - payload: What's the purpose of training?
+      title: What can I achieve with training?
+    - payload: How does it work?
+      title: How training works?
+    - payload: How to train models?
+      title: How to train models?
+    text: Want to learn more about Training?
+  utter_training_purpose_options:
+  - buttons:
+    - payload: Description Assessment
+      title: Description Assessment
+    - payload: QA Metrics
+      title: QA Metrics
+    text: Want to learn more?
   utter_what_do_you_can:
   - text: I can give you the latest news on your project.
 session_config:
@@ -73,6 +233,11 @@ session_config:
   session_expiration_time: 0
 slots:
   period:
+    auto_fill: false
+    type: text
+  project:
+    type: unfeaturized
+  project_selection:
     auto_fill: false
     type: text
   requested_slot:

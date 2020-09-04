@@ -81,17 +81,25 @@ class TestPredictionsTable(unittest.TestCase):
             ]
         )
 
-    def test_get_predictions_table(self):
+    def test_get_predictions_table_without_limit(self):
         predictions_table = get_predictions_table(
             self.issues, self.predictions_table_fields, None, None
         )
 
         assert len(predictions_table) == 100
 
+    def test_get_predictions_table_with_limit(self):
+        predictions_table = get_predictions_table(
+            self.issues, self.predictions_table_fields, 0, 20
+        )
+
+        assert len(predictions_table) == 20
+
     def test_predictions_pagination(self):
         predictions_table = get_predictions_table(
             self.issues, self.predictions_table_fields, None, None
         )
+
         predictions_table = paginate_bugs(predictions_table, 0, 20)
 
         assert len(predictions_table) == 20

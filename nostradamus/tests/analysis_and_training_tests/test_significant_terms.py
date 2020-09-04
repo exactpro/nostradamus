@@ -7,7 +7,6 @@ import django
 from django.conf import settings
 
 settings.MONGODB_NAME = "testdb"
-settings.MONGODB_HOST = "127.0.0.1"
 
 django.setup()
 

@@ -1,3 +1,3 @@
 #!/bin/bash
 
-rasa run actions
+rasa run actions --debug

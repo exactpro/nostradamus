@@ -398,7 +398,7 @@ def train(
         )
     )
 
-    if filtered_elements:
+    if filtered_elements and filtered_elements != {"Other"}:
         raise SmallNumberRepresentatives(
             f"Oops! Too little number of class representatives for: {filtered_elements}. Models can't be trained."
         )

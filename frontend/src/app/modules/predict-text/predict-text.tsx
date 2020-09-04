@@ -143,7 +143,7 @@ class PredictText extends React.Component<Props, State> {
 					</label>
 
 					<label className="predict-text__dropdown" htmlFor="areas_of_testing">
-						Areas of Testing
+						Area of Testing
 						<select
 							className={cn('predict-text__select', { 'predict-text__select_color_purple': this.state.currentMetricsValue.areas_of_testing })}
 							name="areas_of_testing"

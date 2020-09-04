@@ -30,7 +30,12 @@ from apps.settings.serializers import (
     FiltersSettingsSerializer,
     TrainingSettingsPostSerializer,
 )
-from utils.redis import redis_conn, clear_cache
+from utils.redis import (
+    redis_conn,
+    remove_cache_record,
+    clear_cache,
+    clear_page_cache,
+)
 
 
 class FilterSettingsView(APIView):
@@ -62,7 +67,7 @@ class FilterSettingsView(APIView):
         UserFilterSerializer.delete_old_filters(data[0]["settings"])
         filter_settings_serializer.save()
 
-        clear_cache("analysis_and_training")
+        clear_page_cache(["analysis_and_training"], request.user.id)
 
         return Response({"result": "success"})
 
@@ -97,10 +102,10 @@ class QAMetricsSettingsView(APIView):
         UserQAMetricsFilterSerializer.delete_old_filters(data[0]["settings"])
         settings_serializer.save()
 
-        clear_cache("qa_metrics:filters")
+        remove_cache_record("qa_metrics:filters", request.user.id)
 
         redis_conn.set(
-            f"settings:qa_metrics:{request.user.id}",
+            f"user:{request.user.id}:settings:qa_metrics",
             dumps(get_qa_metrics_settings(request.user)),
         )
 
@@ -141,8 +146,10 @@ class PredictionsTableSettingsView(APIView):
         UserPredictionsTableSerializer.delete_old_fields(data[0]["settings"])
         settings_serializer.save()
 
-        clear_cache("qa_metrics:predictions_page")
-        clear_cache("qa_metrics:predictions_table")
+        clear_cache(
+            ["qa_metrics:predictions_page", "qa_metrics:predictions_table"],
+            request.user.id,
+        )
 
         return Response({"result": "success"})
 
@@ -164,7 +171,7 @@ class TrainingSettingsView(APIView):
             "source_field"
         ]
         update_resolutions(data, request.user)
-        redis_conn.delete(f"settings:predictions_table:{request.user.id}")
+        remove_cache_record("settings:predictions_table", request.user.id)
 
         training_serializer = TrainingSettingsPostSerializer(data=data)
         training_serializer.is_valid(raise_exception=True)

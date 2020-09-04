@@ -45,6 +45,10 @@
   &__card:not(:first-child) {
     margin-top: 20px;
   }
+  
+  &__card_filter{
+    padding-bottom: 0 !important;
+  }
 
   .configuration-tab {
     height: 600px;

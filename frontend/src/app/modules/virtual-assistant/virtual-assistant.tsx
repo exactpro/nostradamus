@@ -31,10 +31,9 @@ class VirtualAssistant extends Component<VirtualAssistantProps, VirtualAssistant
     this.setState({message})
   }
 
-  selectChoiceListItem = (message: string) => () => {
-    this.props.sendVirtualAssistantMessage(message)
+  selectMessageData = (item: string, renderItem?: string) => () => {
+    if(item.length) this.props.sendVirtualAssistantMessage(item, renderItem);
   }
-
 
   render(){
     return(
@@ -44,7 +43,7 @@ class VirtualAssistant extends Component<VirtualAssistantProps, VirtualAssistant
 
           <div className="virtual-assistant">
             <MessageViewer messages={this.props.messages}
-                           selectItem={this.selectChoiceListItem}/>
+                           selectMessageData={this.selectMessageData}/>
             <MessageInput message={this.state.message}
                           inputMessage={this.inputMessage}
                           sendMessage={this.sendMessage}/>

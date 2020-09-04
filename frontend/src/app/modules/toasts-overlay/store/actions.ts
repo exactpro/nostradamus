@@ -19,7 +19,7 @@ export const addToast = (message: string, style: ToastStyle, config?: ToastConfi
 	} as Toast
 } as const);
 
-export const addToastWithAction = (message: string, style: ToastStyle, buttons: ToastButton[]) => ({
+export const addToastWithAction = (message: string, style: ToastStyle, buttons: ToastButton[], outerId?: number) => ({
 	type: 'TOASTS_ADD_TOAST',
 	toast: {
 		message,
@@ -29,7 +29,8 @@ export const addToastWithAction = (message: string, style: ToastStyle, buttons: 
 		config: {
 			...DEFAULT_CONFIG,
 			time: 300000
-		}
+		},
+		outerId
 	} as Toast
 } as const);
 
@@ -38,4 +39,8 @@ export const removeToast = (toastId: number) => ({
 	toastId
 } as const);
 
+export const removeToastByOuterId = (toastId: number) => ({
+	type: 'TOASTS_REMOVE_TOAST_BY_OUTER_ID',
+	toastId
+} as const);
 

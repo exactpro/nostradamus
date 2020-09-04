@@ -3,7 +3,7 @@ import cn from "classnames";
 
 import Button from "app/common/components/button/button";
 import {IconType} from "app/common/components/icon/icon";
-import {UserSignIn} from "app/common/types/user.types"; 
+import {UserSignIn} from "app/common/types/user.types";
 
 import './forms.scss';
 import {HttpStatus} from "app/common/types/http.types";
@@ -60,7 +60,7 @@ class SignIn extends React.Component<SignInProps, SignInState> {
       return false;
     }
 
-    if (password.length < 6 || !password.match(/\S/i)) {
+    if (password.length < 6 || !password.match(/^[a-zA-Z0-9_.\-]+$/i)) {
       return false;
     }
 

@@ -39,7 +39,7 @@ from apps.settings.main.common import get_training_settings
 from apps.settings.main.archiver import delete_training_data, get_archive_path
 from utils.const import swagger_desriptions
 from apps.extractor.main.preprocessor import get_issues_dataframe
-from utils.redis import redis_conn, clear_cache
+from utils.redis import redis_conn, remove_cache_record, clear_cache
 from utils.exceptions import InvalidSourceField
 from drf_yasg.utils import swagger_auto_schema
 
@@ -58,14 +58,14 @@ class AnalysisAndTraining(APIView):
             return Response({})
 
         cache = redis_conn.get(
-            f"analysis_and_training:filters:{request.user.id}"
+            f"user:{request.user.id}:analysis_and_training:filters"
         )
 
         filters = None
         if cache:
             filters = loads(cache)
 
-        filtered_count = len(get_issues(filters=filters, fields=["Key",]))
+        filtered_count = get_issue_count(filters)
 
         context = {
             "records_count": {
@@ -84,7 +84,7 @@ class Filter(APIView):
     )
     def get(self, request):
         cache = redis_conn.get(
-            f"analysis_and_training:filters:{request.user.id}"
+            f"user:{request.user.id}:analysis_and_training:filters"
         )
         if cache:
             filters = loads(cache)
@@ -95,7 +95,7 @@ class Filter(APIView):
             )
 
             redis_conn.set(
-                name=f"analysis_and_training:filters:{request.user.id}",
+                name=f"user:{request.user.id}:analysis_and_training:filters",
                 value=dumps(filters),
                 ex=60 * 30,
             )
@@ -142,11 +142,13 @@ class Filter(APIView):
         }
         for element in context:
             redis_conn.set(
-                f"analysis_and_training:{element}:{request.user.id}",
+                f"user:{request.user.id}:analysis_and_training:{element}",
                 dumps(context.get(element)),
             )
 
-        clear_cache("analysis_and_training:defect_submission")
+        remove_cache_record(
+            "analysis_and_training:defect_submission", request.user.id
+        )
 
         return Response(context)
 
@@ -158,10 +160,10 @@ class DefectSubmission(APIView):
     )
     def get(self, request):
         cached_chart = redis_conn.get(
-            f"analysis_and_training:defect_submission:{request.user.id}"
+            f"user:{request.user.id}:analysis_and_training:defect_submission"
         )
         cached_filters = redis_conn.get(
-            f"analysis_and_training:filters:{request.user.id}"
+            f"user:{request.user.id}:analysis_and_training:filters"
         )
         context = loads(cached_chart) if cached_chart else None
         filters = loads(cached_filters) if cached_filters else None
@@ -183,7 +185,7 @@ class DefectSubmission(APIView):
             }
 
             redis_conn.set(
-                f"analysis_and_training:defect_submission:{request.user.id}",
+                f"user:{request.user.id}:analysis_and_training:defect_submission",
                 dumps(context),
             )
 
@@ -197,7 +199,7 @@ class DefectSubmission(APIView):
     def post(self, request):
         period = request.GET["period"]
         cache = redis_conn.get(
-            f"analysis_and_training:filters:{request.user.id}"
+            f"user:{request.user.id}:analysis_and_training:filters"
         )
         filters = loads(cache) if cache else None
         issues = get_issues_dataframe(
@@ -211,7 +213,7 @@ class DefectSubmission(APIView):
         context = {"defect_submission": coordinates, "period": period}
 
         redis_conn.set(
-            f"analysis_and_training:defect_submission:{request.user.id}",
+            f"user:{request.user.id}:analysis_and_training:defect_submission",
             dumps(context),
         )
 
@@ -225,7 +227,7 @@ class SignificantTerms(APIView):
     )
     def get(self, request):
         cache = redis_conn.get(
-            f"analysis_and_training:filters:{request.user.id}"
+            f"user:{request.user.id}:analysis_and_training:filters"
         )
         filters = loads(cache) if cache else None
         settings = get_training_settings(request.user)
@@ -257,7 +259,7 @@ class SignificantTerms(APIView):
     def post(self, request):
         metric = request.GET["metric"]
         cache = redis_conn.get(
-            f"analysis_and_training:filters:{request.user.id}"
+            f"user:{request.user.id}:analysis_and_training:filters"
         )
         filters = loads(cache) if cache else None
         settings = get_training_settings(request.user)
@@ -303,7 +305,7 @@ class Train(APIView):
         user = request.user
 
         cache = redis_conn.get(
-            f"analysis_and_training:filters:{request.user.id}"
+            f"user:{request.user.id}:analysis_and_training:filters"
         )
         filters = loads(cache) if cache else None
         fields = get_issues_fields(request.user)
@@ -345,7 +347,10 @@ class Train(APIView):
             user, issues, areas_of_testing, resolutions,
         )
 
-        clear_cache("qa_metrics:predictions")
+        clear_cache(
+            ["qa_metrics:predictions_page", "qa_metrics:predictions_table"],
+            request.user.id,
+        )
 
         context = {
             "result": "success",
@@ -360,7 +365,7 @@ class FrequentlyTerms(APIView):
     )
     def get(self, request):
         cache = redis_conn.get(
-            f"analysis_and_training:filters:{request.user.id}"
+            f"user:{request.user.id}:analysis_and_training:filters"
         )
         filters = loads(cache) if cache else None
 
@@ -384,7 +389,7 @@ class Statistics(APIView):
     )
     def get(self, request):
         cache = redis_conn.get(
-            f"analysis_and_training:filters:{request.user.id}"
+            f"user:{request.user.id}:analysis_and_training:filters"
         )
         filters = loads(cache) if cache else None
 

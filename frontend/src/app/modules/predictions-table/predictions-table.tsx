@@ -3,6 +3,8 @@ import { QAMetricsData } from 'app/common/store/qa-metrics/types';
 import React from 'react';
 
 import './predictions-table.scss';
+import cn from "classnames";
+import Tooltip from 'app/common/components/tooltip/tooltip';
 
 interface IProps {
 	tableData: QAMetricsData[];
@@ -127,11 +129,20 @@ class PredictionsTable extends React.Component<IProps, IState> {
 							tableData.map((item, index) => (
 								<tr key={index}>
 									{
-										columnsNames.map((columnName, index) => (
+										columnsNames.map((columnName, index) => {
+											let str = String(item[columnName]);
+
+											let charActualWidth = 10; // Actual average width of symbols with font-size 16px
+											let isTooltipDisplayed = str.replace(/\W/g, '').length * charActualWidth > 400? true: false; // if sum width of all symbols larger than td max-width than display tooltip 											
+											
+											return(
 											<td key={index} className={'color_' + this.determineColor(String(item[columnName]))}>
-												{String(item[columnName])}
-											</td>
-										))
+													<Tooltip message = {str}
+															 isDisplayed = {isTooltipDisplayed}>
+														<p className={cn({"predictions-table__table-cell-title": isTooltipDisplayed})}>{str}</p>
+													</Tooltip>
+												</td>)}
+										)
 									}
 								</tr>
 							))

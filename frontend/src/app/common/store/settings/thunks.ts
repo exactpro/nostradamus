@@ -34,8 +34,6 @@ export const sendSettingsData =(section: SettingsSections, data: SettingsDataUni
   return async (dispatch: any) => {
     try{
       await SettingsApi.sendSettingsData(section, data);
-      dispatch(uploadData(section, data))
-      // if(section === SettingsSections.filters) dispatch(getDashboardData());
     }
     catch(e){
 			dispatch(addToast((e as HttpError).detail || e.message, ToastStyle.Error))

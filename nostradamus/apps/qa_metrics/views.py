@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.analysis_and_training.main.filter import update_drop_down_fields
-from apps.extractor.main.connector import get_issues
+from apps.extractor.main.connector import get_issue_count
 from apps.qa_metrics.main.charts import (
     calculate_aot_percentage,
     calculate_priority_percentage,
@@ -22,8 +22,10 @@ from apps.analysis_and_training.main.training import check_training_files
 from apps.qa_metrics.serializers import (
     PredictionsInfoSerializer,
     PredictionsTableSerializer,
-    QAMetricsFiltersSerializer,
+    QAMetricsFiltersContentSerializer,
+    QAMetricsFiltersResultSerializer,
     QAMetricsTableRequestSerializer,
+    QAMetricsSerializer,
 )
 from apps.settings.main.archiver import get_archive_path, read_from_archive
 from apps.settings.main.common import (
@@ -37,20 +39,49 @@ from utils.const import (
     UNRESOLVED_BUGS_FILTER,
 )
 from apps.extractor.main.preprocessor import get_issues_dataframe
-from utils.redis import redis_conn
+from utils.redis import redis_conn, clear_cache
 
 from pandas import DataFrame
 
 
 class QAMetricsView(APIView):
-    @swagger_auto_schema(responses={200: QAMetricsFiltersSerializer},)
+    @swagger_auto_schema(
+        operation_description="QA metrics.",
+        responses={200: QAMetricsSerializer},
+    )
+    def get(self, request):
+        total_count = get_issue_count(filters=[UNRESOLVED_BUGS_FILTER])
+
+        if not total_count:
+            Response({})
+
+        cache = redis_conn.get(f"user:{request.user.id}:qa_metrics:filters")
+
+        filters = [UNRESOLVED_BUGS_FILTER]
+        if cache:
+            filters = loads(cache)
+
+        context = {
+            "records_count": {
+                "total": total_count,
+                "filtered": get_issue_count(filters),
+            },
+        }
+        return Response(context)
+
+
+class QAMetricsFilterView(APIView):
+    @swagger_auto_schema(
+        operation_description="Filters card content.",
+        responses={200: QAMetricsFiltersContentSerializer},
+    )
     def get(self, request):
         user = request.user
 
         check_training_files(user)
 
         cached_filters = redis_conn.get(
-            f"qa_metrics:filters:{request.user.id}"
+            f"user:{request.user.id}:qa_metrics:filters"
         )
         if cached_filters:
             filters = loads(cached_filters)
@@ -65,19 +96,14 @@ class QAMetricsView(APIView):
 
         return Response(filters)
 
-
-class PredictionsInfoView(APIView):
     @swagger_auto_schema(
-        request_body=QAMetricsFiltersSerializer,
-        responses={200: PredictionsInfoSerializer},
+        operation_description="Apply or Clear filters.",
+        request_body=QAMetricsFiltersContentSerializer,
+        responses={200: QAMetricsFiltersResultSerializer},
     )
     def post(self, request):
-        user = request.user
-        offset = DEFAULT_OFFSET
-        limit = DEFAULT_LIMIT
-
         new_filters = request.data.get("filters", [])
-        filters = json.loads(json.dumps(get_qa_metrics_settings(user)))
+        filters = get_qa_metrics_settings(request.user)
         fields = [field["name"] for field in filters]
         filters = update_drop_down_fields(
             filters,
@@ -99,18 +125,63 @@ class PredictionsInfoView(APIView):
                                 "exact_match": new_filter["exact_match"],
                             }
                         )
+        filters += [UNRESOLVED_BUGS_FILTER]
 
-        cached_predictions = redis_conn.get(
-            f"qa_metrics:predictions_page:{request.user.id}"
-        )
         cached_filters = redis_conn.get(
-            f"qa_metrics:filters:{request.user.id}"
+            f"user:{request.user.id}:qa_metrics:filters"
         )
         cached_filters = loads(cached_filters) if cached_filters else []
 
-        if cached_predictions and check_filters_equality(
+        context = {
+            "records_count": {
+                "total": get_issue_count(filters=[UNRESOLVED_BUGS_FILTER]),
+                "filtered": get_issue_count(filters),
+            },
+            "filters": filters,
+        }
+
+        if not cached_filters or not check_filters_equality(
             filters, cached_filters
         ):
+            clear_cache(
+                [
+                    "qa_metrics:predictions_table",
+                    "qa_metrics:predictions_page",
+                ],
+                request.user.id,
+            )
+            for element in context:
+                redis_conn.set(
+                    f"user:{request.user.id}:qa_metrics:{element}",
+                    dumps(context.get(element)),
+                )
+
+        return Response(context)
+
+
+class PredictionsInfoView(APIView):
+    @swagger_auto_schema(
+        operation_description="Predictions Info cards content.",
+        responses={200: PredictionsInfoSerializer},
+    )
+    def get(self, request):
+        user = request.user
+        offset = DEFAULT_OFFSET
+        limit = DEFAULT_LIMIT
+
+        cached_predictions = redis_conn.get(
+            f"user:{request.user.id}:qa_metrics:predictions_page"
+        )
+        cached_filters = redis_conn.get(
+            f"user:{request.user.id}:qa_metrics:filters"
+        )
+        filters = (
+            loads(cached_filters)
+            if cached_filters
+            else [UNRESOLVED_BUGS_FILTER]
+        )
+
+        if cached_predictions:
             predictions = loads(cached_predictions)
         else:
             check_training_files(user)
@@ -127,19 +198,7 @@ class PredictionsInfoView(APIView):
             )
 
             if issues.empty:
-                return Response(
-                    {
-                        "records_count": {
-                            "total": len(
-                                get_issues(
-                                    fields=["Key"],
-                                    filters=[UNRESOLVED_BUGS_FILTER],
-                                )
-                            ),
-                            "filtered": 0,
-                        }
-                    }
-                )
+                return Response({})
 
             predictions_table_fields.remove("Description_tr")
             predictions_table_fields.remove("Key")
@@ -150,8 +209,6 @@ class PredictionsInfoView(APIView):
                 offset=None,
                 limit=None,
             )
-
-            filtered_predictions_count = len(predictions_table)
 
             prediction_table = paginate_bugs(predictions_table, offset, limit)
 
@@ -171,14 +228,6 @@ class PredictionsInfoView(APIView):
             )
 
             predictions = {
-                "records_count": {
-                    "total": len(
-                        get_issues(
-                            fields=["Key"], filters=[UNRESOLVED_BUGS_FILTER]
-                        )
-                    ),
-                    "filtered": filtered_predictions_count,
-                },
                 "predictions_table": list(
                     prediction_table.T.to_dict().values()
                 ),
@@ -190,17 +239,17 @@ class PredictionsInfoView(APIView):
             }
 
             redis_conn.set(
-                name=f"qa_metrics:predictions_page:{request.user.id}",
+                name=f"user:{request.user.id}:qa_metrics:predictions_page",
                 value=dumps(predictions),
                 ex=60 * 30,
             )
             redis_conn.set(
-                name=f"qa_metrics:filters:{request.user.id}",
+                name=f"user:{request.user.id}:qa_metrics:filters",
                 value=dumps(filters),
                 ex=60 * 30,
             )
             redis_conn.set(
-                name=f"qa_metrics:predictions_table:{request.user.id}",
+                name=f"user:{request.user.id}:qa_metrics:predictions_table",
                 value=dumps(list(predictions_table.T.to_dict().values())),
                 ex=60 * 30,
             )
@@ -210,19 +259,22 @@ class PredictionsInfoView(APIView):
 
 class PredictionsTableView(APIView):
     @swagger_auto_schema(
+        operation_description="Predictions Table card content.",
         request_body=QAMetricsTableRequestSerializer,
         responses={200: PredictionsTableSerializer},
     )
     def post(self, request):
         user = request.user
-        filters = request.data.get("filters", [])
         offset = int(request.data.get("offset", DEFAULT_OFFSET))
         limit = int(request.data.get("limit", DEFAULT_LIMIT))
+
+        cache = redis_conn.get(f"user:{user.id}:qa_metrics:filters")
+        filters = loads(cache) if cache else [UNRESOLVED_BUGS_FILTER]
 
         check_training_files(user)
 
         cached_predictions = redis_conn.get(
-            f"qa_metrics:predictions_table:{request.user.id}"
+            f"user:{request.user.id}:qa_metrics:predictions_table"
         )
 
         if cached_predictions:
@@ -251,5 +303,11 @@ class PredictionsTableView(APIView):
                 offset=None,
                 limit=None,
             ).to_dict("records")
+
+            redis_conn.set(
+                name=f"user:{request.user.id}:qa_metrics:predictions_table",
+                value=dumps(predictions),
+                ex=60 * 30,
+            )
 
         return Response(predictions)

@@ -1,23 +1,39 @@
-import io
 import os
+from typing import Optional
 
+from pandas import DataFrame, ExcelWriter
+from xlsxwriter.workbook import Format
 from datetime import datetime
 from pathlib import Path
-from pandas import DataFrame
 
-from apps.extractor.main.connector import get_issues
+from apps.extractor.main.connector import get_issues, get_issue_count
+
+SHEET_INDENT = 3
+SHEET_FONT_SIZE = 14
+
+REPORT_FIELDS = [
+    "Project",
+    "Key",
+    "Status",
+    "Priority",
+    "Created",
+    "Reporter",
+    "Assignee",
+]
+
+TYPES_MAPPING = {"created": "date", "project": "drop-down"}
 
 
 def make_report(
-    new_issues: DataFrame, closed_issues: DataFrame, date: str
+    created_issues: DataFrame, resolved_issues: DataFrame, date: str
 ) -> dict:
     """ Creates status report.
     
     Parameters
     ----------
-    new_issues:
+    created_issues:
         Issues created on specific date.
-    closed_issues:
+    resolved_issues:
         Issues resolved on specific date.
     date:
         Report date.
@@ -26,54 +42,38 @@ def make_report(
     -------
         Report info.
     """
-
-    def _convert_to_string(issues: DataFrame) -> str:
-        """ Converts dataframe to string.
-
-        Parameters
-        ----------
-        issues:
-            Dataframe to be converted.
-
-        Returns
-        -------
-            Stringified Dataframe.
-        """
-        str_buffer = io.StringIO()
-
-        # Writes issues to in-memory buffer instead of separate file.
-        issues.to_csv(str_buffer, index=False)
-
-        return str_buffer.getvalue()
-
-    created_issues = f"New\n{_convert_to_string(new_issues)}\n"
-    resolved_issues = f"Closed\n{_convert_to_string(closed_issues)}\n"
-
     file_path = make_report_path(date)
+    filename = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%f%z").strftime(
+        "%Y-%m-%d"
+    )
 
-    with open(file_path, "w") as report:
-        report.write(created_issues + resolved_issues)
+    create_report_file(created_issues, resolved_issues, filename, file_path)
 
-    filename = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%f%z")
-    filename = f"{filename.strftime('%Y-%m-%d')}.csv"
+    filename = f"{filename}.xlsx"
 
     return {
         "size": get_file_size(file_path),
         "filename": filename,
-        "format": "csv",
+        "format": "xlsx",
         "link": make_report_link(filename),
     }
 
 
-def build_report_filters(field: str, period: tuple) -> list:
+def build_report_filters(
+    field: str, values: tuple, f_type: str, exact_match: bool
+) -> list:
     """ Creates filters for pymongo query.
 
     Parameters
     ----------
     field:
         Field to filter by.
-    period:
-        Period for report generating.
+    values:
+        Field's values.
+    f_type:
+        Type Field.
+    exact_match:
+        Filtration option.
 
     Returns
     -------
@@ -81,10 +81,10 @@ def build_report_filters(field: str, period: tuple) -> list:
     """
     filters = [
         {
-            "name": f"{field}",
-            "filtration_type": "date",
-            "current_value": period,
-            "exact_match": True,
+            "name": field,
+            "filtration_type": f_type,
+            "current_value": values,
+            "exact_match": exact_match,
         }
     ]
 
@@ -106,7 +106,7 @@ def make_report_path(date: str) -> str:
     dir_path = get_report_dir()
     date = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%f%z")
 
-    return f"{dir_path.joinpath(date.strftime('%Y-%m-%d'))}.csv"
+    return f"{dir_path.joinpath(date.strftime('%Y-%m-%d'))}.xlsx"
 
 
 def get_report_dir():
@@ -178,7 +178,7 @@ def make_report_link(filename: str) -> str:
     return domain + hostname + path + filename
 
 
-def get_issues_for_report(fields, filters):
+def get_issues_for_report(fields, filters) -> DataFrame:
     """ Query database for issues which will be written to a report.
 
     Parameters
@@ -197,3 +197,125 @@ def get_issues_for_report(fields, filters):
     issues = issues.reindex(fields, axis=1)
 
     return issues
+
+
+def create_report_file(
+    created_issues: DataFrame,
+    resolved_issues: DataFrame,
+    filename: str,
+    file_path: str,
+) -> None:
+    """Create report file.
+
+    Parameters
+    ----------
+    created_issues:
+        Issues created on specific date.
+    resolved_issues:
+        Issues resolved on specific date.
+    filename:
+        Sheet name.
+    file_path:
+        File path.
+    """
+    with ExcelWriter(file_path, engine="xlsxwriter") as writer:
+        row = 0
+
+        text_style = writer.book.add_format({"bold": True})
+        text_style.set_font_size(SHEET_FONT_SIZE)
+
+        if not writer.book.get_worksheet_by_name(filename):
+            sheet = writer.book.add_worksheet(filename)
+            writer.sheets.update({filename: sheet})
+
+        row += write_report_dataframe(
+            df=created_issues,
+            writer=writer,
+            sheet_name=filename,
+            header="Created",
+            text_style=text_style,
+            row_number=row,
+        )
+        row += write_report_dataframe(
+            df=resolved_issues,
+            writer=writer,
+            sheet_name=filename,
+            header="Resolved",
+            text_style=text_style,
+            row_number=row,
+        )
+
+        text_style = writer.book.add_format({"bold": True, "border": 1})
+        sheet.write_column(
+            row, 0, ["Total", "Created", "Resolved"], text_style,
+        )
+        sheet.write_column(
+            row,
+            1,
+            [get_issue_count(), len(created_issues), len(resolved_issues)],
+        )
+
+
+def write_report_dataframe(
+    df: DataFrame,
+    writer: ExcelWriter,
+    sheet_name: str,
+    header: str,
+    text_style: Format,
+    row_number: int,
+) -> int:
+    """Record dataframe.
+
+    Parameters
+    ----------
+    df:
+        Dataframe.
+    writer:
+        Object performing excel read/write ops.
+    sheet_name:
+        Sheet name.
+    header:
+        Table header.
+    text_style:
+        Style of table header.
+    row_number:
+        Row number.
+
+    Returns
+    -------
+        Number of written rows.
+    """
+    if not df.empty:
+        writer.sheets[sheet_name].write(row_number, 0, header, text_style)
+        df.to_excel(
+            writer,
+            sheet_name=sheet_name,
+            index=False,
+            startrow=row_number + 1,
+        )
+
+        return len(df) + SHEET_INDENT
+
+    return 0
+
+
+def parse_field(name: str, value: Optional) -> dict:
+    """ Creates filtration payload.
+
+    Parameters
+    ----------
+    name:
+        Field to be filtrated.
+    value:
+        Value to filter by.
+
+    Returns
+    -------
+        Filters payload.
+    """
+    return {
+        "field": name.capitalize(),
+        "exact_match": False,
+        "values": value,
+        "f_type": TYPES_MAPPING[name],
+    }

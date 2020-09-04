@@ -10,6 +10,7 @@ import {
 	setFieldValue,
 } from 'app/modules/filters/field/field.helper-function';
 import { UpdateFieldFunction } from 'app/modules/filters/filters.class';
+import { caseInsensitiveStringCompare } from 'app/common/functions/helper';
 
 export class FilterField {
 
@@ -35,7 +36,7 @@ export class FilterField {
 		}
 
 		if (field.values) {
-			this.values = field.values;
+			this.values = field.values.sort((a,b)=>caseInsensitiveStringCompare(a, b));
 		}
 
 		this.updateFunction = updateFunction;

@@ -9,8 +9,7 @@ import CircleSpinner from 'app/common/components/circle-spinner/circle-spinner';
 import { IconType } from 'app/common/components/icon/icon';
 import {
 	updateQAMetricsData,
-	updateQAMetricsFilters,
-	updateQAMetricsTable,
+	updateQAMetricsTable, saveQAMetricsFilters, initQAMetrics,
 } from 'app/common/store/qa-metrics/thunks';
 import { RootStore } from 'app/common/types/store.types';
 import { FilterFieldBase } from 'app/modules/filters/field/field-type';
@@ -61,12 +60,12 @@ class QAMetricsPage extends React.Component<PropsFromRedux, State> {
 				this.imageForNotTrainingModel = notTrainModel3;
 				break;
 		}
-	}
+	};
 
 	componentDidMount() {
 		this.randomImageForNotTrainingModel();
 
-		this.props.updateQAMetricsFilters().then(filters => {
+		this.props.initQAMetrics().then(filters => {
 			if (filters && filters.length) {
 				this.setState(
 					{ filters: [...filters] },
@@ -76,29 +75,33 @@ class QAMetricsPage extends React.Component<PropsFromRedux, State> {
 		});
 	}
 
-	loadData = (filters?: FilterFieldBase[]) => {
-		this.props.updateQAMetricsData(filters || this.state.filters);
+	loadData = () => {
+		if (this.props.records_count.filtered) {
+			this.props.updateQAMetricsData();
+		}
 	};
 
 	loadNewTableData = (pageIndex: number, limit: number) => {
-		this.props.updateQAMetricsTable(this.state.filters, limit, (pageIndex - 1) * limit);
+		this.props.updateQAMetricsTable(limit, (pageIndex - 1) * limit);
 	};
 
 	applyFilters = (filters: FilterFieldBase[]) => {
-		this.setState(
-			{ filters: [...filters] },
-			() => { this.loadData(); },
-		);
+		this.setState({ filters: [] });
+
+		this.props.saveQAMetricsFilters(filters).then(() => {
+			this.setState(
+				{ filters: [...filters] },
+				() => { this.loadData(); },
+			);
+		});
 	};
 
 	resetFilters = () => {
-		this.loadData([]);
 
 		this.setState({ filters: [] });
-		this.props.updateQAMetricsFilters().then(filters => {
-			if (filters) {
-				this.setState({ filters: [...filters] });
-			}
+		this.props.saveQAMetricsFilters([]).then((filters) => {
+			this.loadData();
+			this.setState({ filters: [ ...filters] });
 		});
 	};
 
@@ -108,8 +111,10 @@ class QAMetricsPage extends React.Component<PropsFromRedux, State> {
 		return (
 			<div className="qa-metrics-page">
 				<Header pageTitle="QA Metrics">
-					<MainStatistic className="qa-metrics-page__main-statistic"
-								   statistic={this.props.records_count}/>
+					<MainStatistic
+						className="qa-metrics-page__main-statistic"
+						statistic={this.props.records_count}
+					/>
 				</Header>
 
 				{
@@ -142,12 +147,12 @@ class QAMetricsPage extends React.Component<PropsFromRedux, State> {
 
 								{
 									this.state.filters.length > 0 &&
-									<Filters
-										className="qa-metric-filters__filter"
-										filters={this.state.filters}
-										applyFilters={this.applyFilters}
-										resetFilters={this.resetFilters}
-									/>
+                  <Filters
+                      className="qa-metric-filters__filter"
+                      filters={this.state.filters}
+                      applyFilters={this.applyFilters}
+                      resetFilters={this.resetFilters}
+                  />
 								}
 
 							</div>
@@ -249,9 +254,10 @@ const mapStateToProps = (state: RootStore) => ({
 });
 
 const mapDispatchToProps = {
-	updateQAMetricsFilters,
 	updateQAMetricsData,
 	updateQAMetricsTable,
+	saveQAMetricsFilters,
+	initQAMetrics
 };
 
 const connector = connect(

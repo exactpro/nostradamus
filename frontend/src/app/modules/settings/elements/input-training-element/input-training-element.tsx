@@ -1,6 +1,7 @@
 import React, {Component} from "react";
 import cn from "classnames" 
 import {FilterElementType, FilterDropdownType} from "app/modules/settings/elements/elements-types";
+import SelectWindow from "app/modules/settings/elements/select-window/select-window";
 import Icon, {IconSize, IconType} from "app/common/components/icon/icon";
 import "app/modules/settings/elements/input-training-element/input-training-element.scss";
 
@@ -8,6 +9,7 @@ interface InputTrainingElementProps{
   type: FilterElementType,
   onChange: (value: string)=>void,
   onClear: (index: number) => void,
+  onClearAll: () => void,
   values: string[],
   dropDownValues: string[],
 }
@@ -73,6 +75,10 @@ export default class InputTrainingElement extends Component<InputTrainingElement
     this.props.onClear(index);
   }
 
+  deleteAllValueBlocks = () => {
+    this.props.onClearAll();
+  }
+
   renderValueBlocks = (content: string, index: number) => {
     return (
       <div key={index} className="input-training-element-value-block">
@@ -99,13 +105,27 @@ export default class InputTrainingElement extends Component<InputTrainingElement
     
     let values = this.props.values;
     let dropdownValues = this.state.isSelectedListOpen? this.props.values: this.props.dropDownValues;
-
+    
     return(
       <div className="input-training-element"
            tabIndex={0}
            onFocus={this.onFocusTrainingElement}
            onBlur={this.onBlurTrainingElement}
            ref={this.inputTrainingElementRef}>
+        
+        {
+          this.allowedEditing && 
+          <div className="input-training-element-icons">
+            <button className="input-training-element-icons__close"
+                    onClick={this.deleteAllValueBlocks}>
+              <Icon size={IconSize.small} type={IconType.close}/>
+            </button>
+            <Icon className={cn("input-training-element-icons__down",
+                                {"input-training-element-icons__down_rotated": this.state.isSelectWindowOpen})} 
+                  size={IconSize.small}
+                  type={IconType.down}/>        
+          </div>
+        }        
 
         <div className={cn("input-training-element-block-container", "input-training-element-block-container_"+this.props.type)}>
           {
@@ -125,42 +145,12 @@ export default class InputTrainingElement extends Component<InputTrainingElement
 
         {
           this.state.isSelectWindowOpen &&
-          <div className="input-training-element__select-window select-window">
-
-            {
-              !this.state.isSelectedListOpen && 
-              <input  type="text"
-                    value={this.state.quickSearchValue}
-                    onChange={this.changeQuickSearchValue} 
-                    onFocus={()=>this.timerID && clearTimeout(this.timerID)}
-                    className="select-window__search" 
-                    placeholder="Quick search"/>
-            }
-
-          {
-            dropdownValues.filter(str=>this.isStrIncludesSubstr(str.toString(), this.state.quickSearchValue)).map((item,index)=>{
-              let checked = values.findIndex(checkedItem => checkedItem === item) > -1;
-              return (
-                <label key={index} className="select-window__item">
-                  <input
-                    className="select-window__browser-checkbox"
-                    type="checkbox" 
-                    checked={checked}
-                    onChange={this.selectDropdownValue(item, checked)}
-                  />
-
-                  <span className="select-window__checkbox">
-                    {
-                      checked &&
-                      <Icon type={IconType.check} className="select-window__check-mark" size={IconSize.small} />
-                    }
-                  </span>
-
-                  {item}
-                </label>
-            )})
-          }
-        </div>
+          <div className="input-training-element__select-window">
+            <SelectWindow selectWindowAllValues={dropdownValues}
+                          selectWindowCheckedValues={values}
+                          searchable={!this.state.isSelectedListOpen}
+                          onSelectValue={this.selectDropdownValue}/>
+          </div>
         }
         
       </div>
