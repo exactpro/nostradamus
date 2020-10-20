@@ -24,6 +24,7 @@ interface TooltipProps{
   children: React.ReactNode,
   isDisplayed: boolean, 
   style?: CSSProperties,
+  tooltipOuterRef?: React.RefObject<HTMLDivElement>
 }
 
 interface TooltipState{
@@ -86,7 +87,8 @@ class Tooltip extends React.Component<TooltipProps, TooltipState> {
                                               "tooltip-wrapper_"+this.state.wrapperDisplayStyle)} 
                                   style={this.props.style}
                                   onMouseEnter={this.timer.pause}
-                                  onMouseLeave={this.timer.resume}>
+                                  onMouseLeave={this.timer.resume}
+                                  ref={this.props.tooltipOuterRef}>
 
                               <div className="tooltip-wrapper__content">{this.props.message}</div>
                               <div className={cn("tooltip-wrapper__triangle", "tooltip-wrapper__triangle_"+this.props.position)}></div>

@@ -8,7 +8,7 @@ from apps.settings.models import (
 from apps.settings.validators import default_fields_validator
 
 
-class UserFilterSerializer(serializers.ModelSerializer):
+class UserFilterBase(serializers.ModelSerializer):
     filtration_types = [
         ("string", "String"),
         ("drop-down", "Drop-down"),
@@ -22,6 +22,8 @@ class UserFilterSerializer(serializers.ModelSerializer):
         choices=filtration_types, required=True
     )
 
+
+class UserFilterSerializer(UserFilterBase):
     class Meta:
         model = UserFilter
         fields = ("name", "filtration_type", "settings")
@@ -36,20 +38,7 @@ class UserFilterSerializer(serializers.ModelSerializer):
         UserFilter.objects.filter(settings=settings).delete()
 
 
-class UserQAMetricsFilterSerializer(serializers.ModelSerializer):
-    filtration_types = [
-        ("string", "String"),
-        ("drop-down", "Drop-down"),
-        ("numeric", "Numeric"),
-        ("date", "Date"),
-    ]
-
-    settings = serializers.IntegerField(required=True, write_only=True)
-    name = serializers.CharField(max_length=128, required=True)
-    filtration_type = serializers.ChoiceField(
-        choices=filtration_types, required=True
-    )
-
+class UserQAMetricsFilterSerializer(UserFilterBase):
     class Meta:
         model = UserQAMetricsFilter
         fields = ("name", "filtration_type", "settings")

@@ -15,7 +15,7 @@ DB = CLIENT[settings.MONGODB_NAME].bug
 
 
 def build_query(filters: list = None, query: dict = None) -> dict:
-    """ Builds mongodb query.
+    """Builds mongodb query.
 
     Parameters
     ----------
@@ -32,7 +32,7 @@ def build_query(filters: list = None, query: dict = None) -> dict:
     def _build_filtration_conditions(
         f_type: str, f_value: Optional, exact_match: bool
     ) -> Optional:
-        """ Builds filtration conditions.
+        """Builds filtration conditions.
 
         Parameters:
         ----------
@@ -82,7 +82,7 @@ def build_query(filters: list = None, query: dict = None) -> dict:
         return query_field
 
     def _build_find_query() -> dict:
-        """ Builds query for received filters.
+        """Builds query for received filters.
 
         Returns:
         -------
@@ -108,7 +108,7 @@ def build_query(filters: list = None, query: dict = None) -> dict:
 def get_issues(
     fields: list = None, filters: list = None, query: dict = None
 ) -> list:
-    """ Query bugs from the db with specific conditions.
+    """Query bugs from the db with specific conditions.
 
     Parameters:
     ----------
@@ -136,7 +136,7 @@ def get_issues(
 
 
 def get_largest_keys() -> list:
-    """ Finds the largest issue keys.
+    """Finds the largest issue keys.
 
     Returns
     -------
@@ -144,7 +144,7 @@ def get_largest_keys() -> list:
     """
 
     def _get_natural_number(issue_key) -> int:
-        """ Converts issue key to a number.
+        """Converts issue key to a number.
 
         Parameters
         ----------
@@ -175,7 +175,7 @@ def get_largest_keys() -> list:
 
 
 def update_issues(issues: list) -> None:
-    """ Update issues in the db.
+    """Update issues in the db.
 
     Parameters
     ----------
@@ -205,7 +205,7 @@ def update_issues(issues: list) -> None:
 
 
 def get_issue_count(filters: list = None) -> int:
-    """ Get count bugs
+    """Get count bugs
 
     Parameters
     ----------
@@ -221,7 +221,7 @@ def get_issue_count(filters: list = None) -> int:
 
 
 def get_fields() -> list:
-    """ Get unique field names from Bug document.
+    """Get unique field names from Bug document.
 
     Returns:
         Unique field names.
@@ -232,7 +232,7 @@ def get_fields() -> list:
 
 
 def get_unique_values(field: str) -> list:
-    """ Query unique values from the db by the field.
+    """Query unique values from the db by the field.
 
     Parameters
     ----------

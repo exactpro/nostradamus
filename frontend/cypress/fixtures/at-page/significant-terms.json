@@ -1,0 +1,45 @@
+{
+  "significant_terms": {
+    "metrics": [
+      "Resolution Fixed",
+      "Resolution Cannot Reproduce",
+      "Resolution Duplicate",
+      "Resolution Later",
+      "Resolution Won't Fix",
+      "Resolution Not A Problem",
+      "Resolution Invalid",
+      "Resolution Unresolved",
+      "Priority Major",
+      "Priority Minor",
+      "Priority Blocker",
+      "Priority Critical",
+      "Priority Trivial",
+      "Priority Unfilled",
+      "1",
+      "2"
+    ],
+    "chosen_metric": "Resolution Fixed",
+    "terms": {
+      "android": 117.48042490338077,
+      "app": 99.744086851693,
+      "io": 80.58480937369521,
+      "host": 79.51653316910173,
+      "ambari": 74.21761665244185,
+      "workaround": 66.06088322206804,
+      "plugin": 53.735183099789175,
+      "applic": 51.90259244248064,
+      "work": 51.39097849797785,
+      "hi": 49.78269078812183,
+      "reproduc": 48.094069965316784,
+      "devic": 48.06916610808605,
+      "keyboard": 46.45337630893669,
+      "activemq": 43.9517223136404,
+      "chart": 43.64220524481515,
+      "camera": 41.19732846549317,
+      "thank": 41.01573063718405,
+      "inappbrows": 40.04697897384575,
+      "column": 39.88618177763923,
+      "wizard": 37.569581820617486
+    }
+  }
+}

@@ -7,6 +7,8 @@ import { setCollectingDataStatus } from 'app/common/store/settings/actions';
 import {
 	AnalysisAndTrainingDefectSubmission,
 	AnalysisAndTrainingStatistic,
+	DefectSubmissionData,
+	SignificantTermsData,
 } from 'app/common/types/analysis-and-training.types';
 import { HttpStatus } from 'app/common/types/http.types';
 import DefectSubmission from 'app/modules/defect-submission/defect-submission';
@@ -46,15 +48,8 @@ interface State {
 	frequentlyTerms: string[],
 	isCollectingFinished: boolean,
 	statistic: AnalysisAndTrainingStatistic | undefined,
-	significantTerms: {
-		metrics: string[],
-		chosen_metric: string | null,
-		terms: Terms
-	},
-	defectSubmission: {
-		data: AnalysisAndTrainingDefectSubmission | undefined,
-		activePeriod: string | undefined,
-	},
+	significantTerms: SignificantTermsData,
+	defectSubmission: DefectSubmissionData,
 	statuses: {
 		[key: string]: HttpStatus,
 		filter: HttpStatus,
@@ -182,10 +177,9 @@ class AnalysisAndTrainingPage extends React.Component<PropsFromRedux, State> {
 	componentDidUpdate(prevProps: Readonly<PropsFromRedux>, prevState: Readonly<State>, snapshot?: any): void {
 		if (!this.state.isCollectingFinished && !this.interval) {
 			this.interval = setInterval(() => {
-				this.setState({
-					...this.state,
-					loadingStatus: this.state.loadingStatus < 100 ? this.state.loadingStatus + 1 : 100,
-				});
+				this.setState((state)=>({
+					loadingStatus: state.loadingStatus < 100 ? state.loadingStatus + 1 : 100,
+				}));
 
 				this.timer = new Timer(() => {
 					if (this.interval) {
@@ -198,227 +192,250 @@ class AnalysisAndTrainingPage extends React.Component<PropsFromRedux, State> {
 
 	validateUploadData = (data: any, cardName: string) => {
 		if(!(data && Object.keys(data).length)){
-			this.setState({
-				statuses: {...this.state.statuses, [cardName]: HttpStatus.PREVIEW}
-			});
+			this.setState((state)=>({
+				statuses: {...state.statuses, [cardName]: HttpStatus.PREVIEW}
+			}));
 			return true;
 		}
 		return false;
 	}
 
 	uploadSignificantTermsData = async () => {
-		this.setState({
-			statuses: { ...this.state.statuses, significantTerms: HttpStatus.LOADING },
-		});
+		this.setState((state)=>({
+			statuses: { ...state.statuses, significantTerms: HttpStatus.LOADING },
+		}));
+
+		let significant_terms: SignificantTermsData;
 
 		try {
-			let { significant_terms } = await AnalysisAndTrainingApi.getSignificantTermsData();
-
-			if(this.validateUploadData(significant_terms, "significantTerms")) return; 
-
-			this.setState({
-				statuses: { ...this.state.statuses, significantTerms: HttpStatus.FINISHED },
-				significantTerms: {
-					metrics: [...significant_terms.metrics],
-					chosen_metric: significant_terms.chosen_metric,
-					terms: { ...significant_terms.terms },
-				},
-			});
+			significant_terms = (await AnalysisAndTrainingApi.getSignificantTermsData()).significant_terms;
 		} catch (e) {
-			this.setState({
-				statuses: { ...this.state.statuses, significantTerms: HttpStatus.FAILED },
-			});
+			this.setState((state)=>({
+				statuses: { ...state.statuses, significantTerms: HttpStatus.FAILED },
+			}));
+			return;
 		}
+
+		if(this.validateUploadData(significant_terms, "significantTerms")) return; 
+
+		this.setState((state)=>({
+			statuses: { ...state.statuses, significantTerms: HttpStatus.FINISHED },
+			significantTerms: {
+				metrics: [...significant_terms.metrics],
+				chosen_metric: significant_terms.chosen_metric,
+				terms: { ...significant_terms.terms },
+			},
+		}));
 	};
 
 	uploadSignificantTermsList = async (metric: string) => {
-		this.setState({
-			statuses: { ...this.state.statuses, significantTerms: HttpStatus.LOADING },
+		this.setState((state)=>({
+			statuses: { ...state.statuses, significantTerms: HttpStatus.LOADING },
 			significantTerms: {
-				...this.state.significantTerms,
+				...state.significantTerms,
 				chosen_metric: metric,
 			},
-		});
+		}));
+
+		let significant_terms: Terms;
 
 		try {
-			let { significant_terms } = await AnalysisAndTrainingApi.getSignificantTermsList(metric);
-
-			if(this.validateUploadData(significant_terms, "significantTerms")) return;
-
-			this.setState({
-				statuses: { ...this.state.statuses, significantTerms: HttpStatus.FINISHED },
-				significantTerms: {
-					...this.state.significantTerms,
-					terms: { ...significant_terms },
-				},
-			});
+			significant_terms = (await AnalysisAndTrainingApi.getSignificantTermsList(metric)).significant_terms;
 		} catch (e) {
-			this.setState({
-				statuses: { ...this.state.statuses, significantTerms: HttpStatus.FAILED },
-			});
+			this.setState((state)=>({
+				statuses: { ...state.statuses, significantTerms: HttpStatus.FAILED },
+			}));
+			return;
 		}
+
+		if(this.validateUploadData(significant_terms, "significantTerms")) return;
+
+		this.setState((state)=>({
+			statuses: { ...state.statuses, significantTerms: HttpStatus.FINISHED },
+			significantTerms: {
+				...state.significantTerms,
+				terms: { ...significant_terms },
+			},
+		}));
 	};
 
 	uploadDefectSubmission = async (period?: string) => {
-		this.setState({
+		this.setState((state)=>({
 			defectSubmission: {
-				...this.state.defectSubmission,
+				...state.defectSubmission,
 				activePeriod: period,
 			},
-			statuses: { ...this.state.statuses, defectSubmission: HttpStatus.LOADING },
-		});
+			statuses: { ...state.statuses, defectSubmission: HttpStatus.LOADING },
+		}));
+
+		let defectSubmission: AnalysisAndTrainingDefectSubmission;
 
 		try {
-			let defectSubmission = await AnalysisAndTrainingApi.getDefectSubmission(period);
-
-			if(this.validateUploadData(defectSubmission, "defectSubmission")) return;
-
-			this.setState({
-				defectSubmission: {
-					data: defectSubmission.defect_submission,
-					activePeriod: defectSubmission.period,
-				},
-				statuses: { ...this.state.statuses, defectSubmission: HttpStatus.FINISHED },
-			});
+			defectSubmission = await AnalysisAndTrainingApi.getDefectSubmission(period);
 		} catch (e) {
-			this.setState({
-				statuses: { ...this.state.statuses, defectSubmission: HttpStatus.FAILED },
-			});
+			this.setState((state)=>({
+				statuses: { ...state.statuses, defectSubmission: HttpStatus.FAILED },
+			}));
+			return;
 		}
+
+		if(this.validateUploadData(defectSubmission, "defectSubmission")) return;
+
+		this.setState((state)=>({
+			defectSubmission: {
+				data: defectSubmission,
+				activePeriod: defectSubmission!.period,
+			},
+			statuses: { ...state.statuses, defectSubmission: HttpStatus.FINISHED },
+		}));
 	};
 
 	uploadFrequentlyTerms = async () => {
-		this.setState({
-			statuses: { ...this.state.statuses, frequentlyTerms: HttpStatus.LOADING },
-		});
+		this.setState((state)=>({
+			statuses: { ...state.statuses, frequentlyTerms: HttpStatus.LOADING },
+		}));
+
+		let body: any;
 
 		try {
-			let body: any = await AnalysisAndTrainingApi.getFrequentlyTerms();
-
-			if(this.validateUploadData(body, "frequentlyTerms")) return;
-
-			if (body.frequently_terms) {
-				this.setState({
-					frequentlyTerms: [...body.frequently_terms],
-					statuses: { ...this.state.statuses, frequentlyTerms: HttpStatus.FINISHED },
-				});
-			} else {
-				this.setState({
-					warnings: {
-						...this.state.warnings,
-						frequentlyTerms: body.warning.detail || body.warning.message,
-					},
-					statuses: { ...this.state.statuses, frequentlyTerms: HttpStatus.WARNING },
-				});
-			}
+			body = await AnalysisAndTrainingApi.getFrequentlyTerms();
 		} catch (e) {
-			this.setState({
-				statuses: { ...this.state.statuses, frequentlyTerms: HttpStatus.FAILED },
-			});
+			this.setState((state)=>({
+				statuses: { ...state.statuses, frequentlyTerms: HttpStatus.FAILED },
+			}));
+			return;
+		}
+
+		if(this.validateUploadData(body, "frequentlyTerms")) return;
+
+		if (body.frequently_terms) {
+			this.setState((state)=>({
+				frequentlyTerms: [...body.frequently_terms],
+				statuses: { ...state.statuses, frequentlyTerms: HttpStatus.FINISHED },
+			}));
+		} else {
+			this.setState((state)=>({
+				warnings: {
+					...state.warnings,
+					frequentlyTerms: body.warning.detail || body.warning.message,
+				},
+				statuses: { ...state.statuses, frequentlyTerms: HttpStatus.WARNING },
+			}));
 		}
 	};
 
 	uploadFilters = async () => {
-		this.setState({
-			statuses: { ...this.state.statuses, filter: HttpStatus.LOADING },
-		});
+		this.setState((state)=>({
+			statuses: { ...state.statuses, filter: HttpStatus.LOADING },
+		}));
+
+		let filters: FilterFieldBase[];
 
 		try {
-			let filters = await AnalysisAndTrainingApi.getFilter();
-
-			this.setState({
-				filters: [...filters],
-				statuses: { ...this.state.statuses, filter: HttpStatus.FINISHED },
-			});
+			filters = await AnalysisAndTrainingApi.getFilter();			
 		} catch (e) {
-			this.setState({
-				statuses: { ...this.state.statuses, filter: HttpStatus.FAILED },
-			});
+			this.setState((state)=>({
+				statuses: { ...state.statuses, filter: HttpStatus.FAILED },
+			}));
+			return;
 		}
+
+		this.setState((state)=>({
+			filters: [...filters],
+			statuses: { ...state.statuses, filter: HttpStatus.FINISHED },
+		}));
 	};
 
 	applyFilters = async (filters: FilterFieldBase[]) => {
-		this.setState({
+		this.setState((state)=>({
 			filters: [],
-			statuses: { ...this.state.statuses, filter: HttpStatus.LOADING },
-		});
+			statuses: { ...state.statuses, filter: HttpStatus.LOADING },
+		}));
+
+		let response: { filters: FilterFieldBase[]; records_count: MainStatisticData | undefined; };
 
 		try {
-			let response = await AnalysisAndTrainingApi.saveFilter({
+			response = await AnalysisAndTrainingApi.saveFilter({
 				action: 'apply',
 				filters: [...filters.filter((field) => checkFieldIsFilled(field.filtration_type, field.current_value))],
 			});
-
-			if (response.records_count.filtered) {
-				this.setState({
-					filters: response.filters,
-					totalStatistic: response.records_count,
-					statuses: { ...this.state.statuses, filter: HttpStatus.FINISHED },
-				});
-
-				this.uploadDashboardData();
-			} else {
-				this.props.addToast('Data cannot be found. Please change filters.', ToastStyle.Warning);
-
-				this.setState({
-					filters: response.filters,
-					statuses: { ...this.state.statuses, filter: HttpStatus.FINISHED },
-				});
-			}
-
 		} catch (e) {
-			this.setState({
+			this.setState((state)=>({
 				filters,
-				statuses: { ...this.state.statuses, filter: HttpStatus.FAILED },
-			});
+				statuses: { ...state.statuses, filter: HttpStatus.FAILED },
+			}));
+			return;
+		}
+
+		if (response.records_count && response.records_count.filtered) {
+			this.setState((state)=>({
+				filters: response.filters,
+				totalStatistic: response.records_count,
+				statuses: { ...state.statuses, filter: HttpStatus.FINISHED },
+			}));
+
+			this.uploadDashboardData();
+		} else {
+			this.props.addToast('Data cannot be found. Please change filters.', ToastStyle.Warning);
+
+			this.setState((state)=>({
+				filters: response.filters,
+				statuses: { ...state.statuses, filter: HttpStatus.FINISHED },
+			}));
 		}
 	};
 
 	resetFilters = async () => {
-		this.setState({
+		this.setState((state)=>({
 			filters: [],
-			statuses: { ...this.state.statuses, filter: HttpStatus.LOADING },
-		});
+			statuses: { ...state.statuses, filter: HttpStatus.LOADING },
+		}));
+
+		let response: { filters: FilterFieldBase[]; records_count: MainStatisticData | undefined; };
 
 		try {
-			let response = await AnalysisAndTrainingApi.saveFilter({
+			response = await AnalysisAndTrainingApi.saveFilter({
 				action: 'apply',
 				filters: [],
 			});
-
-			this.setState({
-				filters: response.filters,
-				totalStatistic: response.records_count,
-				statuses: { ...this.state.statuses, filter: HttpStatus.FINISHED },
-			});
-
-			this.uploadDashboardData();
 		} catch (e) {
-			this.setState({
-				statuses: { ...this.state.statuses, filter: HttpStatus.FAILED },
-			});
+			this.setState((state)=>({
+				statuses: { ...state.statuses, filter: HttpStatus.FAILED },
+			}));
+			return;
 		}
+
+		this.setState((state)=>({
+			filters: response.filters,
+			totalStatistic: response.records_count,
+			statuses: { ...state.statuses, filter: HttpStatus.FINISHED },
+		}));
+
+		this.uploadDashboardData();
 	};
 
 	uploadStatistic = async () => {
-		this.setState({
-			statuses: { ...this.state.statuses, statistic: HttpStatus.LOADING },
-		});
+		this.setState((state)=>({
+			statuses: { ...state.statuses, statistic: HttpStatus.LOADING },
+		}));
+
+		let statistic: AnalysisAndTrainingStatistic | undefined;
 
 		try {
-			let statistic = await AnalysisAndTrainingApi.getStatistic();
-
-			if(this.validateUploadData(statistic, "statistic")) return;
-
-			this.setState({
-				statistic,
-				statuses: { ...this.state.statuses, statistic: HttpStatus.FINISHED },
-			});
+			statistic = await AnalysisAndTrainingApi.getStatistic();			
 		} catch (e) {
-			this.setState({
-				statuses: { ...this.state.statuses, statistic: HttpStatus.FAILED },
-			});
+			this.setState((state)=>({
+				statuses: { ...state.statuses, statistic: HttpStatus.FAILED },
+			}));
+			return;
 		}
+
+		if(this.validateUploadData(statistic, "statistic")) return;
+
+		this.setState((state)=>({
+			statistic,
+			statuses: { ...state.statuses, statistic: HttpStatus.FINISHED },
+		}));
 	};
 
 	uploadTotalStatistic = async () => {
@@ -444,16 +461,16 @@ class AnalysisAndTrainingPage extends React.Component<PropsFromRedux, State> {
 			if (!totalStatistic.records_count.filtered) {
 				this.props.addToast('With cached filters we didn\'t find data. Try to change filter.', ToastStyle.Warning);
 
-				this.setState({
+				this.setState((state)=>({
 					isCollectingFinished: true,
 					statuses: {
-						...this.state.statuses,
+						...state.statuses,
 						frequentlyTerms: HttpStatus.PREVIEW,
 						defectSubmission: HttpStatus.PREVIEW,
 						statistic: HttpStatus.PREVIEW,
 						significantTerms: HttpStatus.PREVIEW,
 					},
-				});
+				}));
 				this.props.setCollectingDataStatus(true);
 			}
 		} else {

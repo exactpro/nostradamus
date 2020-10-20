@@ -18,6 +18,7 @@ import { Link, RouteComponentProps } from 'react-router-dom';
 import Tooltip from "app/common/components/tooltip/tooltip";
 import { setStatusTrainModelQAMetrics, clearQAMetricsData } from "app/common/store/qa-metrics/actions";
 import { clearSettingsData } from "app/common/store/settings/thunks";
+import { clearMessages } from "app/common/store/virtual-assistant/actions";
 
 enum SideBarTabs {
 	settings = 'Settings',
@@ -41,17 +42,15 @@ class Sidebar extends React.Component<Props, SideBarState> {
 
 	toggleNav = (opened: boolean) => () => {
 		this.setState({
-			...this.state,
 			isOpen: opened,
 			actionsBlockOpened: false,
 		});
 	};
 
 	toggleActionBlock = () => {
-		this.setState({
-			...this.state,
-			actionsBlockOpened: !this.state.actionsBlockOpened,
-		});
+		this.setState((state)=>({
+			actionsBlockOpened: !state.actionsBlockOpened,
+		}));
 	};
 
 	activateTab = (dispatchFunction: any) => () => {
@@ -72,6 +71,7 @@ class Sidebar extends React.Component<Props, SideBarState> {
 		this.props.deleteUser();
 		this.props.clearQAMetricsData();
 		this.props.clearSettingsData();
+		this.props.clearMessages();
 	};
 
 	render() {
@@ -264,7 +264,8 @@ const mapDispatchToProps = {
 	activateVirtualAssistant,
 	setStatusTrainModelQAMetrics,
 	clearQAMetricsData,
-	clearSettingsData
+	clearSettingsData,
+	clearMessages
 };
 
 const connector = connect(

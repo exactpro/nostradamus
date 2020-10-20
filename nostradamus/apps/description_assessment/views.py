@@ -174,7 +174,7 @@ class Highlighting(APIView):
 
             index = value
             if metric != "areas_of_testing":
-                index = f"{metric.capitalize()}_{value.capitalize()}"
+                index = f"{metric.capitalize()}_{value}"
 
             top_terms = (
                 read_from_archive(archive_path, TOP_TERMS_FILENAME)[index]

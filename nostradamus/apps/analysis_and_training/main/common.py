@@ -1,20 +1,19 @@
 import os
+import zipfile
 
 from pandas import DataFrame, Series
 from django.db.models import Model
 
+from utils.const import STOP_WORDS
 from itertools import chain
 from pathlib import Path
 
-from utils.const import MIN_CLASS_PERCENTAGE, STOP_WORDS
-
-import pandas as pd
-import zipfile
+MIN_CLASS_PERCENTAGE = 0.01
 
 
-def check_bugs_count(issues: pd.DataFrame, required_count: int = 100) -> bool:
-    """ Checks the number of bugs in the dataset.
-    
+def check_bugs_count(issues: DataFrame, required_count: int = 100) -> bool:
+    """Checks the number of bugs in the dataset.
+
     Parameters:
     ----------
     issues:
@@ -31,7 +30,7 @@ def check_bugs_count(issues: pd.DataFrame, required_count: int = 100) -> bool:
 
 
 def unpack_lists(lists: list) -> list:
-    """ Unpacks two-dimensional lists to one-dimensional.
+    """Unpacks two-dimensional lists to one-dimensional.
 
     Parameters:
     ----------
@@ -46,7 +45,7 @@ def unpack_lists(lists: list) -> list:
 
 
 def get_user_dir(instance: Model) -> Path:
-    """ Creates assets/usr/%id% directory if it haven't been created before.
+    """Creates assets/usr/%id% directory if it haven't been created before.
 
     Parameters:
     ----------
@@ -68,7 +67,7 @@ def get_user_dir(instance: Model) -> Path:
 
 
 def get_models_dir(instance: Model) -> Path:
-    """ Creates current.zip archive if it haven't been created before.
+    """Creates current.zip archive if it haven't been created before.
 
     Parameters:
     ----------
@@ -90,8 +89,8 @@ def get_models_dir(instance: Model) -> Path:
 
 
 def get_team_dir(instance: Model) -> Path:
-    """ Creates assets/team/%id% directory if it haven't been created before.
-    
+    """Creates assets/team/%id% directory if it haven't been created before.
+
     Parameters:
     ----------
     instance:
@@ -112,7 +111,7 @@ def get_team_dir(instance: Model) -> Path:
 
 
 def init_instance_folders(path: Path) -> None:
-    """ Creates backup and archive folders in instance directory.
+    """Creates backup and archive folders in instance directory.
 
     Parameters:
     ----------
@@ -126,7 +125,7 @@ def init_instance_folders(path: Path) -> None:
 
 
 def check_required_percentage(series: Series, value: str) -> bool:
-    """ Checks whether the value represents required percentage
+    """Checks whether the value represents required percentage
     in handled series.
 
     Parameters:
@@ -145,7 +144,7 @@ def check_required_percentage(series: Series, value: str) -> bool:
 
 
 def get_assignee_reporter(issues: DataFrame) -> set:
-    """ Parsing full names from Assignee and Reported series
+    """Parsing full names from Assignee and Reported series
 
     Parameters:
     ----------
@@ -168,7 +167,7 @@ def get_assignee_reporter(issues: DataFrame) -> set:
 
 
 def get_stop_words(issues: DataFrame) -> set:
-    """ Generates stop words for TfidfVectorizer constructor.
+    """Generates stop words for TfidfVectorizer constructor.
 
     Parameters:
     ----------
@@ -185,7 +184,7 @@ def get_stop_words(issues: DataFrame) -> set:
 
 
 def save_to_archive(archive_path: Path, file_name: str, content):
-    """ Saves content to a file and appends it to archive.
+    """Saves content to a file and appends it to archive.
 
     Parameters:
     ----------

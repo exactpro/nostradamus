@@ -29,7 +29,7 @@ class User(AbstractUser):
         *args,
         **kwargs,
     ) -> None:
-        """ Instance creating handler. Creates instance folders and
+        """Instance creating handler. Creates instance folders and
         default settings for it.
 
         Parameters:
@@ -43,8 +43,7 @@ class User(AbstractUser):
         """
 
         def init_settings():
-            """ Init all default user's settings
-            """
+            """Init all default user's settings"""
             init_filters(UserFilter, user_settings)
             init_filters(UserQAMetricsFilter, user_settings)
             init_predictions_table(UserPredictionsTable, user_settings)
@@ -69,7 +68,7 @@ class User(AbstractUser):
     def post_delete(
         sender: models.Model, instance: models.Model, *args, **kwargs
     ) -> None:
-        """ Instance deleting handler. Deletes instance folders.
+        """Instance deleting handler. Deletes instance folders.
 
         Parameters:
         ----------
@@ -99,7 +98,7 @@ class Team(models.Model):
         *args,
         **kwargs,
     ) -> None:
-        """ Instance creating handler. Creates instance folders and
+        """Instance creating handler. Creates instance folders and
         default settings for it.
 
         Parameters:
@@ -132,7 +131,7 @@ class Team(models.Model):
     def post_delete(
         sender: models.Model, instance: models.Model, *args, **kwargs
     ) -> None:
-        """ Instance deleting handler. Deletes instance folders.
+        """Instance deleting handler. Deletes instance folders.
 
         Parameters:
         ----------

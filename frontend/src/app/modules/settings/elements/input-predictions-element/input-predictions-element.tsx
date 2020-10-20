@@ -7,50 +7,45 @@ import "app/modules/settings/elements/input-predictions-element/input-prediction
 interface InputPredictionsElementProps{
   values: PredictionTableData[],
   onDeletePrediction: (index: number) => () => void, 
-  onChangeOrder: (indexDrag: number, indexPaste: number) => void
+  onChangePredictionsOrder: (indexDrag: number, indexPaste: number) => void
 }
 
 export default class InputPredictionsElement extends Component<InputPredictionsElementProps>{
 
-  valueBlockRef: HTMLDivElement | undefined = undefined;
+  predictionBlockRef: HTMLDivElement | undefined = undefined;
 
-  editValueBlockContent = ({target}: any) => {
-    this.setState({valueBlockContent: target.value})
+  predictionBlockDragStart = ({target}: any) => {
+    this.predictionBlockRef=target
+    target.style.opacity="0.25"
   }
 
-  valueBlockDragStart = (e: any) => {
-    this.valueBlockRef=e.target
-    e.target.style.opacity="0.25"
+  predictionBlockDragEnd = ({target}: any) => {
+    target.style.opacity="1"
   }
 
-  valueBlockDragEnd = (e: any) => {
-    e.target.style.opacity="1"
-  }
-
-  valueBlockDragOver = (e: any) => {
+  predictionBlockDragOver = (e: any) => {
     e.preventDefault()
   }
 
-  valueBlockDrop = (e: any) => {
-    if(!this.valueBlockRef) return
+  predictionBlockDrop = ({target}: any) => {
+    if(!this.predictionBlockRef) return
     
-    let {target} = e
-    while(target.classList[0] !== this.valueBlockRef.classList[0]) target=target.parentNode
-    this.props.onChangeOrder(
-        Array.from(target.parentNode.children).indexOf(this.valueBlockRef),
+    while(target.classList[0] !== this.predictionBlockRef.classList[0]) target=target.parentNode
+    this.props.onChangePredictionsOrder(
+        Array.from(target.parentNode.children).indexOf(this.predictionBlockRef),
         Array.from(target.parentNode.children).indexOf(target))
   } 
 
   render(){
     return(
       <div  className="input-predictions-element"
-            onDragOver={this.valueBlockDragOver}>
+            onDragOver={this.predictionBlockDragOver}>
         {
           this.props.values.map((item,index)=>(
             <div  key={index}
-                  onDragStart={this.valueBlockDragStart}
-                  onDragEnd={this.valueBlockDragEnd}
-                  onDrop={this.valueBlockDrop}
+                  onDragStart={this.predictionBlockDragStart}
+                  onDragEnd={this.predictionBlockDragEnd}
+                  onDrop={this.predictionBlockDrop}
                   draggable={true}
                   tabIndex={1} 
                   className={cn("input-predictions-element-block",

@@ -25,7 +25,7 @@ class AuthenticationView(APIView):
         responses={200: AuthResponseSerializer},
     )
     def post(self, request):
-        credentials_serializer = AuthRequestSerializer(data=request.GET)
+        credentials_serializer = AuthRequestSerializer(data=request.data)
         credentials_serializer.is_valid(raise_exception=True)
         credentials, password = credentials_serializer.get_credentials()
 
@@ -49,7 +49,7 @@ class RegistrationView(APIView):
         query_serializer=UserSerializer, responses={200: "success"}
     )
     def post(self, request):
-        user_serializer = UserSerializer(data=request.GET)
+        user_serializer = UserSerializer(data=request.data)
 
         user_serializer.is_valid(raise_exception=True)
         team = user_serializer.get_team()

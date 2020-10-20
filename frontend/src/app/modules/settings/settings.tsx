@@ -25,10 +25,7 @@ class Settings extends Component<Props, State> {
   }
 
   selectTab = (tab: SettingsTab) => () => {
-    this.setState({
-      ...this.state,
-      activeTab: tab,
-    })
+    this.setState({ activeTab: tab })
   }
 
   closeSettings = () => {

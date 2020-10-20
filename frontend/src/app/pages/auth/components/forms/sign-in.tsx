@@ -34,26 +34,30 @@ class SignIn extends React.Component<SignInProps, SignInState> {
   };
 
   changeField = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let state: SignInState = this.state;
+    const {form} = this.state;
     const name: 'credentials' | 'password' = e.target.name as ('credentials' | 'password');
 
-    state.form.value[name] = e.target.value;
+    form.value[name] = e.target.value;
 
-    this.setState(state);
+    this.setState({ form });
   };
 
   formValidation = () => {
-    let { isValid } = this.state.form;
+    const { isValid } = this.state.form;
 
     if (isValid !== this.checkFormIsValid()) {
-      let state: SignInState = this.state;
-      state.form.isValid = !isValid;
-      this.setState(state);
+      this.setFormValidationStatus(!isValid);
     }
   };
 
+  setFormValidationStatus = (newStatus: boolean) => {
+    const {form} = this.state;
+    form.isValid = newStatus;
+    this.setState({ form });
+  }
+
   checkFormIsValid = () => {
-    let { credentials, password } = this.state.form.value;
+    const { credentials, password } = this.state.form.value;
 
     // TODO: dirty code
     if (credentials.length < 1 || credentials.length > 254 || !credentials.match(/\S/i)) {
@@ -71,10 +75,11 @@ class SignIn extends React.Component<SignInProps, SignInState> {
     e.preventDefault();
 
     this.props.signIn(this.state.form.value);
+    this.setFormValidationStatus(false);
   };
 
   render() {
-
+ 
     return (
       <form className={cn("auth-form", this.props.className)} onChange={this.formValidation} onSubmit={this.formSubmit}>
         <h3 className="auth-form__title">

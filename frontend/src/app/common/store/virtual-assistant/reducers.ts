@@ -20,6 +20,9 @@ export const virtualAssistantReducer = (state: VirtualAssistantStore = initialSt
       messages.push({...action.message})
       return {...state, messages}
 
+    case VirtualAssistantActionTypes.clearMessages:
+      return {...initialState};
+
     default:
       return {...state}
   }

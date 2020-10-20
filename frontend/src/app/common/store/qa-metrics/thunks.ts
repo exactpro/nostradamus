@@ -43,7 +43,7 @@ export const initQAMetrics = () => {
 			dispatch(setQaMetricsStatus('filters', HttpStatus.PREVIEW));
 			dispatch(setStatusTrainModelQAMetrics(false));
 			dispatch(addToast(warning.detail || warning.message, ToastStyle.Warning));
-			return []
+			return [];
 		} 
 
 		if (!recordsCountResBody.records_count.filtered) {
@@ -86,13 +86,13 @@ export const saveQAMetricsFilters = (filters: FilterFieldBase[]) => {
 			dispatch(setQaMetricsStatus('filters', HttpStatus.PREVIEW));
 			dispatch(setStatusTrainModelQAMetrics(false));
 			dispatch(addToast(body.warning.detail || body.warning.message, ToastStyle.Warning));
-			return []
+			return [];
 		}
 
 		if (body.warning) {
 			dispatch(setQaMetricsStatus('filters', HttpStatus.PREVIEW));
 			dispatch(setStatusTrainModelQAMetrics(false));
-			return []
+			return [];
 		}
 
 		// check, that bugs is founded

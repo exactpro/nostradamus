@@ -12,9 +12,10 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 
 import os
 
-from pathlib import Path
 from datetime import timedelta
 
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -44,6 +45,15 @@ CORS_ORIGIN_WHITELIST = [
     r"http://127\.0\.0\.1:\d+",
     SERVER_NAME,
 ]
+
+# Logging
+
+sentry_sdk.init(
+    dsn=os.environ.get("SENTRY_DSN", default=""),
+    integrations=[DjangoIntegration()],
+    traces_sample_rate=1.0,
+    send_default_pii=True,
+)
 
 LOGGING = {
     "version": 1,
@@ -155,10 +165,10 @@ TEMPLATES = [
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("POSTGRES_DB"),
-        "USER": os.environ.get("POSTGRES_USER", "user"),
-        "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "password"),
-        "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
+        "NAME": os.environ.get("POSTGRES_DB", "users"),
+        "USER": os.environ.get("POSTGRES_USER", "postgres_user"),
+        "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "postgres_password"),
+        "HOST": os.environ.get("POSTGRES_HOST", "127.0.0.1"),
         "PORT": os.environ.get("POSTGRES_PORT", "5432"),
     }
 }

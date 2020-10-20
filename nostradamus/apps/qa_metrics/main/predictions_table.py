@@ -14,8 +14,6 @@ from apps.settings.main.common import (
 )
 from utils.const import (
     TRAINING_PARAMETERS_FILENAME,
-    BINARY_CLASSES,
-    PREDICTIONS_TABLE_FIELD_MAPPING,
     UNRESOLVED_BUGS_FILTER,
     MANDATORY_FIELDS,
 )
@@ -23,11 +21,21 @@ from apps.authentication.models import User
 from apps.extractor.main.preprocessor import get_issues_dataframe
 from utils.predictions import get_probabilities
 
+# Required for areas of testing prediction.
+BINARY_CLASSES = [0, 1]
+
+# Resolution predictions will be mapped separately.
+PREDICTIONS_TABLE_FIELD_MAPPING = {
+    "Issue Key": "Key",
+    "Area of Testing": "areas_of_testing_prediction",
+    "Time to Resolve": "Time to Resolve_prediction",
+}
+
 
 def get_predictions_table(
     issues, fields_settings, offset, limit
 ) -> pd.DataFrame:
-    """ Reads issues predictions for according user settings.
+    """Reads issues predictions for according user settings.
 
     Parameters:
     ----------
@@ -69,7 +77,7 @@ def get_predictions_table(
 
 
 def get_predictions(user: User, issues: pd.DataFrame) -> pd.DataFrame:
-    """ Appends predictions for each issue.
+    """Appends predictions for each issue.
 
     Parameters:
     ----------
@@ -110,7 +118,7 @@ def get_predictions(user: User, issues: pd.DataFrame) -> pd.DataFrame:
 
 
 def load_models(params: dict, models_path: Path) -> dict:
-    """ Read models.
+    """Read models.
 
     Parameters:
     ----------
@@ -143,7 +151,7 @@ def load_models(params: dict, models_path: Path) -> dict:
 def calculate_predictions(
     issues: pd.DataFrame, training_parameters: dict, models: dict
 ) -> pd.DataFrame:
-    """ Calculates predictions for received DataFrame and writes them to the DB.
+    """Calculates predictions for received DataFrame and writes them to the DB.
 
     Parameters:
     ----------
@@ -162,7 +170,9 @@ def calculate_predictions(
         if parameter == "Time to Resolve":
             issues[parameter + "_prediction"] = issues["Description_tr"].apply(
                 lambda descr: get_probabilities(
-                    descr, training_parameters[parameter], models[parameter],
+                    descr,
+                    training_parameters[parameter],
+                    models[parameter],
                 )
             )
         elif parameter == "Resolution":
@@ -184,7 +194,7 @@ def calculate_predictions(
 def calculate_resolution_predictions(
     text: str, classes: dict, models: dict
 ) -> dict:
-    """ Calculates predictions for defect resolutions.
+    """Calculates predictions for defect resolutions.
 
     Parameters:
     ----------
@@ -209,7 +219,7 @@ def calculate_resolution_predictions(
 def calculate_area_of_testing_predictions(
     text: str, classes: list, models: dict
 ) -> dict:
-    """ Calculates area of testing predictions.
+    """Calculates area of testing predictions.
 
     Parameters:
     ----------
@@ -225,9 +235,11 @@ def calculate_area_of_testing_predictions(
         Calculated predictions.
     """
     prediction = {
-        parameter: get_probabilities(text, BINARY_CLASSES, models[parameter],)[
-            1
-        ]
+        parameter: get_probabilities(
+            text,
+            BINARY_CLASSES,
+            models[parameter],
+        )[1]
         for parameter in classes
     }
     return prediction
@@ -238,7 +250,7 @@ def paginate_bugs(df: pd.DataFrame, offset: int, limit: int) -> pd.DataFrame:
 
 
 def get_qa_metrics_fields(user: Model) -> list:
-    """ Append values for drop-down fields.
+    """Append values for drop-down fields.
 
     Parameters:
     ----------
@@ -258,7 +270,7 @@ def get_qa_metrics_fields(user: Model) -> list:
 
 
 def get_predictions_table_fields(user: User) -> list:
-    """ Reads predictions table settings from db.
+    """Reads predictions table settings from db.
 
     Parameters:
     ----------
@@ -280,7 +292,7 @@ def get_predictions_table_fields(user: User) -> list:
 def calculate_issues_predictions(
     user: User, fields: List[str], filters: List[dict]
 ) -> pd.DataFrame:
-    """ Appends predictions to issues.
+    """Appends predictions to issues.
 
     Parameters:
     ----------

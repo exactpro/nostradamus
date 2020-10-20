@@ -8,13 +8,18 @@ from jira import JIRA, JIRAError
 from django.conf import settings
 
 from apps.extractor.main.cleaner import clean_text
-from utils.const import MAX_JIRA_BLOCK_SIZE, BASE_JQL, PARSE_CONF_FILENAME
 from apps.extractor.main.preprocessor import calculate_ttr
 from apps.extractor.main.mapping import FUNCTION_MAPPING, REPLACE_MAPPING
 from utils.data_converter import get_utc_datetime
 from utils.exceptions import NonexistentJiraUser, IncorrectJiraCredentials
 
+
+PARSE_CONF_FILENAME = "parse.conf"
 CONFIG_PARSE = Path(__file__).parents[0].joinpath(PARSE_CONF_FILENAME)
+
+# Jira limits response size to 1000 per request
+MAX_JIRA_BLOCK_SIZE = 1000
+BASE_JQL = "issuetype=BUG"
 
 
 class JAPI:
@@ -57,7 +62,7 @@ class JAPI:
         self.base_jql = base_jql
 
     def __get_connection(self) -> JIRA:
-        """ Creates connection object for communication
+        """Creates connection object for communication
         with Jira REST API service.
 
         Returns:
@@ -85,7 +90,7 @@ class JAPI:
         return jira_connection
 
     def get_extract_args(self, largest_keys: list = None) -> List[tuple]:
-        """ Generates arguments for REST API requests.
+        """Generates arguments for REST API requests.
 
         Parameters:
         ----------
@@ -117,7 +122,7 @@ class JAPI:
         return request_args
 
     def get_update_args(self, existing_issues: List[Dict]) -> list:
-        """ Generates arguments for REST API requests.
+        """Generates arguments for REST API requests.
 
         Parameters:
         ----------
@@ -150,7 +155,7 @@ class JAPI:
         return request_args
 
     def __get_issues_amount(self, jql: str) -> int:
-        """ Request total issues amount.
+        """Request total issues amount.
 
         Returns:
         ----------
@@ -166,7 +171,7 @@ class JAPI:
     def execute_jql(
         self, jql: str, start: int = 0, step_size: int = 50
     ) -> dict:
-        """ Executes JQL to fetch issues from bug-tracker.
+        """Executes JQL to fetch issues from bug-tracker.
 
         Parameters:
         ----------
@@ -204,7 +209,7 @@ class JAPI:
 
     @staticmethod
     def parse_issues(issue_block: dict) -> List[Dict]:
-        """ Parses issues.
+        """Parses issues.
 
         Parameters:
         ----------
@@ -219,7 +224,7 @@ class JAPI:
         def _get_value(
             path_values: list, raw_value: Optional, result=None
         ) -> Optional[Union[dict, str, List[str]]]:
-            """ Get values using values path.
+            """Get values using values path.
 
             Parameters:
             ----------
@@ -255,7 +260,7 @@ class JAPI:
             return result
 
         def _map_field_names(raw_issue: dict) -> None:
-            """ Rename fields of loaded issues using mapper object.
+            """Rename fields of loaded issues using mapper object.
 
             Parameters:
             ----------
@@ -273,7 +278,7 @@ class JAPI:
                     ].pop(name)
 
         def _parse_issue(raw_issue: dict) -> dict:
-            """ Parse issue raw object structure.
+            """Parse issue raw object structure.
 
             Parameters:
             ----------

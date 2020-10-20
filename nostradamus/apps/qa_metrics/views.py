@@ -1,4 +1,3 @@
-import json
 from json import dumps, loads
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
@@ -33,8 +32,6 @@ from apps.settings.main.common import (
     check_filters_equality,
 )
 from utils.const import (
-    DEFAULT_OFFSET,
-    DEFAULT_LIMIT,
     TRAINING_PARAMETERS_FILENAME,
     UNRESOLVED_BUGS_FILTER,
 )
@@ -42,6 +39,9 @@ from apps.extractor.main.preprocessor import get_issues_dataframe
 from utils.redis import redis_conn, clear_cache
 
 from pandas import DataFrame
+
+DEFAULT_OFFSET = 0
+DEFAULT_LIMIT = 20
 
 
 class QAMetricsView(APIView):
@@ -279,11 +279,6 @@ class PredictionsTableView(APIView):
 
         if cached_predictions:
             predictions = DataFrame.from_records(loads(cached_predictions))
-            predictions = list(
-                paginate_bugs(df=predictions, offset=offset, limit=limit)
-                .T.to_dict()
-                .values()
-            )
         else:
             predictions_table_fields = get_predictions_table_fields(user)
 
@@ -302,12 +297,18 @@ class PredictionsTableView(APIView):
                 fields_settings=predictions_table_fields,
                 offset=None,
                 limit=None,
-            ).to_dict("records")
+            )
 
             redis_conn.set(
                 name=f"user:{request.user.id}:qa_metrics:predictions_table",
-                value=dumps(predictions),
+                value=dumps(list(predictions.T.to_dict().values())),
                 ex=60 * 30,
             )
+
+        predictions = list(
+            paginate_bugs(df=predictions, offset=offset, limit=limit)
+            .T.to_dict()
+            .values()
+        )
 
         return Response(predictions)

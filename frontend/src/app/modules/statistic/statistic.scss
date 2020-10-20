@@ -39,19 +39,17 @@
     font-size: 20px;
     line-height: 20px;
 
-    &_type {
-      &_max {
-        color: $orange;
-      }
-      &_min {
-        color: $lightGreen;
-      }
-      &_mean {
-        color: $blue;
-      }
-      &_std {
-        color: $sirene;
-      }
+    &:nth-of-type(4n + 2) {
+      color: $orange;
+    }
+    &:nth-of-type(4n + 3) {
+      color: $lightGreen;
+    }
+    &:nth-of-type(4n + 4) {
+      color: $blue;
+    }
+    &:nth-of-type(4n + 5) {
+      color: $sirene;
     }
 
   }

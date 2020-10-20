@@ -57,6 +57,7 @@ class FreeInput extends React.Component<Props, State> {
 					value={String(field.current_value)}
 					onChange={this.handleChanges}
 					onBlur={this.field.applyField}
+					placeholder={"Input " + this.field.name}
 				/>
 
 				<ResetValue onClick={this.resetValue} className="field__reset" />

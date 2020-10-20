@@ -9,6 +9,7 @@ import {connect, ConnectedProps} from "react-redux";
 import {RootStore} from "app/common/types/store.types";
 import {SettingsSections} from "app/common/store/settings/types";
 import {sendSettingsData} from "app/common/store/settings/thunks";
+import { caseInsensitiveStringCompare } from "app/common/functions/helper";
 
 interface SettingsFilterData{
   [key: string]: string,
@@ -132,8 +133,8 @@ class SettingsFilter extends Component<Props, SettingsFilterState>{
 
   getDefaultStateObject = (): SettingsFilterState => ({
       names: [...this.props.defaultSettings[this.props.section].names],
-      settings: [...this.props.defaultSettings[this.props.section].filter_settings].sort((firstItem: SettingsFilterData, secondItem: SettingsFilterData)=>firstItem.name.toLowerCase().localeCompare(secondItem.name.toLowerCase())),
-      status: this.props.defaultSettings[this.props.section].filter_settings.map((_:any,index:number)=>this.getTableRowParity(index)),
+      settings: this.sortTableRows(this.props.defaultSettings[this.props.section].filter_settings),
+      status: this.getDefaultTableRowsStatuses(this.props.defaultSettings[this.props.section].filter_settings.length),
       dataInput: {
         name:"",
         filtration_type:"",
@@ -145,6 +146,10 @@ class SettingsFilter extends Component<Props, SettingsFilterState>{
       isSettingsDefault: true,
     })
 
+  getDefaultTableRowsStatuses = (length: number) => [...new Array(length)].map((_, index)=>this.getTableRowParity(index));
+
+  sortTableRows = (arr: Array<SettingsFilterData>) => [...arr].sort((firstItem: SettingsFilterData, secondItem: SettingsFilterData)=>caseInsensitiveStringCompare(firstItem.name, secondItem.name));
+    
   getTableRowParity = (numb: number) => numb%2===1? FilterElementType.odd: FilterElementType.even;
 
   detectIsSettingsDefault = (isSettingsDefault: boolean = false) => this.setState({isSettingsDefault});
@@ -156,7 +161,7 @@ class SettingsFilter extends Component<Props, SettingsFilterState>{
 
   render(){
     let excludeNames = this.state.settings.map(item=>item.name);
-
+    
     return(
       <div className="settings-filter">
         <p className="settings-filter__title">Filter</p>

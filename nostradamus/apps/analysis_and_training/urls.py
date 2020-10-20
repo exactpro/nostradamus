@@ -1,22 +1,24 @@
 from django.urls import path
 
 from .views import (
-    AnalysisAndTraining,
-    Filter,
-    DefectSubmission,
-    SignificantTerms,
-    Train,
-    FrequentlyTerms,
-    Statistics,
+    AnalysisAndTrainingView,
+    FilterView,
+    DefectSubmissionView,
+    SignificantTermsView,
+    TrainView,
+    FrequentlyTermsView,
+    StatisticsView,
+    StatusView,
 )
 
 
 urlpatterns = [
-    path("", AnalysisAndTraining.as_view()),
-    path("filter/", Filter.as_view()),
-    path("defect_submission/", DefectSubmission.as_view()),
-    path("significant_terms/", SignificantTerms.as_view()),
-    path("train/", Train.as_view()),
-    path("frequently_terms/", FrequentlyTerms.as_view()),
-    path("statistics/", Statistics.as_view()),
+    path("", AnalysisAndTrainingView.as_view()),
+    path("filter/", FilterView.as_view()),
+    path("defect_submission/", DefectSubmissionView.as_view()),
+    path("significant_terms/", SignificantTermsView.as_view()),
+    path("train/", TrainView.as_view()),
+    path("frequently_terms/", FrequentlyTermsView.as_view()),
+    path("statistics/", StatisticsView.as_view()),
+    path("status/", StatusView.as_view()),
 ]

@@ -74,18 +74,20 @@ class DropdownElement extends Component<DropdownProps, DropdownState>{
   isStrIncludesSubstr = (str: string, substr: string) =>  str.toLowerCase().includes(substr.toLowerCase());
 
   render(){
-    let allowedOpening: boolean = [FilterElementType.simple, FilterElementType.edited].includes(this.props.type);
-    let isInputEditable: boolean = allowedOpening && this.props.writable;
+    const allowedOpening: boolean = [FilterElementType.simple, FilterElementType.edited].includes(this.props.type);
+    const isInputEditable: boolean = allowedOpening && this.props.writable;
 
-    // Simplify condition
-    let dropDownOptions = (isInputEditable? 
-                          this.props.dropDownValues.filter((substr: string)=>!this.state.inputValue.length? 
-                                                                              this.isStrIncludesSubstr(substr, this.state.inputValue): 
-                                                                              this.isStrIncludesSubstr(substr,this.state.inputValue) && 
-                                                                              !this.props.excludeValues?.includes(substr)):
-                          this.props.dropDownValues)
-                          .sort((a, b) => caseInsensitiveStringCompare(a,b));
+    let dropDownOptions: string[] = [...this.props.dropDownValues];
 
+    if(isInputEditable){
+      dropDownOptions = dropDownOptions.filter((str: string)=>{ 
+        if(this.state.inputValue.length) return this.isStrIncludesSubstr(str, this.state.inputValue) && !this.props.excludeValues?.includes(str);
+        return true;
+      })
+    }
+    
+    dropDownOptions.sort((a, b) => caseInsensitiveStringCompare(a,b));
+                  
     return (
       <div className="dropdown-element" tabIndex={1}
            ref={this.dropdownElementRef}

@@ -1,7 +1,7 @@
 import React, {Component} from "react";
 import cn from "classnames" 
 import {FilterElementType, FilterDropdownType} from "app/modules/settings/elements/elements-types";
-import SelectWindow from "app/modules/settings/elements/select-window/select-window";
+import SelectWindow from "app/common/components/select-window/select-window";
 import Icon, {IconSize, IconType} from "app/common/components/icon/icon";
 import "app/modules/settings/elements/input-training-element/input-training-element.scss";
 
@@ -17,7 +17,6 @@ interface InputTrainingElementProps{
 interface InputTrainingElementState{
   isSelectWindowOpen: boolean,
   isSelectedListOpen: boolean,
-  quickSearchValue: string
 }
 
 export default class InputTrainingElement extends Component<InputTrainingElementProps, InputTrainingElementState>{
@@ -28,7 +27,6 @@ export default class InputTrainingElement extends Component<InputTrainingElement
     this.state = {
       isSelectWindowOpen:false,
       isSelectedListOpen: false,
-      quickSearchValue: "",
     };
   }
 
@@ -40,10 +38,6 @@ export default class InputTrainingElement extends Component<InputTrainingElement
   timerID: NodeJS.Timeout | null = null;
   inputTrainingElementRef: React.RefObject<HTMLDivElement> = React.createRef();
   allowedEditing: boolean = false;
-
-  changeQuickSearchValue = (e: React.ChangeEvent<HTMLInputElement>) => {
-    this.setState({quickSearchValue: e.target.value});
-  }
 
   onFocusTrainingElement = () => {
     if(!this.allowedEditing) return;
@@ -57,9 +51,9 @@ export default class InputTrainingElement extends Component<InputTrainingElement
   };
 
   openSelectedValuesList = () => {
-    this.setState({
-      isSelectedListOpen: !this.state.isSelectedListOpen, 
-    })
+    this.setState((state)=>({
+      isSelectedListOpen: !state.isSelectedListOpen, 
+    }))
   };
 
   selectDropdownValue = (value: string, isChecked: boolean) => () => {

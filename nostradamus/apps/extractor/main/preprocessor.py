@@ -3,8 +3,36 @@ import pandas as pd
 from datetime import datetime as dt
 
 from apps.extractor.main.connector import get_issues
-from utils.const import bug_attributes, dtype_conversions
-from utils.data_converter import optimize_dtype
+from utils.data_converter import optimize_dtype, convert_date
+
+DTYPE_CONVERSIONS = {
+    "date": convert_date,
+    "int": "int32",
+    "float": "float32",
+    "unique": "category",
+    # It's more relative "string"
+    "string": str,
+    "object": str,
+    "float64": "float32",
+    "int64": "int32",
+}
+
+BUG_ATTRIBUTES = {
+    "built-in": {
+        "Labels": "string",
+        "Summary": "string",
+        "Description": "string",
+        "Components": "string",
+        "Attachments": "int",
+        "Comments": "int",
+        "Project": "unique",
+        "Priority": "unique",
+        "Status": "unique",
+        "Key": "unique",
+        "Resolution": "unique",
+    },
+    "raw": {"Resolved": "date", "Created": "date", "Updated": "date"},
+}
 
 
 def preprocess_df(issues: pd.DataFrame) -> pd.DataFrame:
@@ -21,32 +49,32 @@ def preprocess_df(issues: pd.DataFrame) -> pd.DataFrame:
     -------
         Preprocessed issues.
     """
-    built_in_dtypes = bug_attributes.get("built-in")
-    raw_dtypes = bug_attributes.get("raw")
+    built_in_dtypes = BUG_ATTRIBUTES.get("built-in")
+    raw_dtypes = BUG_ATTRIBUTES.get("raw")
 
     for col in issues.columns:
         if built_in_dtypes.get(col):
             issues[col] = optimize_dtype(
-                issues[col], dtype_conversions.get(built_in_dtypes.get(col))
+                issues[col], DTYPE_CONVERSIONS.get(built_in_dtypes.get(col))
             )
         elif raw_dtypes.get(col):
-            issues[col] = dtype_conversions.get(raw_dtypes.get(col))(
+            issues[col] = DTYPE_CONVERSIONS.get(raw_dtypes.get(col))(
                 issues[col]
             )
         else:
             series_dtype = str(issues[col].dtype)
-            if dtype_conversions.get(series_dtype):
+            if DTYPE_CONVERSIONS.get(series_dtype):
                 if series_dtype == "object":
                     issues[col] = issues[col].fillna("")
                 issues[col] = optimize_dtype(
-                    issues[col], dtype_conversions.get(series_dtype)
+                    issues[col], DTYPE_CONVERSIONS.get(series_dtype)
                 )
 
     return issues
 
 
 def calculate_ttr(resolved: dt, created: dt) -> int:
-    """ Calculates how many days spent for issue resolution.
+    """Calculates how many days spent for issue resolution.
 
     Parameters:
     ----------
@@ -71,7 +99,7 @@ def calculate_ttr(resolved: dt, created: dt) -> int:
 def get_issues_dataframe(
     fields: list = None, filters: list = None
 ) -> pd.DataFrame:
-    """ Converts issues to optimized pandas dataframe.
+    """Converts issues to optimized pandas dataframe.
 
     Parameters:
     ----------

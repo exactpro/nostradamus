@@ -1,12 +1,11 @@
 from zipfile import ZipFile
 
 import concurrent.futures
-import pandas as pd
 import numpy
 from typing import List
 from pathlib import Path
 
-from pandas import qcut, get_dummies, Categorical
+from pandas import qcut, get_dummies, Categorical, DataFrame, Series, Interval
 from sklearn import feature_selection
 from sklearn.feature_selection import chi2, SelectKBest
 from imblearn.pipeline import Pipeline
@@ -37,8 +36,8 @@ from utils.warnings import ModelsNotTrainedWarning
 from sklearn.model_selection import GridSearchCV
 
 
-def compare_resolutions(issues: pd.DataFrame, resolutions: list) -> set:
-    """ Checks for difference between required resolutions and those that are present in df.
+def compare_resolutions(issues: DataFrame, resolutions: list) -> set:
+    """Checks for difference between required resolutions and those that are present in df.
 
     Parameters:
     ----------
@@ -54,9 +53,9 @@ def compare_resolutions(issues: pd.DataFrame, resolutions: list) -> set:
     return set(resolutions).difference(set(issues.Resolution.unique()))
 
 
-def get_k_neighbors(series: pd.Series) -> int:
-    """ Calculates the number of k-nearest neighbors.
-    
+def get_k_neighbors(series: Series) -> int:
+    """Calculates the number of k-nearest neighbors.
+
     Parameters:
     ----------
     series:
@@ -84,9 +83,9 @@ def get_k_neighbors(series: pd.Series) -> int:
     return k_neighbors
 
 
-def stringify_ttr_intervals(intervals: List[pd.Interval]) -> str:
-    """ Stringifies list of ttr intervals.
-    
+def stringify_ttr_intervals(intervals: List[Interval]) -> str:
+    """Stringifies list of ttr intervals.
+
     Parameters:
     ----------
     intervals:
@@ -111,10 +110,10 @@ def stringify_ttr_intervals(intervals: List[pd.Interval]) -> str:
 
 
 def filter_classes(
-    issues: pd.DataFrame, areas_of_testing: list, resolution: list
+    issues: DataFrame, areas_of_testing: list, resolution: list
 ) -> dict:
-    """ Filters out classes with inadequate percentage of representatives.
-    
+    """Filters out classes with inadequate percentage of representatives.
+
     Parameters:
     ----------
     issues:
@@ -157,9 +156,9 @@ def filter_classes(
     return filtered_classes
 
 
-def encode_series(issues: pd.DataFrame) -> pd.DataFrame:
+def encode_series(issues: DataFrame) -> DataFrame:
     """Encodes series classes.
-    
+
     Parameters:
     ----------
     issues:
@@ -190,8 +189,8 @@ def encode_series(issues: pd.DataFrame) -> pd.DataFrame:
     return issues
 
 
-def get_best_params(model, X: pd.Series, Y: pd.Series) -> dict:
-    """ Selects optimal parameters for model.
+def get_best_params(model, X: Series, Y: Series) -> dict:
+    """Selects optimal parameters for model.
 
     Parameters:
     ----------
@@ -216,8 +215,8 @@ def get_best_params(model, X: pd.Series, Y: pd.Series) -> dict:
 
 
 def train_imbalance(
-    descr_series: pd.Series,
-    classes_codes: pd.Series,
+    descr_series: Series,
+    classes_codes: Series,
     TFIDF_,
     IMB_,
     FS_,
@@ -225,7 +224,7 @@ def train_imbalance(
     CLF_,
     model_name: str,
 ) -> tuple:
-    """ Trains models using handled setting and saves them as .sav objects.
+    """Trains models using handled setting and saves them as .sav objects.
 
     Parameters:
     ----------
@@ -271,7 +270,7 @@ def train_imbalance(
 
 
 def save_training_parameters(archive_path: Path, classes: dict, params: dict):
-    """ Saves training parameters to the config file.
+    """Saves training parameters to the config file.
 
     Parameters:
     ----------
@@ -305,12 +304,12 @@ def save_training_parameters(archive_path: Path, classes: dict, params: dict):
 
 def train(
     instance: Model,
-    issues: pd.DataFrame,
+    issues: DataFrame,
     areas_of_testing: list,
     resolution: list,
 ) -> dict:
-    """ Train models.
-    
+    """Train models.
+
     Parameters:
     ----------
     instance:
@@ -328,7 +327,7 @@ def train(
     """
 
     def _params_producer() -> tuple:
-        """ Generates parameters for imbalance training.
+        """Generates parameters for imbalance training.
 
         Returns:
         ----------
@@ -457,8 +456,8 @@ def train(
     )
 
 
-def get_top_terms(issues: pd.DataFrame, metric: str) -> dict:
-    """ Calculates top terms.
+def get_top_terms(issues: DataFrame, metric: str) -> dict:
+    """Calculates top terms.
 
     Parameters:
     ----------
@@ -484,8 +483,8 @@ def get_top_terms(issues: pd.DataFrame, metric: str) -> dict:
     return dict(zip(tfidf.get_feature_names(), selector.scores_))
 
 
-def calculate_top_terms(issues: pd.DataFrame, metric: str) -> list:
-    """ Calculates top terms which are based on significance weights.
+def calculate_top_terms(issues: DataFrame, metric: str) -> list:
+    """Calculates top terms which are based on significance weights.
 
     Parameters:
     ----------
@@ -509,13 +508,13 @@ def calculate_top_terms(issues: pd.DataFrame, metric: str) -> list:
 
 def save_top_terms(
     archive_path: Path,
-    issues: pd.DataFrame,
+    issues: DataFrame,
     resolutions: list,
     priorities: list,
     areas_of_testing: list,
 ):
-    """ Saves calculation results as a .pkl to an archive.
-    
+    """Saves calculation results as a .pkl to an archive.
+
     Parameters:
     ----------
     archive_path:
@@ -530,8 +529,10 @@ def save_top_terms(
         areas of testing derived after models' training.
 
     """
-    binarized_df = pd.get_dummies(
-        issues, prefix=["Priority"], columns=["Priority"],
+    binarized_df = get_dummies(
+        issues,
+        prefix=["Priority"],
+        columns=["Priority"],
     )
     top_terms = {}
 
@@ -544,15 +545,13 @@ def save_top_terms(
     for metric in metrics:
         top_terms[metric] = calculate_top_terms(binarized_df, metric)
 
-    top_terms = pd.DataFrame(
-        dict([(k, pd.Series(v)) for k, v in top_terms.items()])
-    )
+    top_terms = DataFrame(dict([(k, Series(v)) for k, v in top_terms.items()]))
 
     save_to_archive(archive_path, "top_terms.pkl", dumps(top_terms))
 
 
 def check_training_files(user: User) -> None:
-    """ Raises warning if models don't exist.
+    """Raises warning if models don't exist.
 
     Parameters:
     ----------
@@ -566,7 +565,7 @@ def check_training_files(user: User) -> None:
 
 
 def save_models(models: list, user: User) -> None:
-    """ Appends models to archive.
+    """Appends models to archive.
 
     Parameters:
     ----------

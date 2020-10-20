@@ -87,9 +87,10 @@ class DateRange extends React.Component<Props, State> {
 	}
 
 	handleChanges = (value: Date) => {
-		this.setState({[this.state.showCalendar as ShowCalendarField]: moment(value).format('DD.MM.YYYY'),
-						showCalendar: undefined},
-						this.applyChanges)
+		this.setState((state)=>({
+			[state.showCalendar as ShowCalendarField]: moment(value).format('DD.MM.YYYY'),
+			showCalendar: undefined}),
+			this.applyChanges)
 	};
 
 	clearInputField = (field: ShowCalendarField) => () => {
@@ -99,21 +100,17 @@ class DateRange extends React.Component<Props, State> {
 
 	handleDirectChanges = (dateField: ShowCalendarField) => (event: React.ChangeEvent<HTMLInputElement>) => {
 
-		this.setState({
-			...this.state,
-			[dateField]: event.target.value
-		});
+		this.setState({[dateField]: event.target.value});
 	};
 
 	onBlurInput = (dateField: ShowCalendarField) => () => {
 		let inputtedDate = this.editZeroDate(this.state[dateField]);
 		let dateFieldMoment = moment( inputtedDate, ['DD.MM.YY', 'DD.MM.YYYY'], true);
-		this.setState({
-			...this.state,
-			[dateField]: !this.state[dateField] ||
-						(dateFieldMoment.isValid() && dateFieldMoment.isBetween(this.props.minDateValue, this.props.maxDateValue, "day", "[]"))?
+		this.setState((state, props)=>({
+			[dateField]: !state[dateField] ||
+						(dateFieldMoment.isValid() && dateFieldMoment.isBetween(props.minDateValue, props.maxDateValue, "day", "[]"))?
 						inputtedDate:
-						'Invalid date'},
+						'Invalid date'}),
 			this.applyChanges);
 	};
 

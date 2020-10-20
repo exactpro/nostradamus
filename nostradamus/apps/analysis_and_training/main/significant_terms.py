@@ -6,11 +6,12 @@ from collections import OrderedDict
 from apps.analysis_and_training.main.common import check_required_percentage
 from apps.analysis_and_training.main.mark_up import mark_up_series
 from apps.analysis_and_training.main.training import get_top_terms
-from utils.const import SIGNIFICANT_TERMS_METRICS
+
+SIGNIFICANT_TERMS_METRICS = ["Resolution", "Priority"]
 
 
 def calculate_significance_weights(issues: pd.DataFrame, metric: str) -> dict:
-    """ Calculates top terms based on significance weights.
+    """Calculates top terms based on significance weights.
 
     Parameters:
     ----------
@@ -48,7 +49,7 @@ def calculate_significance_weights(issues: pd.DataFrame, metric: str) -> dict:
 
 
 def get_term_metrics(issues: pd.DataFrame, aot: dict) -> list:
-    """ Generates metrics for significant terms calculation.
+    """Generates metrics for significant terms calculation.
 
     Parameters:
     ----------
@@ -85,7 +86,7 @@ def get_term_metrics(issues: pd.DataFrame, aot: dict) -> list:
 
 
 def get_significant_terms(issues: pd.DataFrame, aot: dict = None) -> dict:
-    """ Generates content for significant terms card.
+    """Generates content for significant terms card.
 
     Parameters:
     ----------
@@ -105,7 +106,7 @@ def get_significant_terms(issues: pd.DataFrame, aot: dict = None) -> dict:
     if len(issues) < 100:
 
         # TODO raise exception if dataframe length is less than 100
-        return {"referring_to": [], "chosen_metric": "", "terms": {}}
+        return {"metrics": [], "chosen_metric": "", "terms": {}}
 
     metrics = get_term_metrics(issues, aot)
 

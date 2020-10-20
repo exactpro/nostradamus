@@ -40,10 +40,7 @@ class FrequentlyUsedTerms extends React.Component<FrequentlyUsedTermsProps, Freq
         slides.push(this.renderTerms(i)());
       }
 
-      this.setState({
-        ...this.state,
-        slides
-      })
+      this.setState({ slides })
     }
   };
 

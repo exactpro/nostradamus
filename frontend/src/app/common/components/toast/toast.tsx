@@ -49,10 +49,9 @@ class Toast extends React.Component<ToastProps, IState> {
 	};
 
 	toggleExpand = (val: boolean) => () => {
-		this.setState({
-			...this.state,
-			expanded: this.state.expandable ? val : false,
-		});
+		this.setState((state)=>({
+			expanded: state.expandable ? val : false,
+		}));
 	};
 
 	// stop timer of removing, when cursor is hovered
@@ -60,10 +59,9 @@ class Toast extends React.Component<ToastProps, IState> {
 		this.timer.pause();
 		this.style = this.props.style;
 
-		this.setState({
-			...this.state,
-			expandable: this.props.toast.actionToast || (this.messageRef.current ? this.messageRef.current.scrollWidth > 350 : false),
-		});
+		this.setState((state, props)=>({
+			expandable: props.toast.actionToast || (this.messageRef.current ? this.messageRef.current.scrollWidth > 350 : false),
+		}));
 	};
 
 	// resume timer of removing, when the cursor is removed

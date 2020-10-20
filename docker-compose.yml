@@ -8,7 +8,7 @@ services:
     build:
       context: ./nostradamus
       dockerfile: Dockerfile
-    command: bash -c "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn -b 0.0.0.0:8000 -c gunicorn-conf.py -k uvicorn.workers.UvicornH11Worker nostradamus.asgi --access-logfile - --error-logfile - --log-level debug"
+    command: bash -c "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn -c gunicorn-conf.py nostradamus.asgi"
     env_file: &envfile
       - .env
     links:
@@ -32,7 +32,6 @@ services:
     links:
       - nostradamus-core
       - flower
-      - virtual-assistant-core
     volumes:
       - ./certs:/opt/nginx/certs
     environment:
@@ -53,7 +52,7 @@ services:
             - '27017:27017'
     volumes:
             - ./mongo-init.sh:/docker-entrypoint-initdb.d/mongo-init.sh
-    command: --wiredTigerCacheSizeGB 2.5
+    command: --wiredTigerCacheSizeGB 4.0
 
   rabbitmq:
     container_name: rabbitmq
@@ -126,8 +125,6 @@ services:
     build:
       context: ./chatbot
       dockerfile: Dockerfile-actions
-    volumes:
-      - /etc/localtime:/etc/localtime
     expose:
       - "5055"
     env_file: *envfile
@@ -138,6 +135,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     env_file: *envfile
+    ports:
+      - 5432:5432
 
 volumes:
   postgres_data:

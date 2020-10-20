@@ -6,7 +6,6 @@ import django
 from django.conf import settings
 
 settings.MONGODB_NAME = "testdb"
-settings.MONGODB_HOST = "127.0.0.1"
 
 django.setup()
 
@@ -102,7 +101,7 @@ class TestCoreBot(unittest.TestCase):
             in request.json()[0]["text"]
         )
 
-    def test_report(self):
+    def test_report_bug_not_upload(self):
         message = {
             "sender": "user",
             "message": "status report for today please",
@@ -113,11 +112,7 @@ class TestCoreBot(unittest.TestCase):
         )
         data = request.json()
 
-        assert all(
-            [
-                data[0]["custom"]["size"] == "5.3 KB",
-                data[0]["custom"]["format"] == "xlsx",
-                "http://localhost/api/virtual_assistant/reports/"
-                in data[0]["custom"]["link"],
-            ]
+        assert (
+            data[0]["text"]
+            == "Oops! Bugs haven't been uploaded yet. Please try again later"
         )

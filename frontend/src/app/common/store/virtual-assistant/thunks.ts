@@ -4,12 +4,14 @@ import {MessageSendingType, InboundData} from "app/common/store/virtual-assistan
 import { HttpError } from 'app/common/types/http.types';
 import { addToast } from "app/modules/toasts-overlay/store/actions";
 import { ToastStyle } from "app/modules/toasts-overlay/store/types";
+import { RootStore } from "app/common/types/store.types";
 
 export const sendVirtualAssistantMessage = (outboundMessage: string, outboundRenderMessage?: string) => {
-  return async (dispatch:any) =>{
+  return async (dispatch:any, getState: ()=>RootStore) =>{
     try{
-      dispatch(activateMessage({sender: "user", message: outboundRenderMessage? outboundRenderMessage: outboundMessage}));
-      let response: InboundData[] = await VirtualAssistantApi.SendMessage({sender: "user", message: outboundMessage});
+      const userId = getState().auth.user?.id || "sender";
+      dispatch(activateMessage({sender: userId, message: outboundRenderMessage? outboundRenderMessage: outboundMessage}));
+      const response: InboundData[] = await VirtualAssistantApi.SendMessage({sender: userId, message: outboundMessage});
       
       if(response.length)
       (response as InboundData[]).forEach((element: InboundData) => {

@@ -37,34 +37,38 @@ class SignUp extends React.Component<SignUpProps, SignUpState> {
   };
 
   changeField = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let state: SignUpState = this.state;
+    const {form} = this.state;
     const name: 'email' | 'name' | 'password' = e.target.name as ('email' | 'name' | 'password');
 
-    state.form.value[name] = e.target.value;
+    form.value[name] = e.target.value;
 
-    this.setState(state);
+    this.setState({ form });
   };
 
   changeSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    let state: SignUpState = this.state;
+    const {form} = this.state;
 
-    state.form.value.team = parseInt(e.target.value) > -1 ? parseInt(e.target.value) : null;
+    form.value.team = parseInt(e.target.value) > -1 ? parseInt(e.target.value) : null;
 
-    this.setState(state);
+    this.setState({ form });
   };
 
   formValidation = () => {
-    let {isValid} = this.state.form;
+    const {isValid} = this.state.form;
 
     if (isValid !== this.checkFormIsValid()) {
-      let state: SignUpState = this.state;
-      state.form.isValid = !isValid;
-      this.setState(state);
+      this.setFormValidationStatus(!isValid);
     }
   };
+  
+  setFormValidationStatus = (newStatus: boolean) => {
+    const {form} = this.state;
+    form.isValid = newStatus;
+    this.setState({ form });
+  }
 
   checkFormIsValid = () => {
-    let {team, email, name, password} = this.state.form.value;
+    const {team, email, name, password} = this.state.form.value;
 
     if (typeof team !== "number") {
       return false
@@ -91,6 +95,7 @@ class SignUp extends React.Component<SignUpProps, SignUpState> {
     e.preventDefault();
 
     this.props.signUp(this.state.form.value);
+    this.setFormValidationStatus(false);
   };
 
   render() {

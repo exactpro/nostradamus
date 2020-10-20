@@ -32,6 +32,13 @@ class Card extends React.Component<CardProps, CardState> {
 
 	static getDerivedStateFromError = (): CardState => ({hasError: true});
 
+	shouldComponentUpdate = (nextProps: CardProps) => {
+		if(this.props.status !== nextProps.status && this.state.hasError) {
+			this.setState({hasError: false})
+		}
+		return true;
+	}
+
 	render() {
 
 		const { status } = this.props;

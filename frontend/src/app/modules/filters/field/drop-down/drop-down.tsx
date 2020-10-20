@@ -1,4 +1,3 @@
-import Icon, { IconSize, IconType } from 'app/common/components/icon/icon';
 import Tooltip from 'app/common/components/tooltip/tooltip';
 import { Timer } from 'app/common/functions/timer';
 import ExactMatch from 'app/modules/filters/field/exact-match/exact-match';
@@ -10,6 +9,7 @@ import ResetValue from 'app/modules/filters/field/reset-value/reset-value';
 import { UpdateFieldFunction } from 'app/modules/filters/filters.class';
 import cn from 'classnames';
 import React, { RefObject } from 'react';
+import SelectWindow from 'app/common/components/select-window/select-window';
 
 interface Props {
 	className?: string
@@ -34,20 +34,18 @@ class DropDown extends React.PureComponent<Props, State> {
 	field: FilterField;
 
 	timer: Timer | null = null;
-	fieldRef: RefObject<HTMLDivElement>;
+	fieldRef: RefObject<HTMLDivElement> = React.createRef();
 
 	constructor(props: Props) {
 		super(props);
 		this.field = new FilterField(this.props.field, this.props.updateFunction);
-		 
-		this.fieldRef = React.createRef();
 	}
 
-	toggleItem = (newItem: string) => () => {
+	toggleItem = (newItem: string, checked: boolean) => () => {
 		let current_value = [...this.field.current_value as FilterFieldDropdownValue];
-		let index = current_value.findIndex(item => item === newItem);
 
-		if (index > -1) {
+		if (checked) {
+			let index = current_value.findIndex(item => item === newItem);
 			current_value.splice(index, 1);
 		} else {
 			current_value.push(newItem);
@@ -63,13 +61,10 @@ class DropDown extends React.PureComponent<Props, State> {
 	};
 
 	resetItem = (item: string) => () => {
-		this.toggleItem(item)();
+		this.toggleItem(item, true)();
 		this.field.applyField();
 
-		this.setState({
-			...this.state,
-			isOpen: false,
-		});
+		this.setState({ isOpen: false });
 	};
 
 	resetValue = () => {
@@ -77,10 +72,7 @@ class DropDown extends React.PureComponent<Props, State> {
 		this.field.updateValue([]);
 		this.field.applyField();
 
-		this.setState({
-			...this.state,
-			isOpen: false,
-		});
+		this.setState({ isOpen: false });
 	};
 
 	toggleExactMatch = () => {
@@ -89,26 +81,17 @@ class DropDown extends React.PureComponent<Props, State> {
 	};
 
 	openCheckedVariant = () => {
-		this.setState({
-			...this.state,
-			isCheckedVariantList: true,
-		});
+		this.setState({ isCheckedVariantList: true });
 	};
 
 	changeSearchRequest = (event: React.ChangeEvent<HTMLInputElement>) => {
-		this.setState({
-			...this.state,
-			search: event.target.value,
-		});
+		this.setState({ search: event.target.value });
 	};
 
 	onFocus = () => {
 		this.stopHidden();
 
-		this.setState({
-			...this.state,
-			isOpen: true,
-		});
+		this.setState({ isOpen: true });
 	};
 
 	stopHidden = () => {
@@ -119,7 +102,6 @@ class DropDown extends React.PureComponent<Props, State> {
 		// for don't removing dropdown, when set focus at the quick search
 		this.timer = new Timer(() => {
 			this.setState({
-				...this.state,
 				isCheckedVariantList: false,
 				isOpen: false,
 			});
@@ -175,7 +157,7 @@ class DropDown extends React.PureComponent<Props, State> {
 				{
 					value.length === 0 &&
           <span className="drop-down__no-value">
-						 Select
+						 Select { this.field.name }
 					</span>
 				}
 
@@ -183,51 +165,14 @@ class DropDown extends React.PureComponent<Props, State> {
 
 				{
 					this.state.isOpen &&
-          <div className="drop-down__select-window select-window">
-
-						{
-							!this.state.isCheckedVariantList &&
-							<div className="select-window__search">
-								<input  type="text"
-										className="select-window__search-input"
-										value={this.state.search}
-										onFocus={this.stopHidden}
-										onChange={this.changeSearchRequest}
-										placeholder="Quick search"/>
-								<Icon type={IconType.find} size={IconSize.small} className="select-window__search-icon" />
-							</div>
-							
-						}
-
-						{
-							!this.state.search && values.length > 50 ?
-								<p className="select-window__too-much">Too much variants, use search</p> :
-								values.map((item, index) => {
-										let checked = value.findIndex(checkedItem => checkedItem === item) > -1;
-
-										return (
-											<label key={index} className="select-window__item" onFocus={this.stopHidden}>
-
-												<input
-													className="select-window__browser-checkbox"
-													type="checkbox"
-													checked={checked}
-													onChange={this.toggleItem(item)}
-												/>
-
-												<span className="select-window__checkbox">
-													{checked &&
-                          <Icon type={IconType.check} className="select-window__check-mark" size={IconSize.small} />}
-											</span>
-											
-												<p className = "select-window__title">{item}</p>
-												
-											</label>);
-									},
-								)
-						}
-          </div>
+					<div className="drop-down__select-window">
+						<SelectWindow selectWindowAllValues={values}
+									selectWindowCheckedValues={value}
+									onSelectValue={this.toggleItem}
+									searchable={!this.state.isCheckedVariantList}/>
+					</div>
 				}
+
 			</div>
 		);
 	}

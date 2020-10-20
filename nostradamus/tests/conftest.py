@@ -1,32 +1,53 @@
 import datetime
 
 import pytest
-import sqlite3
 import requests
 import pandas as pd
 
-from pathlib import Path
+from random import choice, randint
+from string import ascii_lowercase
+from django.db import connection
 
 
-@pytest.fixture
-def sql_conn():
-    db_path = Path(__file__).parents[1].joinpath("db.sqlite3")
-
-    with sqlite3.connect(db_path, uri=True) as conn:
-        yield conn.cursor()
-
-
-@pytest.fixture
-def host():
-    return "http://localhost/api/"
+@pytest.fixture()
+def sql_conn(request):
+    with connection.cursor() as conn:
+        request.cls.conn = conn
+        yield conn
 
 
-@pytest.fixture
-def test_user():
-    return {
+@pytest.fixture(scope="class")
+def host(request):
+    host = "http://localhost:8000/"
+    request.cls.host = host
+
+
+@pytest.fixture(scope="class")
+def register_url(request):
+    request.cls.register_url = "auth/register/"
+
+
+@pytest.fixture(scope="class")
+def signin_url(request):
+    request.cls.signin_url = "auth/signin/"
+
+
+@pytest.fixture(scope="class")
+def test_user_1(request):
+    request.cls.test_user_1 = {
         "team": 1,
-        "name": "test_user",
-        "email": "test_user@test.com",
+        "name": "".join(choice(ascii_lowercase) for _ in range(20)),
+        "email": f"{''.join(choice(ascii_lowercase) for _ in range(20))}@test.com",
+        "password": 123456,
+    }
+
+
+@pytest.fixture(scope="class")
+def test_user_2(request):
+    request.cls.test_user_2 = {
+        "team": 1,
+        "name": "".join(choice(ascii_lowercase) for _ in range(20)),
+        "email": f"{''.join(choice(ascii_lowercase) for _ in range(20))}@test.com",
         "password": 123456,
     }
 
@@ -86,12 +107,19 @@ def statistics_3():
 @pytest.fixture
 def dates():
     base_date = datetime.datetime.today()
-    dates = sorted(
+    created_dates = sorted(
         [base_date - datetime.timedelta(days=days) for days in range(1500)],
         reverse=False,
     )
+    resolved_dates = [
+        date + datetime.timedelta(randint(0, 3)) for date in created_dates
+    ]
 
-    data = {"Created": dates, "Key": [_ for _ in range(1, 1501)]}
+    data = {
+        "Created": created_dates,
+        "Resolved": resolved_dates,
+        "Key": [_ for _ in range(1, 1501)],
+    }
 
     return pd.DataFrame(data=data, columns=list(data.keys()))
 
@@ -395,15 +423,25 @@ def predictions_table_fields(request):
 
 
 @pytest.fixture()
-def qa_metrics_route():
-    return "qa_metrics/"
+def qa_metrics_route(request):
+    request.cls.qa_metrics_route = "qa_metrics/"
 
 
 @pytest.fixture()
-def analysis_and_training_route():
-    return "analysis_and_training/"
+def analysis_and_training_route(request):
+    request.cls.analysis_and_training_route = "analysis_and_training/"
 
 
 @pytest.fixture()
-def settings_route():
-    return "settings/"
+def settings_route(request):
+    request.cls.settings_route = "settings/"
+
+
+@pytest.fixture()
+def description_assessment_route(request):
+    request.cls.description_assessment_route = "description_assessment/"
+
+
+@pytest.fixture()
+def auth_route(request):
+    request.cls.auth_route = "auth/"

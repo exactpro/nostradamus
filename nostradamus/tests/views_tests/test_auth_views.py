@@ -1,22 +1,22 @@
 import requests
 
-
-ROUTE = 'auth/'
-
-
-def test_get_register(host):
-    request = requests.head(host + ROUTE + 'register/')
-
-    assert 'GET' in request.headers['Allow']
+from pytest import mark
+from unittest import TestCase
 
 
-def test_post_register(host):
-    request = requests.head(host + ROUTE + 'register/')
+@mark.usefixtures("host", "auth_route")
+class TestAuthViews(TestCase):
+    def test_get_register(self):
+        request = requests.head(f"{self.host}{self.auth_route}register/")
 
-    assert 'POST' in request.headers['Allow']
+        assert "GET" in request.headers["Allow"]
 
+    def test_post_register(self):
+        request = requests.head(f"{self.host}{self.auth_route}register/")
 
-def test_post_signin(host):
-    request = requests.head(host + ROUTE + 'signin/')
+        assert "POST" in request.headers["Allow"]
 
-    assert 'POST' in request.headers['Allow']
+    def test_post_signin(self):
+        request = requests.head(f"{self.host}{self.auth_route}signin/")
+
+        assert "POST" in request.headers["Allow"]

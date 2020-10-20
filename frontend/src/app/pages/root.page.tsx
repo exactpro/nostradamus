@@ -1,4 +1,4 @@
-import { checkCollectingDataFinished } from 'app/common/store/common/thunks';
+import { checkCollectingIssuesFinished } from 'app/common/store/common/thunks';
 
 import { RouterNames } from 'app/common/types/router.types';
 import { RootStore } from 'app/common/types/store.types';
@@ -21,7 +21,7 @@ const SidebarWithRouter = withRouter(props => <Sidebar {...props} />);
 class RootPage extends React.Component<Props> {
 
 	componentDidMount() {
-		this.props.checkCollectingDataFinished();
+		this.props.checkCollectingIssuesFinished();
 	}
 
 	render() {
@@ -30,8 +30,7 @@ class RootPage extends React.Component<Props> {
 				<SidebarWithRouter />
 				<Settings />
 				<VirtualAssistant />
-
-				<Settings />
+				
 				<div className="root-page__content">
 					<article>
 						<Switch>
@@ -65,7 +64,7 @@ class RootPage extends React.Component<Props> {
 const mapStateToProps = (store: RootStore) => ({});
 
 const mapDispatchToProps = {
-	checkCollectingDataFinished,
+	checkCollectingIssuesFinished,
 };
 
 const connector = connect(

@@ -10,9 +10,10 @@ const initialState: CommonStore = {
 type actionsUserTypes = ReturnType<InferValueTypes<typeof actions>>;
 
 export const commonReducer = (state: CommonStore = initialState, action: actionsUserTypes) => {
+	
 	switch (action.type) {
 
-		case 'MARK_LOAD_BUGS_FINISHED':
+		case 'MARK_LOAD_ISSUES_FINISHED':
 			return {
 				...state,
 				isCollectingFinished: true

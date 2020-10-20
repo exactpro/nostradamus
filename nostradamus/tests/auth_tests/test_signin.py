@@ -1,97 +1,134 @@
+import os
 import requests
+import unittest
+import pytest
+
+os.environ["DJANGO_SETTINGS_MODULE"] = "nostradamus.settings"
+
+import django
+
+django.setup()
+
+from apps.authentication.models import User
 
 
-SIGN_IN_URL = "auth/signin/"
+@pytest.mark.usefixtures(
+    "sql_conn", "test_user_1", "host", "signin_url", "register_url"
+)
+class TestRegister(unittest.TestCase):
+    def teardown_method(self, method):
+        User.objects.filter(name=self.test_user_1["name"]).delete()
 
+    def test_auth_by_username(self):
+        requests.post(
+            self.host + self.register_url, data=self.test_user_1
+        ).json()
 
-def test_auth_by_username(host, test_user):
-    payload = {
-        "credentials": test_user["name"],
-        "password": test_user["password"],
-    }
+        test_user = {
+            "credentials": self.test_user_1["name"],
+            "password": self.test_user_1["password"],
+        }
 
-    request = requests.post(host + SIGN_IN_URL, params=payload)
-    data = request.json()
+        request = requests.post(self.host + self.signin_url, data=test_user)
+        data = request.json()
 
-    assert data is not None and "exception" not in data
+        assert data is not None and "exception" not in data
 
+    def test_auth_by_email(self):
+        requests.post(
+            self.host + self.register_url, data=self.test_user_1
+        ).json()
 
-def test_auth_by_email(host, test_user):
-    payload = {
-        "credentials": test_user["email"],
-        "password": test_user["password"],
-    }
+        test_user = {
+            "credentials": self.test_user_1["email"],
+            "password": self.test_user_1["password"],
+        }
 
-    request = requests.post(host + SIGN_IN_URL, params=payload)
-    data = request.json()
+        request = requests.post(self.host + self.signin_url, data=test_user)
+        data = request.json()
 
-    assert data is not None and "exception" not in data
+        assert data is not None and "exception" not in data
 
+    def test_auth_error(self):
+        requests.post(
+            self.host + self.register_url, data=self.test_user_1
+        ).json()
 
-def test_auth_error(host, test_user):
-    payload = {"credentials": test_user["email"], "password": "1234Pass"}
+        test_user = {
+            "credentials": self.test_user_1["email"],
+            "password": "1234Pass",
+        }
 
-    request = requests.post(host + SIGN_IN_URL, params=payload)
-    data = request.json()
+        request = requests.post(self.host + self.signin_url, data=test_user)
+        data = request.json()
 
-    assert data is not None and "exception" in data
+        assert data is not None and "exception" in data
 
+    def test_auth_data(self):
+        requests.post(
+            self.host + self.register_url, data=self.test_user_1
+        ).json()
 
-def test_auth_data(sql_conn, host, test_user):
-    payload = {
-        "credentials": test_user["email"],
-        "password": test_user["password"],
-    }
+        test_user = {
+            "credentials": self.test_user_1["name"],
+            "password": self.test_user_1["password"],
+        }
 
-    team = sql_conn.execute(
-        "SELECT name FROM authentication_team WHERE id = (?)",
-        (test_user["team"],),
-    ).fetchone()[0]
+        self.conn.execute(
+            f"SELECT name FROM authentication_team WHERE id=%s",
+            (self.test_user_1["team"],),
+        )
+        team = self.conn.fetchone()[0]
 
-    user_id = sql_conn.execute(
-        "SELECT id FROM authentication_user WHERE email = (?)",
-        (test_user["email"],),
-    ).fetchone()[0]
+        self.conn.execute(
+            f"SELECT id FROM authentication_user WHERE email=%s",
+            (self.test_user_1["email"],),
+        )
+        user_id = self.conn.fetchone()[0]
 
-    role = sql_conn.execute(
-        """
-        SELECT
-            name
-        FROM
-            authentication_role AS r
-            INNER JOIN
-                authentication_teammember AS tm
-            ON r.id = tm.role_id
-        WHERE
-            tm.user_id = (?)
-        """,
-        (user_id,),
-    ).fetchone()[0]
+        self.conn.execute(
+            f"""
+            SELECT
+                name
+            FROM
+                authentication_role AS r
+                INNER JOIN
+                    authentication_teammember AS tm
+                ON r.id = tm.role_id
+            WHERE
+                tm.user_id = '{user_id}'
+            """,
+        )
+        role = self.conn.fetchone()[0]
 
-    request = requests.post(host + SIGN_IN_URL, params=payload)
-    data = request.json()
+        request = requests.post(self.host + self.signin_url, data=test_user)
+        data = request.json()
 
-    assert (
-        data["id"] == user_id
-        and data["name"] == test_user["name"]
-        and data["email"] == test_user["email"]
-        and data["team"] == team
-        and data["role"] == role
-    )
+        assert all(
+            [
+                data["id"] == user_id,
+                data["name"] == self.test_user_1["name"],
+                data["email"] == self.test_user_1["email"],
+                data["team"] == team,
+                data["role"] == role,
+            ]
+        )
 
+    def test_auth_token(self):
+        requests.post(
+            self.host + self.register_url, data=self.test_user_1
+        ).json()
 
-def test_auth_token(host, test_user):
-    payload = {
-        "credentials": test_user["email"],
-        "password": test_user["password"],
-    }
+        filter_route = "analysis_and_training/"
+        test_user = {
+            "credentials": self.test_user_1["name"],
+            "password": self.test_user_1["password"],
+        }
 
-    filter_route = "analysis_and_training/filter/"
+        request = requests.post(self.host + self.signin_url, data=test_user)
+        token = "JWT " + request.json()["token"]
+        headers = {"Authorization": token}
 
-    request = requests.post(host + SIGN_IN_URL, params=payload)
-    token = "JWT " + request.json()["token"]
-    headers = {"Authorization": token}
+        request = requests.get(self.host + filter_route, headers=headers)
 
-    request = requests.get(host + filter_route, headers=headers)
-
-    assert request.status_code == 200
+        assert request.status_code == 200

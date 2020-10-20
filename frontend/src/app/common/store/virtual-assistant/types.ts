@@ -10,9 +10,10 @@ export interface MessageItem{
   message: string| string[],
 }
 
-export enum VirtualAssistantActionTypes{
-    activateVirtualAssistant = "ACTIVATE_VIRTUAL_ASSISTANT",
-    activateMessage = "ACTIVATE_MESSAGE",
+export enum VirtualAssistantActionTypes {
+  activateVirtualAssistant = "ACTIVATE_VIRTUAL_ASSISTANT",
+  activateMessage = "ACTIVATE_MESSAGE",
+  clearMessages = "CLEAR_MESSAGES"
 }
 
 export interface VirtualAssistantStore{
@@ -22,7 +23,7 @@ export interface VirtualAssistantStore{
 }
 
 export interface OutboundData{
-  sender: string,
+  sender: string | number,
   message: string,
 }
 

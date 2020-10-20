@@ -1,6 +1,6 @@
 from rest_framework.exceptions import APIException
 
-from utils.const import DEFAULT_WARNING_CODE
+DEFAULT_WARNING_CODE = 209
 
 
 class BaseAPIWarning(APIException, Warning):

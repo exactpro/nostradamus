@@ -27,7 +27,6 @@ interface IProps {
 }
 
 interface iState {
-	width: number;
 	percentageData: {
 		value: number,
 		color: string,
@@ -42,7 +41,6 @@ class DonutChart extends React.Component<IProps, iState> {
 	};
 
 	state = {
-		width: 0,
 		percentageData: {
 			value: 0,
 			color: "#FFFFFF"

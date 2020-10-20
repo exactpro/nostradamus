@@ -1,6 +1,10 @@
 from rest_framework import serializers
 
 
+class AnalysisAndTrainingSerializer(serializers.Serializer):
+    records_count = serializers.DictField(child=serializers.IntegerField())
+
+
 class FiltrationFieldRequestSerializer(serializers.Serializer):
     name = serializers.CharField()
     filtration_type = serializers.CharField()
@@ -8,26 +12,16 @@ class FiltrationFieldRequestSerializer(serializers.Serializer):
     exact_match = serializers.BooleanField(required=False)
 
 
-class FilterActionSerializer(serializers.Serializer):
-    action = serializers.CharField()
+class FilterResultSerializer(AnalysisAndTrainingSerializer):
     filters = serializers.ListField(child=FiltrationFieldRequestSerializer())
-
-
-class FilterResultSerializer(serializers.Serializer):
-    records_count = serializers.DictField(child=serializers.IntegerField())
-    filters = serializers.ListField(child=FiltrationFieldRequestSerializer())
-
-
-class FiltrationFieldResponseSerializer(serializers.Serializer):
-    name = serializers.CharField()
-    filtration_type = serializers.CharField(write_only=True)
-    values = serializers.ListField(
-        child=serializers.CharField(), required=False
-    )
 
 
 class FilterContentSerializer(serializers.Serializer):
     filters = serializers.ListField(child=FiltrationFieldRequestSerializer())
+
+
+class FilterActionSerializer(FilterContentSerializer):
+    action = serializers.CharField()
 
 
 class StatisticsSerializer(serializers.Serializer):
@@ -45,33 +39,26 @@ class SignificantTermsResponseSerializer(serializers.Serializer):
     terms = serializers.DictField(child=serializers.IntegerField())
 
 
-class SignificantTermsRenderContentSerializer(serializers.Serializer):
+class SignificantTermsRenderContentSerializer(
+    SignificantTermsResponseSerializer
+):
     metrics = serializers.ListField(child=serializers.CharField())
     chosen_metric = serializers.CharField()
-    terms = serializers.DictField(child=serializers.IntegerField())
 
 
 class SignificantTermsRenderSerializer(serializers.Serializer):
     significant_terms = SignificantTermsRenderContentSerializer()
 
 
-class AnalysisAndTrainingSerializer(serializers.Serializer):
-    records_count = serializers.DictField(child=serializers.IntegerField())
-
-
-class BugTrackerLoginSerializer(serializers.Serializer):
-    link = serializers.CharField()
-    username = serializers.CharField()
-    password = serializers.CharField()
-
-
 class DefectSubmissionSerializer(serializers.Serializer):
     period = serializers.CharField()
 
 
-class DefectSubmissionResponseSerializer(serializers.Serializer):
-    defect_submission = serializers.DictField(child=serializers.IntegerField())
-    period = serializers.CharField()
+class DefectSubmissionResponseSerializer(DefectSubmissionSerializer):
+    created_line = serializers.DictField(child=serializers.IntegerField())
+    resolved_line = serializers.DictField(child=serializers.IntegerField())
+    created_total_count = serializers.IntegerField()
+    resolved_total_count = serializers.IntegerField()
 
 
 class FrequentlyTermsResponseSerializer(serializers.Serializer):
@@ -80,3 +67,7 @@ class FrequentlyTermsResponseSerializer(serializers.Serializer):
 
 class StatisticsResponseSerializer(serializers.Serializer):
     statistics = serializers.DictField(child=StatisticsSerializer())
+
+
+class StatusResponseSerializer(serializers.Serializer):
+    issues_exists = serializers.BooleanField()

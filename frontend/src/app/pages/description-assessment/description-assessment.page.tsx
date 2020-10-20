@@ -129,12 +129,12 @@ class DescriptionAssessmentPage extends React.Component<PropsFromRedux, State> {
 			newKeywords = [];
 		}
 
-		this.setState({
+		this.setState((state)=>({
 			keywords: {
-				...this.state.keywords,
+				...state.keywords,
 				[predictMetric.metric]: newKeywords,
 			},
-		});
+		}));
 	};
 
 	getMetrics = (empty: boolean = false) => {

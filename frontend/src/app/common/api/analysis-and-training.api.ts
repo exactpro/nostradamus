@@ -92,4 +92,13 @@ export class AnalysisAndTrainingApi {
 		}
 	}
 
+	
+	public static async getGeneralApplicationStatus() {
+		try {
+			return await HttpClient.get(this.baseUrl + '/status/');
+		} catch (e) {
+			throw e;
+		}
+	}
+
 }

@@ -12,3 +12,7 @@ export const activateMessage = (content: InboundData | OutboundData, messageType
     content,
   }
 } as const)
+
+export const clearMessages = () => ({
+  type: VirtualAssistantActionTypes.clearMessages,
+} as const)

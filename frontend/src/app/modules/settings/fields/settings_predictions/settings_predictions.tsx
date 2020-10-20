@@ -35,7 +35,7 @@ class SettingsPredictions extends Component<SettingsPredictionsProps, SettingsPr
     this.setInputData("");
   }
 
-  addPrediction = () => {
+  addPredictionBlock = () => {
     let {predictions} = this.state;
 
     predictions.push({
@@ -50,23 +50,23 @@ class SettingsPredictions extends Component<SettingsPredictionsProps, SettingsPr
     this.detectIsSettingsDefault();
   }
 
-  deletePrediction = (index: number) => () => {
+  deletePredictionBlock = (index: number) => () => {
     let {predictions} = this.state;
 
     predictions.splice(index, 1);
 
     this.setState({predictions});
-    this.fixPredictionOrder();
+    this.fixPredictionsBlocksOrder();
     this.detectIsSettingsDefault();
   }
 
-  fixPredictionOrder = () => {
+  fixPredictionsBlocksOrder = () => {
     let predictions = this.state.predictions.map((item,index)=>({...item, position: index+1}));
 
     this.setState({predictions});
   }
 
-  changePredictionsOrder = (indexOfDraggedVal: number, indexOfNewPosition: number) =>
+  changeValueBlocksOrder = (indexOfDraggedVal: number, indexOfNewPosition: number) =>
   {
     let {predictions}=this.state;
     let val = predictions.splice(indexOfDraggedVal,1)[0];
@@ -74,7 +74,7 @@ class SettingsPredictions extends Component<SettingsPredictionsProps, SettingsPr
     predictions.splice(indexOfNewPosition,0,val);
 
     this.setState({predictions});
-    this.fixPredictionOrder();
+    this.fixPredictionsBlocksOrder();
     this.detectIsSettingsDefault();
   }
 
@@ -97,7 +97,7 @@ class SettingsPredictions extends Component<SettingsPredictionsProps, SettingsPr
 
   render(){
     let excludeNames = this.state.predictions.map(item=>item.name);
-
+    
     return (
       <div className="settings-predictions">
         <p className="settings-predictions__title">Predictions</p>
@@ -111,7 +111,7 @@ class SettingsPredictions extends Component<SettingsPredictionsProps, SettingsPr
                              dropDownValues={this.state.names}
                              excludeValues={excludeNames}/>
             <button className={cn("settings-predictions__add-position", "settings-predictions__button")}
-                    onClick={this.addPrediction}
+                    onClick={this.addPredictionBlock}
                     disabled={!this.state.dataInput || this.state.predictions.find((item:PredictionTableData)=>!item.is_default) !== undefined}>
               <Icon size={IconSize.small} type={IconType.close}/>
             </button>
@@ -120,8 +120,8 @@ class SettingsPredictions extends Component<SettingsPredictionsProps, SettingsPr
 
         <div className="settings-predictions-main">
           <InputPredictionsElement  values={this.state.predictions}
-                                    onDeletePrediction={this.deletePrediction}
-                                    onChangeOrder={this.changePredictionsOrder}/>
+                                    onDeletePrediction={this.deletePredictionBlock}
+                                    onChangePredictionsOrder={this.changeValueBlocksOrder}/>
         </div>
 
         <div className="settings-predictions-footer">

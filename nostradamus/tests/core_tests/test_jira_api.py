@@ -10,9 +10,11 @@ from apps.extractor.main.connector import get_largest_keys
 class TestJiraAPI(unittest.TestCase):
     @pytest.fixture(autouse=True)
     def init(self, request) -> None:
-        self.Jira = JAPI(base_jql=self.JQL,)
+        self.Jira = JAPI(
+            base_jql=self.JQL,
+        )
 
-    def test_get_extractor_args_all(self):
+    def test_get_extractor_args(self):
         larges_key = []
         request_args = self.Jira.get_extract_args(larges_key)
 
@@ -30,19 +32,6 @@ class TestJiraAPI(unittest.TestCase):
             ]
         )
 
-    def test_get_extractor_args_piece(self):
-        larges_key = ["XNIO-12", "ANOS-156"]
-        request_args = self.Jira.get_extract_args(larges_key)
-
-        assert all(
-            [
-                request_args[0][0] == f"{self.JQL} and (key > XNIO-12) "
-                f"or (key > ANOS-156) ORDER BY project, key ASC",
-                request_args[0][1] == 0,
-                request_args[0][2] == 1000,
-            ]
-        )
-
     def test_parse_issues_positive(self):
         issues = self.Jira.execute_jql(jql=self.JQL, step_size=1)
 
@@ -52,7 +41,7 @@ class TestJiraAPI(unittest.TestCase):
                     self.Jira.parse_issues(issues)
                 ).keys()
             )
-            == 131
+            != 0
         )
 
     def test_parse_issues_negative(self):

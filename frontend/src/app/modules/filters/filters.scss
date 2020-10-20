@@ -1,3 +1,5 @@
+@import "src/app/styles/colors";
+
 .filters {
   height: 100%;
 
@@ -16,9 +18,6 @@
   &__filter {
     margin-top: 20px;
 
-    display: flex;
-    justify-content: space-between;
-
     &:first-child {
       margin-top: 0;
     }
@@ -31,9 +30,14 @@
     align-items: center;
 
     flex-shrink: 0;
+
+    font-size: 12px;
+    line-height: 15px;
+    color: $darkGray;
   }
 
   &__filter-field {
+    margin-top: 7px;
     width: 100%;
   }
 

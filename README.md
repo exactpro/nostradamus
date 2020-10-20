@@ -26,8 +26,8 @@ This knowledge further allows to achieve various IT-related goals, e.g.:
 ### System requirements
 
 For best performance, please make sure that your machine satisfies all the recommended requirements:
-* 2+ CPU
-* 4Gb+ RAM 
+* 4+ CPU
+* 8Gb+ RAM 
 * 10Gb+ HDD
 
 ### Installation
