@@ -84,3 +84,37 @@ class UserPredictionsTable(models.Model):
     is_default = models.BooleanField(default=False)
     position = models.IntegerField()
     settings = models.ForeignKey(UserSettings, on_delete=models.CASCADE)
+
+
+class UserModels(models.Model):
+    name = models.CharField(max_length=128)
+    model = models.BinaryField()
+    settings = models.ForeignKey(UserSettings, on_delete=models.CASCADE)
+
+
+class UserTrainingParameters(models.Model):
+    name = models.CharField(max_length=128)
+    training_parameters = models.TextField()
+    settings = models.ForeignKey(UserSettings, on_delete=models.CASCADE)
+
+
+class UserTopTerms(models.Model):
+    top_terms_object = models.BinaryField()
+    settings = models.ForeignKey(UserSettings, on_delete=models.CASCADE)
+
+
+class UserBugResolution(models.Model):
+    metric = models.CharField(max_length=128)
+    value = models.CharField(max_length=128)
+    settings = models.ForeignKey(UserSettings, on_delete=models.CASCADE)
+
+
+class UserMarkUpEntity(models.Model):
+    name = models.CharField(max_length=128)
+    entities = models.TextField()
+    settings = models.ForeignKey(UserSettings, on_delete=models.CASCADE)
+
+
+class UserSourceField(models.Model):
+    name = models.CharField(max_length=128)
+    settings = models.ForeignKey(UserSettings, on_delete=models.CASCADE)

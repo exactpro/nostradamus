@@ -1,9 +1,7 @@
-from zipfile import ZipFile
-
 import concurrent.futures
+import json
 import numpy
-from typing import List
-from pathlib import Path
+from typing import List, Dict, Union, Tuple
 
 from pandas import qcut, get_dummies, Categorical, DataFrame, Series, Interval
 from sklearn import feature_selection
@@ -16,14 +14,17 @@ from django.db.models import Model
 
 from apps.analysis_and_training.main.common import (
     get_stop_words,
-    save_to_archive,
     check_required_percentage,
-    get_models_dir,
     check_bugs_count,
 )
 from apps.authentication.models import User
-from apps.settings.main.archiver import get_archive_path
-from utils.const import TRAINING_PARAMETERS_FILENAME
+
+from apps.settings.models import (
+    UserTrainingParameters,
+    UserSettings,
+    UserTopTerms,
+    UserModels,
+)
 from utils.stemmed_tfidf_vectorizer import StemmedTfidfVectorizer
 from utils.exceptions import (
     SmallNumberRepresentatives,
@@ -35,8 +36,13 @@ from utils.warnings import ModelsNotTrainedWarning
 
 from sklearn.model_selection import GridSearchCV
 
+ModelParams = List[Dict[str, Dict[str, int]]]
+TrainingParameters = Union[List[str], List[int], Dict[str, List[str]]]
+ModelClasses = Dict[str, TrainingParameters]
+ModelPipeline = Dict[str, Pipeline]
 
-def compare_resolutions(issues: DataFrame, resolutions: list) -> set:
+
+def compare_resolutions(issues: DataFrame, resolutions: List[str]) -> set:
     """Checks for difference between required resolutions and those that are present in df.
 
     Parameters:
@@ -110,8 +116,8 @@ def stringify_ttr_intervals(intervals: List[Interval]) -> str:
 
 
 def filter_classes(
-    issues: DataFrame, areas_of_testing: list, resolution: list
-) -> dict:
+    issues: DataFrame, areas_of_testing: List[str], resolution: List[str]
+) -> ModelClasses:
     """Filters out classes with inadequate percentage of representatives.
 
     Parameters:
@@ -269,13 +275,17 @@ def train_imbalance(
     return {model_name: clf_model}, {model_name: best_params}
 
 
-def save_training_parameters(archive_path: Path, classes: dict, params: dict):
-    """Saves training parameters to the config file.
+def save_training_parameters(
+    user: Model,
+    classes: ModelClasses,
+    params: ModelParams,
+):
+    """Saves training parameters to the database.
 
     Parameters:
     ----------
-    archive_path:
-        Path to an archive.
+    user:
+        User.
     classes:
         classes.
     params:
@@ -297,17 +307,24 @@ def save_training_parameters(archive_path: Path, classes: dict, params: dict):
 
     training_settings["model_params"] = params
 
-    save_to_archive(
-        archive_path, "training_parameters.pkl", dumps(training_settings)
-    )
+    user_settings = UserSettings.objects.get(user=user)
+    for (
+        training_settings_name,
+        training_settings_value,
+    ) in training_settings.items():
+        UserTrainingParameters.objects.create(
+            name=training_settings_name,
+            training_parameters=json.dumps(training_settings_value),
+            settings=user_settings,
+        )
 
 
 def train(
     instance: Model,
     issues: DataFrame,
-    areas_of_testing: list,
-    resolution: list,
-) -> dict:
+    areas_of_testing: List[str],
+    resolution: List[str],
+):
     """Train models.
 
     Parameters:
@@ -320,13 +337,9 @@ def train(
         areas of testing.
     resolution:
         resolution.
-
-    Returns:
-    ----------
-        Valid classes.
     """
 
-    def _params_producer() -> tuple:
+    def _params_producer() -> Tuple[Series, Series, SMOTE, str]:
         """Generates parameters for imbalance training.
 
         Returns:
@@ -433,7 +446,7 @@ def train(
     except ValueError:
         raise InconsistentGivenData
 
-    save_models(models, instance)
+    save_models(user=instance, models=models)
 
     filtered_classes["Time to Resolve"] = stringify_ttr_intervals(
         filtered_classes["Time to Resolve"]
@@ -441,18 +454,19 @@ def train(
     filtered_classes["binary"] = [0, 1]
 
     save_training_parameters(
-        get_models_dir(instance), filtered_classes, params
+        user=instance, classes=filtered_classes, params=params
     )
 
     resolutions = [
         "Resolution_" + resol for resol in filtered_classes["Resolution"]
     ]
+
     save_top_terms(
-        get_models_dir(instance),
-        issues,
-        resolutions,
-        filtered_classes["Priority"],
-        filtered_classes["areas_of_testing"],
+        user=instance,
+        issues=issues,
+        resolutions=resolutions,
+        priorities=filtered_classes["Priority"],
+        areas_of_testing=filtered_classes["areas_of_testing"],
     )
 
 
@@ -507,26 +521,26 @@ def calculate_top_terms(issues: DataFrame, metric: str) -> list:
 
 
 def save_top_terms(
-    archive_path: Path,
+    user: Model,
     issues: DataFrame,
-    resolutions: list,
-    priorities: list,
-    areas_of_testing: list,
+    resolutions: List[str],
+    priorities: List[str],
+    areas_of_testing: List[str],
 ):
-    """Saves calculation results as a .pkl to an archive.
+    """Saves calculation results to database.
 
     Parameters:
     ----------
-    archive_path:
-        Path to an archive.
+    user:
+        User.
     issues:
         Bug reports.
     resolutions:
-        resolutions.
+        Resolutions.
     priorities:
-        priorities derived after models' training.
+        Priorities derived after models' training.
     areas_of_testing:
-        areas of testing derived after models' training.
+        Areas of testing derived after models' training.
 
     """
     binarized_df = get_dummies(
@@ -545,39 +559,46 @@ def save_top_terms(
     for metric in metrics:
         top_terms[metric] = calculate_top_terms(binarized_df, metric)
 
-    top_terms = DataFrame(dict([(k, Series(v)) for k, v in top_terms.items()]))
+    top_terms = DataFrame(
+        {metric: Series(terms) for metric, terms in top_terms.items()}
+    )
 
-    save_to_archive(archive_path, "top_terms.pkl", dumps(top_terms))
+    user_settings = UserSettings.objects.get(user=user)
+    UserTopTerms.objects.filter(settings=user_settings).delete()
+    UserTopTerms.objects.create(
+        top_terms_object=dumps(top_terms),
+        settings=user_settings,
+    )
 
 
 def check_training_files(user: User) -> None:
-    """Raises warning if models don't exist.
+    """Check whether the model is trained.
 
     Parameters:
     ----------
     user:
-        User instance.
+        User.
     """
-    archive_path = get_archive_path(user)
-    with ZipFile(archive_path, "r") as archive:
-        if TRAINING_PARAMETERS_FILENAME not in archive.namelist():
-            raise ModelsNotTrainedWarning
+    user_settings = UserSettings.objects.get(user=user)
+    if not UserTrainingParameters.objects.filter(settings=user_settings):
+        raise ModelsNotTrainedWarning
 
 
-def save_models(models: list, user: User) -> None:
-    """Appends models to archive.
+def save_models(user: Model, models: List[ModelPipeline]):
+    """Saves models to database.
 
     Parameters:
     ----------
+    user:
+        User.
     models:
-        Trained models.
-    user:
-        User instance.
+        Models pipelines.
     """
+    user_settings = UserSettings.objects.get(user=user)
     for model in models:
         for model_name, model_obj in model.items():
-            save_to_archive(
-                get_models_dir(user),
-                "{}.sav".format(model_name),
-                dumps(model_obj),
+            UserModels.objects.create(
+                name=model_name,
+                model=dumps(model_obj),
+                settings=user_settings,
             )

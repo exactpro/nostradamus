@@ -1,14 +1,14 @@
 export type Tag = {
-	name: string,
-	absoluteValue: number,
-	relatedValue: number,
-	size: number,
-	color: TagColor
-}
+	name: string;
+	absoluteValue: number;
+	relatedValue: number;
+	size: number;
+	color: TagColor;
+};
 
 export enum TagColor {
-	violet = 'violet',
-	pink = 'pink',
-	green = 'green',
-	yellow = 'yellow',
+	violet = "violet",
+	pink = "pink",
+	green = "green",
+	yellow = "yellow",
 }

@@ -3,108 +3,102 @@
 $horizontaTriangleSize: 7.5px;
 $verticalTriangleSize: 10px;
 
+.tooltip {
+	position: relative;
 
-.tooltip{
-  position: relative;
+	&-wrapper {
+		position: absolute;
+		display: none;
+		filter: drop-shadow(0px 5px 10px rgba(0, 0, 0, 0.25));
 
-  &-wrapper{
-    position: absolute;
-    display: none;
-    filter: drop-shadow(0px 5px 10px rgba(0, 0, 0, 0.25));
+		visibility: hidden;
+		opacity: 0;
+		transition: visibility 0.2s, opacity ease-out 0.2s;
 
-    visibility: hidden;
-    opacity: 0;
-    transition: visibility .2s,
-                opacity ease-out .2s;
+		&_displayed {
+			display: flex;
+		}
 
-    &_displayed{
-      display: flex;
-    }
-                
-    &_visible{
-      visibility: visible;
-      opacity: 1;
-    };
-    &_hided{
-      visibility: hidden;
-      opacity: 0;
-    }
+		&_visible {
+			visibility: visible;
+			opacity: 1;
+		}
+		&_hided {
+			visibility: hidden;
+			opacity: 0;
+		}
 
+		&_bottom {
+			bottom: 0;
+			flex-direction: column-reverse;
+			transform: translateY(calc(100% + #{$verticalTriangleSize}/ 2));
+		}
 
-    &_bottom{
-      bottom: 0;
-      flex-direction: column-reverse;
-      transform: translateY(calc(100% + #{$verticalTriangleSize}/2 ));
-    }
+		&_top {
+			top: 0;
+			flex-direction: column;
+			transform: translateY(calc(-100% - #{$verticalTriangleSize}/ 2));
+		}
 
-    &_top{
-      top: 0;
-      flex-direction: column;
-      transform: translateY(calc( -100% - #{$verticalTriangleSize}/2 ));
-    }
+		&_left {
+			left: 0;
+			top: 50%;
+			flex-direction: row;
+			align-items: center;
+			transform: translate(calc(-100% - #{$verticalTriangleSize}/ 2), -50%);
+		}
 
-    &_left{
-      left: 0;
-      top: 50%;
-      flex-direction: row;
-      align-items: center;
-      transform: translate(calc( -100% - #{$verticalTriangleSize}/2) , -50% );
-    }
+		&_right {
+			right: 0;
+			top: 50%;
+			flex-direction: row-reverse;
+			align-items: center;
+			transform: translate(calc(100% + #{$verticalTriangleSize}/ 2), -50%);
+		}
 
-    &_right{
-      right: 0;
-      top: 50%;
-      flex-direction: row-reverse;
-      align-items: center;
-      transform: translate(calc( 100% + #{$verticalTriangleSize}/2 ), -50% );
-    }
+		&__content {
+			background: $smoothOrange;
+			border-radius: 8px;
+			padding: 12px 25px;
+			white-space: nowrap;
 
+			font-size: 15px;
+			line-height: 19px;
+			color: $darkGray;
+		}
 
-    &__content{
-      background: $smoothOrange;
-      border-radius: 8px;
-      padding: 12px 25px;
-      white-space: nowrap;
+		&__triangle {
+			width: 0;
+			height: 0;
+			border-style: solid;
 
-      font-size: 15px;
-      line-height: 19px;
-      color: $darkGray;
-    };
+			&_top {
+				transform: translate(200%, -1px);
+				border-width: $verticalTriangleSize $verticalTriangleSize 0 0;
+				border-color: $smoothOrange transparent transparent transparent;
+			}
 
+			&_bottom {
+				transform: translate(200%, 1px);
+				border-width: $verticalTriangleSize 0 0 $verticalTriangleSize;
+				border-color: transparent transparent transparent $smoothOrange;
+			}
 
-    &__triangle{
-      width: 0;
-      height: 0;
-      border-style: solid;
+			&_right {
+				margin-right: -1px;
+				border-width: $horizontaTriangleSize $horizontaTriangleSize $horizontaTriangleSize 0;
+				border-color: transparent $smoothOrange transparent transparent;
+			}
 
+			&_left {
+				margin-left: -1px;
+				border-width: $horizontaTriangleSize 0 $horizontaTriangleSize $horizontaTriangleSize;
+				border-color: transparent transparent transparent $smoothOrange;
+			}
+		}
+	}
 
-      &_top{
-        transform: translate(200%, -1px);
-        border-width: $verticalTriangleSize $verticalTriangleSize 0 0;
-        border-color: $smoothOrange transparent transparent transparent;
-      }
-
-      &_bottom{
-        transform: translate(200%, 1px);
-        border-width: $verticalTriangleSize 0 0 $verticalTriangleSize;
-        border-color: transparent transparent transparent $smoothOrange;
-      }
-
-      &_right{
-        margin-right: -1px;
-        border-width: $horizontaTriangleSize $horizontaTriangleSize $horizontaTriangleSize 0;
-        border-color: transparent $smoothOrange transparent transparent;
-      }
-
-      &_left{
-        margin-left: -1px;
-        border-width: $horizontaTriangleSize 0 $horizontaTriangleSize $horizontaTriangleSize;
-        border-color: transparent transparent transparent $smoothOrange;
-      }
-    };
-  }
-
-  &__wrapped-object{
-    cursor: help;
-  }
+	&__wrapped-object {
+		cursor: help;
+	}
 }

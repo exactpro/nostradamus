@@ -1,8 +1,11 @@
-import { QAMetricsStore } from 'app/common/store/qa-metrics/types';
-import { InferValueTypes } from 'app/common/store/utils';
-import { HttpStatus } from 'app/common/types/http.types'; 
-import * as actions from './actions'; 
-import { fixTTRBarChartAxisDisplayStyle, fixTTRPredictionTableDisplayStyle } from 'app/common/functions/helper';
+import { QAMetricsStore } from "app/common/store/qa-metrics/types";
+import { InferValueTypes } from "app/common/store/utils";
+import { HttpStatus } from "app/common/types/http.types";
+import {
+	fixTTRBarChartAxisDisplayStyle,
+	fixTTRPredictionTableDisplayStyle,
+} from "app/common/functions/helper";
+import * as actions from "./actions";
 
 const initialState: QAMetricsStore = {
 	statuses: {
@@ -12,7 +15,7 @@ const initialState: QAMetricsStore = {
 	},
 	records_count: {
 		total: 0,
-		filtered: 0
+		filtered: 0,
 	},
 	isModelTrained: true,
 	predictions_table: [],
@@ -25,10 +28,12 @@ const initialState: QAMetricsStore = {
 
 type actionsQAMetricsTypes = ReturnType<InferValueTypes<typeof actions>>;
 
-export const qaMetricsPageReducer = (state: QAMetricsStore = initialState, action: actionsQAMetricsTypes): QAMetricsStore => {
+export const qaMetricsPageReducer = (
+	state: QAMetricsStore = initialState,
+	action: actionsQAMetricsTypes
+): QAMetricsStore => {
 	switch (action.type) {
-
-		case 'SET_QA_METRICS_PAGE_STATUS':
+		case "SET_QA_METRICS_PAGE_STATUS":
 			return {
 				...state,
 				statuses: {
@@ -37,19 +42,19 @@ export const qaMetricsPageReducer = (state: QAMetricsStore = initialState, actio
 				},
 			};
 
-		case 'SET_STATUS_TRAIN_MODEL_QA_METRICS':
+		case "SET_STATUS_TRAIN_MODEL_QA_METRICS":
 			return {
 				...state,
-				isModelTrained: action.newModelStatus
+				isModelTrained: action.newModelStatus,
 			};
 
-		case 'SET_QA_METRICS_RECORDS_COUNT':
+		case "SET_QA_METRICS_RECORDS_COUNT":
 			return {
 				...state,
-				records_count: { ...action.records_count }
+				records_count: { ...action.records_count },
 			};
 
-		case 'SET_QA_METRICS_ALL_DATA': 
+		case "SET_QA_METRICS_ALL_DATA":
 			return {
 				...state,
 				predictions_table: [...fixTTRPredictionTableDisplayStyle(action.data.predictions_table)],
@@ -60,17 +65,16 @@ export const qaMetricsPageReducer = (state: QAMetricsStore = initialState, actio
 				resolution_chart: { ...action.data.resolution_chart },
 			};
 
-		case 'SET_QA_METRICS_PAGE_TABLE':
+		case "SET_QA_METRICS_PAGE_TABLE":
 			return {
 				...state,
 				predictions_table: [...fixTTRPredictionTableDisplayStyle(action.tableData)],
 			};
 
 		case "CLEAR_QA_METRICS_DATA":
-			return {...initialState};
+			return { ...initialState };
 
 		default:
 			return state;
 	}
 };
-

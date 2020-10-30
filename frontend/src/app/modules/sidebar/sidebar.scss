@@ -2,245 +2,247 @@
 @import "../../styles/variables";
 
 .navigation-bar {
-  height: 100vh;
-  width: $sidebarWidthDefault;
-  &.navigation-bar_opened {
-    width: $sidebarWidthOpened;
-    transition-duration: .5s;
-    transition-timing-function: cubic-bezier(0, 0.21, 0.43, 1.16);
-  }
+	height: 100vh;
+	width: $sidebarWidthDefault;
+	&.navigation-bar_opened {
+		width: $sidebarWidthOpened;
+		transition-duration: 0.5s;
+		transition-timing-function: cubic-bezier(0, 0.21, 0.43, 1.16);
+	}
 
-  transition-property: width;
-  transition-duration: .2s;
-  transition-timing-function: ease-out;
+	transition-property: width;
+	transition-duration: 0.2s;
+	transition-timing-function: ease-out;
 
-  position: fixed;
-  z-index: 200;
-  top: 0;
-  left: 0;
+	position: fixed;
+	z-index: 200;
+	top: 0;
+	left: 0;
 
-  background-color: $deepDarkBlue;
+	background-color: $deepDarkBlue;
 
-  border-top-right-radius: $defaultBorderRadius;
-  border-bottom-right-radius: $defaultBorderRadius;
+	border-top-right-radius: $defaultBorderRadius;
+	border-bottom-right-radius: $defaultBorderRadius;
 
-  overflow: hidden;
+	overflow: hidden;
 
-  padding: 20px 0;
-  box-sizing: border-box;
+	padding: 20px 0;
+	box-sizing: border-box;
 
-  &__inner {
-    width: $sidebarWidthOpened;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    height: 100%;
-  }
+	&__inner {
+		width: $sidebarWidthOpened;
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		height: 100%;
+	}
 
-  &__logo, &__logo-full {
-    margin-left: 20px;
-    display: block;
-    opacity: 1;
-    align-self: flex-start;
-  }
+	&__logo,
+	&__logo-full {
+		margin-left: 20px;
+		display: block;
+		opacity: 1;
+		align-self: flex-start;
+	}
 
-  & .navigation-bar__logo_hidden, & .navigation-bar__logo-full_hidden {
-    opacity: 0;
-    position: absolute;
-    top: -300px;
-    transition-delay: 1s;
-  }
+	& .navigation-bar__logo_hidden,
+	& .navigation-bar__logo-full_hidden {
+		opacity: 0;
+		position: absolute;
+		top: -300px;
+		transition-delay: 1s;
+	}
 
-  &__user {
-    margin-top: 30px;
+	&__user {
+		margin-top: 30px;
 
-    display: flex;
+		display: flex;
 
-    &-photo {
-      width: $sidebarUserpicWidth;
-      height: $sidebarUserpicWidth;
-      margin-left: ($sidebarWidthDefault - $sidebarUserpicWidth)/2;
-      margin-right: ($sidebarWidthDefault - $sidebarUserpicWidth)/2;
+		&-photo {
+			width: $sidebarUserpicWidth;
+			height: $sidebarUserpicWidth;
+			margin-left: ($sidebarWidthDefault - $sidebarUserpicWidth)/2;
+			margin-right: ($sidebarWidthDefault - $sidebarUserpicWidth)/2;
 
-      flex-shrink: 0;
+			flex-shrink: 0;
 
-      border-radius: 100%;
-      background-color: $active;
+			border-radius: 100%;
+			background-color: $active;
 
-      font-weight: bold;
-      font-size: 24px;
-      color: $white;
-      line-height: 50px;
-      text-align: center;
-    }
+			font-weight: bold;
+			font-size: 24px;
+			color: $white;
+			line-height: 50px;
+			text-align: center;
+		}
 
-    &-data {
-      max-width: ($sidebarWidthOpened - $sidebarWidthDefault);
+		&-data {
+			max-width: ($sidebarWidthOpened - $sidebarWidthDefault);
 
-      color: $white;
-      opacity: 0.6;
+			color: $white;
+			opacity: 0.6;
 
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+		}
 
-    &-name {
-      font-size: 17px;
-      line-height: 21px;
-      padding-right: 30px;
-      position: relative;
-    }
+		&-name {
+			font-size: 17px;
+			line-height: 21px;
+			padding-right: 30px;
+			position: relative;
+		}
 
-    &-manage-icon {
-      display: block;
-      position: absolute;
-      right: 15px;
-      top: 50%;
-      transform: translate(0px, -31%);
-      opacity: 0.8;
-      cursor: pointer;
+		&-manage-icon {
+			display: block;
+			position: absolute;
+			right: 15px;
+			top: 50%;
+			transform: translate(0px, -31%);
+			opacity: 0.8;
+			cursor: pointer;
 
-      &:hover {
-        opacity: 1;
-      }
-    }
+			&:hover {
+				opacity: 1;
+			}
+		}
 
-    &-email {
-      margin-top: 2px;
-      font-size: 11px;
-      line-height: 14px;
-      padding-right: 15px;
-    }
+		&-email {
+			margin-top: 2px;
+			font-size: 11px;
+			line-height: 14px;
+			padding-right: 15px;
+		}
 
-    &-name, &-email{
-      text-overflow: ellipsis;
-      overflow: hidden;
-      white-space: nowrap;
-    }
-  }
+		&-name,
+		&-email {
+			text-overflow: ellipsis;
+			overflow: hidden;
+			white-space: nowrap;
+		}
+	}
 
-  &__actions {
-    margin-top: 8px;
-    padding-left: 70px;
+	&__actions {
+		margin-top: 8px;
+		padding-left: 70px;
 
-    &-item {
-      margin-top: 10px;
-      width: 100%;
-      padding: 10px 10px 10px 20px;
+		&-item {
+			margin-top: 10px;
+			width: 100%;
+			padding: 10px 10px 10px 20px;
 
-      display: flex;
-      align-items: center;
+			display: flex;
+			align-items: center;
 
-      font-size: 16px;
-      line-height: 20px;
-      color: $lightBlueText;
-      background-color: transparent;
+			font-size: 16px;
+			line-height: 20px;
+			color: $lightBlueText;
+			background-color: transparent;
 
-      transition-property: color, background-color;
-      transition-duration: .2s;
-      transition-timing-function: linear;
+			transition-property: color, background-color;
+			transition-duration: 0.2s;
+			transition-timing-function: linear;
 
-      border-top-left-radius: 20px;
-      border-bottom-left-radius: 20px;
+			border-top-left-radius: 20px;
+			border-bottom-left-radius: 20px;
 
-      &:hover:not(:disabled, .disabled) {
-        background: rgba(255, 255, 255, 0.15);
-        color: $white;
-        cursor: pointer;
-      }
+			&:hover:not(:disabled, .disabled) {
+				background: rgba(255, 255, 255, 0.15);
+				color: $white;
+				cursor: pointer;
+			}
 
-      &:disabled, &.disabled {
-        background: none;
-        color: $lightBlueText;
-        cursor: not-allowed;
-      }
+			&:disabled,
+			&.disabled {
+				background: none;
+				color: $lightBlueText;
+				cursor: not-allowed;
+			}
 
-      &-icon {
-        margin-right: 15px;
-      }
-    }
-  }
+			&-icon {
+				margin-right: 15px;
+			}
+		}
+	}
 
-  &__menu {
-    margin-top: 30px;
+	&__menu {
+		margin-top: 30px;
 
-    &_position_bottom {
-      margin-top: auto;
-    }
-  }
+		&_position_bottom {
+			margin-top: auto;
+		}
+	}
 
-  &__menu-item {
-    margin-top: 30px;
+	&__menu-item {
+		margin-top: 30px;
 
-    display: flex;
-    align-items: center;
+		display: flex;
+		align-items: center;
 
-    height: 50px;
-    line-height: 50px;
-    width: 100%;
+		height: 50px;
+		line-height: 50px;
+		width: 100%;
 
-    position: relative;
+		position: relative;
 
-    cursor: pointer;
+		cursor: pointer;
 
-    opacity: .6;
+		opacity: 0.6;
 
-    background-color: transparent;
-    transition-property: background-color;
-    transition-duration: .1s;
-    transition-timing-function: ease-in;
+		background-color: transparent;
+		transition-property: background-color;
+		transition-duration: 0.1s;
+		transition-timing-function: ease-in;
 
-    &:hover:not(&_active) {
-      background-color: rgba(255, 255, 255, 0.15);
-      transition-duration: 0s;
-      opacity: 1;
-    }
+		&:hover:not(&_active) {
+			background-color: rgba(255, 255, 255, 0.15);
+			transition-duration: 0s;
+			opacity: 1;
+		}
 
-    &::before {
-      content: '';
-      height: 100%;
-      width: 7px;
-      background-color: $active;
-      border-top-right-radius: 7px;
-      border-bottom-right-radius: 7px;
-      position: absolute;
-      top: 0;
-      left: -7px;
-      transition: left .1s ease-out;
-    }
+		&::before {
+			content: "";
+			height: 100%;
+			width: 7px;
+			background-color: $active;
+			border-top-right-radius: 7px;
+			border-bottom-right-radius: 7px;
+			position: absolute;
+			top: 0;
+			left: -7px;
+			transition: left 0.1s ease-out;
+		}
 
-    &_active {
-      background-color: rgba(255, 255, 255, 0.15);
-      cursor: default;
-      transition-duration: 0s;
-      opacity: 1;
+		&_active {
+			background-color: rgba(255, 255, 255, 0.15);
+			cursor: default;
+			transition-duration: 0s;
+			opacity: 1;
 
-      &::before {
-        left: 0;
-      }
-    }
+			&::before {
+				left: 0;
+			}
+		}
 
-    &_disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      pointer-events: none;
-    }
+		&_disabled {
+			opacity: 0.6;
+			cursor: not-allowed;
+			pointer-events: none;
+		}
 
-    &-icon {
-        width: $sidebarWidthDefault;
-        display: flex;
-        justify-content: center;
-        color: white;
-        text-align: center; 
-    }
+		&-icon {
+			width: $sidebarWidthDefault;
+			display: flex;
+			justify-content: center;
+			color: white;
+			text-align: center;
+		}
 
-    &-text {
-      font-size: 17px;
-      line-height: 21px;
-      color: $white;
-    }
-  }
-
-
+		&-text {
+			font-size: 17px;
+			line-height: 21px;
+			color: $white;
+		}
+	}
 }

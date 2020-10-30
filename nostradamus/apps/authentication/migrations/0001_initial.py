@@ -122,8 +122,12 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            options={"verbose_name": "User",},
-            managers=[("objects", django.contrib.auth.models.UserManager()),],
+            options={
+                "verbose_name": "User",
+            },
+            managers=[
+                ("objects", django.contrib.auth.models.UserManager()),
+            ],
         ),
         migrations.CreateModel(
             name="Role",
@@ -139,7 +143,9 @@ class Migration(migrations.Migration):
                 ),
                 ("name", models.CharField(max_length=64, unique=True)),
             ],
-            options={"verbose_name": "Role",},
+            options={
+                "verbose_name": "Role",
+            },
         ),
         migrations.CreateModel(
             name="Team",
@@ -155,7 +161,9 @@ class Migration(migrations.Migration):
                 ),
                 ("name", models.CharField(max_length=64, unique=True)),
             ],
-            options={"verbose_name": "Team",},
+            options={
+                "verbose_name": "Team",
+            },
         ),
         migrations.CreateModel(
             name="TeamMember",

@@ -55,10 +55,6 @@ DEFAULT_PREDICTIONS_TABLE_FIELDS = [
     "Summary",
 ]
 
-TRAINING_SETTINGS_FILENAME = "training_settings.pkl"
-TRAINING_PARAMETERS_FILENAME = "training_parameters.pkl"
-TOP_TERMS_FILENAME = "top_terms.pkl"
-
 UNRESOLVED_BUGS_FILTER = {
     "name": "Resolution",
     "filtration_type": "string",

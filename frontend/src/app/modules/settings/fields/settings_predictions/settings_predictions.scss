@@ -1,66 +1,63 @@
 @import "../../../../styles/colors";
 
-.settings-predictions{
-  font-weight: 500;
-  font-size: 14px;
-  line-height: 17px;
-  color: $darkGray;
+.settings-predictions {
+	font-weight: 500;
+	font-size: 14px;
+	line-height: 17px;
+	color: $darkGray;
 
-  &-header{
-    margin-top: 15px;
+	&-header {
+		margin-top: 15px;
 
-    &__title{
-    }
+		&__title {
+		}
 
-    &__wrapper{
-      display: flex;
-      align-items: center;
-      width:50%;
-      margin-top: 5px;
-    }
+		&__wrapper {
+			display: flex;
+			align-items: center;
+			width: 50%;
+			margin-top: 5px;
+		}
+	}
 
-  }
+	&-main {
+		margin-top: 15px;
+	}
 
-  &-main{
-    margin-top: 15px;
-  }
+	&__button {
+		&:disabled {
+			cursor: not-allowed;
+		}
+	}
 
-  &__button{
-    &:disabled{
-      cursor: not-allowed;
-    }
-  }
+	&__add-position {
+		display: inline-block;
+		padding: 6px;
+		margin-left: 15px;
+		border: 1.5px solid $gray;
+		background-color: transparent;
+		border-radius: 100%;
+		opacity: 0.5;
+		cursor: pointer;
+		transform: rotate(45deg);
+		transition: opacity 0.2s ease-out, color 0.2s ease-out, border-color 0.2s ease-out;
 
-  &__add-position{
-    display: inline-block;
-    padding: 6px;
-    margin-left: 15px;
-    border: 1.5px solid $gray;
-    background-color: transparent;
-    border-radius: 100%;
-    opacity: .5;
-    cursor: pointer;
-    transform: rotate(45deg);
-    transition: opacity .2s ease-out,
-                color .2s ease-out,
-                border-color .2s ease-out;
+		&:hover:not([disabled]) {
+			opacity: 1;
+			color: $seaBlue;
+			border-color: $seaBlue;
+		}
+	}
 
-    &:hover:not([disabled]){
-      opacity: 1;
-      color: $seaBlue;
-      border-color: $seaBlue;
-    }
-  }
+	&__title {
+		font-size: 18px;
+		line-height: 22px;
+		color: $deepDarkBlue;
+	}
 
-  &__title{
-    font-size: 18px;
-    line-height: 22px;
-    color: $deepDarkBlue;
-  }
-
-  &-footer{
-    display: flex;
-    justify-content: space-between;
-    margin-top: 30px;
-  }
+	&-footer {
+		display: flex;
+		justify-content: space-between;
+		margin-top: 30px;
+	}
 }

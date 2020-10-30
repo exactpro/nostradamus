@@ -1,17 +1,15 @@
 import pickle
+from json import loads, dumps
+from typing import Dict, List
 
 from django.db.models import Model, Max
+from pandas import DataFrame
+from rest_framework.serializers import Serializer
 
 from apps.extractor.main.connector import get_issue_count
-from apps.settings.main.archiver import (
-    get_archive_path,
-    read_from_archive,
-    update_training_config,
-    delete_training_data,
-)
+
 from utils.const import (
     DEFAULT_PREDICTIONS_TABLE_FIELDS,
-    TRAINING_SETTINGS_FILENAME,
 )
 from utils.exceptions import (
     IncorrectPredictionsTableOrder,
@@ -23,7 +21,7 @@ from itertools import chain
 
 
 def init_filters(model: Model, settings: Model) -> None:
-    """ Creates a default filters settings.
+    """Creates a default filters settings.
 
     Parameters:
     ----------
@@ -56,7 +54,7 @@ def init_filters(model: Model, settings: Model) -> None:
 
 
 def init_predictions_table(model: Model, settings: Model) -> None:
-    """ Creates a default predictions table settings.
+    """Creates a default predictions table settings.
 
     Parameters:
     ----------
@@ -79,19 +77,8 @@ def init_predictions_table(model: Model, settings: Model) -> None:
         )
 
 
-def init_training_settings() -> bytes:
-    """ Creates a default training settings.
-
-    Returns:
-    ----------
-        A pickled representation of training settings.
-    """
-    data = {"source_field": "", "mark_up_entities": [], "bug_resolution": []}
-    return pickle.dumps(data)
-
-
 def read_settings(request_data: list, user: Model) -> None:
-    """ Reads settings and appends it to request.
+    """Reads settings and appends it to request.
 
     Parameters:
     ----------
@@ -109,30 +96,58 @@ def read_settings(request_data: list, user: Model) -> None:
         obj["settings"] = user_settings
 
 
-def get_training_settings(user: Model) -> dict:
-    """ Prepares training settings data for serializing.
+def get_training_parameters(instance: Model) -> Dict[str, str]:
+    """Get training parameters.
 
     Parameters:
     ----------
-    user:
-        User instance.
-
+    instance:
+        Instance of User or Team model.
     Returns:
     ----------
-        Training settings with path to user archive.
+        Training parameters of User or Team from database.
     """
-    training_settings_path = get_archive_path(user)
-    training_settings = read_from_archive(
-        training_settings_path, TRAINING_SETTINGS_FILENAME
-    )
+    # To avoid a circular dependency
+    from apps.settings.models import UserSettings, UserTrainingParameters
 
-    return training_settings
+    user_settings = UserSettings.objects.get(user=instance)
+    user_training_parameters = UserTrainingParameters.objects.filter(
+        settings=user_settings
+    )
+    return {
+        params.name: loads(params.training_parameters)
+        for params in user_training_parameters
+    }
+
+
+def update_training_parameters(
+    instance: Model, params: Dict[str, str]
+) -> None:
+    """Updates training parameters settings.
+
+    Parameters:
+    ----------
+    model:
+        User instance.
+    params:
+        New parameters of training.
+    """
+    # To avoid a circular dependency
+    from apps.settings.models import UserSettings, UserTrainingParameters
+
+    user_settings = UserSettings.objects.get(user=instance)
+    for param in params:
+        UserTrainingParameters.objects.create(
+            name=param.get("name"),
+            training_parameters=param.get("value"),
+            settings=user_settings,
+        )
 
 
 def update_predictions_table(
-    model: Model, settings: int, fields: list
+    model: Model, settings: int, fields: List[Dict[str, str]]
 ) -> None:
-    """ Updates predictions table settings.
+    """Updates predictions table settings.
 
     Parameters:
     ----------
@@ -145,8 +160,7 @@ def update_predictions_table(
     """
 
     def _validate_default_fields() -> None:
-        """ Checks that all default fields exist.
-        """
+        """Checks that all default fields exist."""
         default_fields = [
             field
             for field in fields
@@ -156,8 +170,7 @@ def update_predictions_table(
             raise NotFilledDefaultFields
 
     def _validate_positions() -> None:
-        """ Checks that there are no duplicated positions.
-        """
+        """Checks that there are no duplicated positions."""
         positions = set([field["position"] for field in fields])
         if len(positions) != len(fields):
             raise IncorrectPredictionsTableOrder
@@ -171,77 +184,8 @@ def update_predictions_table(
         model.objects.create(settings_id=settings, **field)
 
 
-def update_training_settings(training_settings: dict, user: Model) -> None:
-    """ Updates training settings.
-
-    Parameters:
-    ----------
-    training_settings:
-        Training settings.
-    user:
-        User instance
-    """
-
-    def _parse() -> None:
-        """ Parses objects with nested objects.
-        """
-        for obj in training_settings:
-            if isinstance(obj, list):
-                training_settings[obj] = [dict(value) for value in obj]
-
-    def _check_by_changing() -> None:
-        """ Checks that training data hasn't been edited.
-        """
-        current_settings = read_from_archive(
-            archive_path, TRAINING_SETTINGS_FILENAME
-        )
-
-        is_changed = False
-
-        for key, obj in current_settings.items():
-            if key == "source_field":
-                if obj != training_settings[key]:
-                    is_changed = True
-                    break
-            elif key == "bug_resolution":
-                current_metrics = {resolution["value"] for resolution in obj}
-                new_metrics = {
-                    resolution["value"]
-                    for resolution in training_settings["bug_resolution"]
-                }
-                if current_metrics.difference(new_metrics):
-                    is_changed = True
-                    break
-            elif key == "mark_up_entities":
-                old_areas_of_testing = {
-                    entity["area_of_testing"]: entity["entities"]
-                    for entity in obj
-                }
-                new_areas_of_testing = {
-                    entity["area_of_testing"]: entity["entities"]
-                    for entity in training_settings[key]
-                }
-                for iteration, key_ in enumerate(old_areas_of_testing, 1):
-                    if key_ not in new_areas_of_testing or set(
-                        old_areas_of_testing[key_]
-                    ).difference(set(new_areas_of_testing[key_])):
-                        is_changed = True
-                        break
-
-        if is_changed:
-            delete_training_data(archive_path)
-
-    _parse()
-
-    archive_path = get_archive_path(user)
-    training_data = pickle.dumps(training_settings)
-
-    _check_by_changing()
-    update_training_config(archive_path, training_data)
-
-
-def get_filter_settings(user: Model) -> list:
-    """ Reads filter settings.
+def get_filter_settings(user: Model) -> List[Dict[str, str]]:
+    """Reads filter settings.
 
     Parameters:
     ----------
@@ -265,8 +209,8 @@ def get_filter_settings(user: Model) -> list:
     return settings_data
 
 
-def get_qa_metrics_settings(user: Model) -> list:
-    """ Reads QA Metrics settings.
+def get_qa_metrics_settings(user: Model) -> List[Dict[str, str]]:
+    """Reads QA Metrics settings.
 
     Parameters:
     ----------
@@ -294,8 +238,8 @@ def get_qa_metrics_settings(user: Model) -> list:
     return settings_data
 
 
-def get_predictions_table_settings(user: Model) -> list:
-    """ Reads predictions table settings.
+def get_predictions_table_settings(user: Model) -> List[Dict[str, str]]:
+    """Reads predictions table settings.
 
     Parameters:
     ----------
@@ -323,8 +267,8 @@ def get_predictions_table_settings(user: Model) -> list:
     return settings_data
 
 
-def update_resolutions(request_data: dict, user: Model) -> None:
-    """ Appends resolutions to predictions_table settings
+def update_resolutions(request_data: Dict[str, str], user: Model) -> None:
+    """Appends resolutions to predictions_table settings
     if their were not added.
 
     Parameters:
@@ -335,8 +279,8 @@ def update_resolutions(request_data: dict, user: Model) -> None:
         User instance
     """
 
-    def _delete_old_resolutions(old_resolutions) -> None:
-        """ Deletes resolution from predictions_table
+    def _delete_old_resolutions(resolutions: List[str]) -> None:
+        """Deletes resolution from predictions_table
         if it's not specified in training settings.
 
         Parameters:
@@ -345,7 +289,7 @@ def update_resolutions(request_data: dict, user: Model) -> None:
             Resolutions from predictions_table settings.
         """
 
-        for resolution in old_resolutions:
+        for resolution in resolutions:
             UserPredictionsTable.objects.filter(
                 settings=user_settings, name=resolution
             ).delete()
@@ -384,15 +328,14 @@ def update_resolutions(request_data: dict, user: Model) -> None:
             )
 
 
-def check_loaded_issues() -> None:
-    """ Raises warning if issues don't exist in db.
-    """
+def check_issues_exist() -> None:
+    """Checks that database have issues. If it doesn't have issues then raises warning."""
     if not get_issue_count():
         raise BugsNotFoundWarning
 
 
 def split_values(values: list) -> set:
-    """ Makes a set of unique elements.
+    """Makes a set of unique elements.
 
     Parameters:
     ----------
@@ -420,8 +363,10 @@ def split_values(values: list) -> set:
     return set(values)
 
 
-def check_filters_equality(new_filters: list, old_filters: list) -> bool:
-    """ Compares new filters and cached filters.
+def check_filters_equality(
+    new_filters: List[Dict[str, str]], old_filters: List[Dict[str, str]]
+) -> bool:
+    """Compares new filters and cached filters.
 
     Parameters:
     ----------
@@ -443,3 +388,201 @@ def check_filters_equality(new_filters: list, old_filters: list) -> bool:
                     return False
 
     return True
+
+
+def get_bug_resolutions(user: Model) -> List[Dict[str, str]]:
+    """Get Bug Resolutions from database.
+
+    Parameters:
+    ----------
+    user:
+        User.
+
+    Returns:
+    ----------
+        Bug resolutions.
+    """
+    # To avoid a circular dependency
+    from apps.settings.models import (
+        UserSettings,
+        UserBugResolution,
+    )
+
+    user_settings = UserSettings.objects.get(user=user)
+    bug_resolutions = UserBugResolution.objects.filter(settings=user_settings)
+
+    return [
+        {"metric": bug_resolution.metric, "value": bug_resolution.value}
+        for bug_resolution in bug_resolutions
+    ]
+
+
+def get_source_field(user: Model) -> str:
+    """Get Source Field from database.
+
+    Parameters:
+    ----------
+    user:
+        User.
+
+    Returns:
+    ----------
+        Source Field.
+    """
+    # To avoid a circular dependency
+    from apps.settings.models import (
+        UserSettings,
+        UserSourceField,
+    )
+
+    user_settings = UserSettings.objects.get(user=user)
+    source_field = ""
+    if UserSourceField.objects.filter(settings=user_settings):
+        source_field = UserSourceField.objects.get(settings=user_settings).name
+
+    return source_field
+
+
+def get_mark_up_entities(
+    user: Model,
+) -> List[Dict[str, str]]:
+    """Get Mark Up Entities from database.
+
+    Parameters:
+    ----------
+    user:
+        User.
+
+    Returns:
+    ----------
+        Entities.
+    """
+    # To avoid a circular dependency
+    from apps.settings.models import (
+        UserSettings,
+        UserMarkUpEntity,
+    )
+
+    user_settings = UserSettings.objects.get(user=user)
+    mark_up_entities = UserMarkUpEntity.objects.filter(settings=user_settings)
+
+    return [
+        {
+            "area_of_testing": mark_up_entity.name,
+            "entities": loads(mark_up_entity.entities),
+        }
+        for mark_up_entity in mark_up_entities
+    ]
+
+
+def update_source_field(user: Model, source_field: Serializer) -> None:
+    """Update Source Field in database.
+
+    Parameters:
+    ----------
+    user:
+        User.
+    data:
+        New Source Field.
+    """
+    # To avoid a circular dependency
+    from apps.settings.models import (
+        UserSettings,
+        UserSourceField,
+    )
+
+    user_settings = UserSettings.objects.get(user=user)
+    UserSourceField.objects.filter(settings=user_settings).delete()
+    UserSourceField.objects.create(
+        name=source_field.get("source_field"),
+        settings=user_settings,
+    )
+
+
+def update_bug_resolutions(user: Model, bug_resolutions: Serializer) -> None:
+    """Update Bug Resolutions in database.
+
+    Parameters:
+    ----------
+    user:
+        User.
+    bug_resolutions:
+        New Bug Resolutions.
+    """
+    # To avoid a circular dependency
+    from apps.settings.models import (
+        UserBugResolution,
+        UserSettings,
+    )
+
+    user_settings = UserSettings.objects.get(user=user)
+    UserBugResolution.objects.filter(settings=user_settings).delete()
+    for bug_resolution in bug_resolutions:
+        UserBugResolution.objects.create(
+            metric=bug_resolution.get("metric"),
+            value=bug_resolution.get("value"),
+            settings=user_settings,
+        )
+
+
+def update_mark_up_entities(user: Model, mark_up_entities: Serializer) -> None:
+    """Update Mark Up Entities in database.
+
+    Parameters:
+    ----------
+    user:
+        User.
+    mark_up_entities:
+        New Mark Up Entities.
+    """
+    # To avoid a circular dependency
+    from apps.settings.models import (
+        UserMarkUpEntity,
+        UserSettings,
+    )
+
+    user_settings = UserSettings.objects.get(user=user)
+    UserMarkUpEntity.objects.filter(settings=user_settings).delete()
+    for mark_up_entity in mark_up_entities:
+        UserMarkUpEntity.objects.create(
+            name=mark_up_entity.get("area_of_testing"),
+            entities=dumps(mark_up_entity.get("entities")),
+            settings=user_settings,
+        )
+
+
+def get_top_terms(user: Model) -> DataFrame:
+    """Get Top Terms from database.
+
+    Parameters:
+    ----------
+    user:
+        User.
+
+    Returns:
+    ----------
+        Top Terms.
+    """
+    # To avoid a circular dependency
+    from apps.settings.models import UserTopTerms, UserSettings
+
+    user_settings = UserSettings.objects.get(user=user)
+
+    return pickle.loads(
+        UserTopTerms.objects.get(settings=user_settings).top_terms_object
+    )
+
+
+def remove_training_parameters(user: Model) -> None:
+    """Remove existing Training Parameters.
+
+    Parameters:
+    ----------
+    user:
+        User.
+    """
+    # To avoid a circular dependency
+    from apps.settings.models import UserTrainingParameters, UserSettings
+
+    user_settings = UserSettings.objects.get(user=user)
+    UserTrainingParameters.objects.filter(settings=user_settings).delete()

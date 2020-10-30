@@ -1,69 +1,78 @@
-import { DescriptionAssessmentApi } from 'app/common/api/description-assessment.api';
+import { DescriptionAssessmentApi } from "app/common/api/description-assessment.api";
 
-import Card from 'app/common/components/card/card';
-import { CustomBarChart } from 'app/common/components/charts/bar-chart/bar-chart';
+import Card from "app/common/components/card/card";
+import { CustomBarChart } from "app/common/components/charts/bar-chart/bar-chart";
 import DonutChart, {
 	DonutChartColorSchemes,
 	DonutChartData,
-} from 'app/common/components/charts/donut-chart/donut-chart';
-import { TagCloud } from 'app/common/components/charts/tag-cloud/tag-cloud';
-import { HttpStatus } from 'app/common/types/http.types';
-import { connect, ConnectedProps } from 'react-redux';
+} from "app/common/components/charts/donut-chart/donut-chart";
+import { TagCloud } from "app/common/components/charts/tag-cloud/tag-cloud";
+import { HttpStatus } from "app/common/types/http.types";
+import { connect, ConnectedProps } from "react-redux";
 
-import Header from 'app/modules/header/header';
+import Header from "app/modules/header/header";
 
-import PredictText, { PredictMetric, Keywords } from 'app/modules/predict-text/predict-text';
-import { Terms } from 'app/modules/significant-terms/store/types';
+import PredictText, { PredictMetric, Keywords } from "app/modules/predict-text/predict-text";
+import { Terms } from "app/modules/significant-terms/store/types";
 
-import bugResolutionPreview from 'assets/images/dAssessment__bug-resolution__preview.png';
-import priorityPreview from 'assets/images/dAssessment__priority__preview.png';
-import testingProbabilityPreview from 'assets/images/dAssessment__testing-probability__preview.png';
-import textFieldPreview from 'assets/images/dAssessment__text-field__preview.png';
-import ttrPreview from 'assets/images/dAssessment__ttr__preview.png';
-import notTrainModel1 from 'assets/images/notTrainModel1.svg';
-import notTrainModel2 from 'assets/images/notTrainModel2.svg';
-import notTrainModel3 from 'assets/images/notTrainModel3.svg';
-import React from 'react';
+import bugResolutionPreview from "assets/images/dAssessment__bug-resolution__preview.png";
+import priorityPreview from "assets/images/dAssessment__priority__preview.png";
+import testingProbabilityPreview from "assets/images/dAssessment__testing-probability__preview.png";
+import textFieldPreview from "assets/images/dAssessment__text-field__preview.png";
+import ttrPreview from "assets/images/dAssessment__ttr__preview.png";
+import notTrainModel1 from "assets/images/notTrainModel1.svg";
+import notTrainModel2 from "assets/images/notTrainModel2.svg";
+import notTrainModel3 from "assets/images/notTrainModel3.svg";
+import React from "react";
 
-import './description-assessment.page.scss';
-import { addToast } from 'app/modules/toasts-overlay/store/actions';
-import { ToastStyle } from 'app/modules/toasts-overlay/store/types';
-import { fixTTRBarChartAxisDisplayStyle } from 'app/common/functions/helper';
+import "./description-assessment.page.scss";
+import { addToast } from "app/modules/toasts-overlay/store/actions";
+import { ToastStyle } from "app/modules/toasts-overlay/store/types";
+import { fixTTRBarChartAxisDisplayStyle } from "app/common/functions/helper";
 
 export interface DAProbabilitiesData {
-	[key: string]: unknown
+	[key: string]: unknown;
 }
 
 export interface DAProbabilitiesResolutionChartData {
-	[key: string]: DAProbabilitiesData
+	[key: string]: DAProbabilitiesData;
 }
 
 interface Probabilities {
-	resolution: DAProbabilitiesResolutionChartData,
-	areas_of_testing: DAProbabilitiesData,
-	'Time to Resolve': DAProbabilitiesData,
-	Priority: DAProbabilitiesData,
+	resolution: DAProbabilitiesResolutionChartData;
+	areas_of_testing: DAProbabilitiesData;
+	"Time to Resolve": DAProbabilitiesData;
+	Priority: DAProbabilitiesData;
 }
 
 interface State {
-	status: HttpStatus,
-	isModelTrained: boolean,
-	metrics: Keywords,
-	keywords: Keywords
-	probabilities: Probabilities | null,
+	status: HttpStatus;
+	isModelTrained: boolean;
+	metrics: Keywords;
+	keywords: Keywords;
+	probabilities: Probabilities | null;
 }
 
 class DescriptionAssessmentPage extends React.Component<PropsFromRedux, State> {
+	imageForNotTrainingModel = "";
 
-	state = {
-		status: HttpStatus.PREVIEW,
-		isModelTrained: true,
-		metrics: emptyMetrics,
-		keywords: emptyMetrics,
-		probabilities: null,
-	};
+	constructor(props: PropsFromRedux) {
+		super(props);
 
-	imageForNotTrainingModel: string = '';
+		this.state = {
+			status: HttpStatus.PREVIEW,
+			isModelTrained: true,
+			metrics: emptyMetrics,
+			keywords: emptyMetrics,
+			probabilities: null,
+		};
+	}
+
+	componentDidMount() {
+		this.randomImageForNotTrainingModel();
+
+		this.getMetrics(true);
+	}
 
 	randomImageForNotTrainingModel = () => {
 		switch (Math.floor(Math.random() * 3)) {
@@ -79,32 +88,28 @@ class DescriptionAssessmentPage extends React.Component<PropsFromRedux, State> {
 		}
 	};
 
-	componentDidMount() {
-		this.randomImageForNotTrainingModel();
-
-		this.getMetrics(true);
-	}
-
 	predictText = (text: string) => {
 		this.setState({ status: HttpStatus.LOADING });
 
 		DescriptionAssessmentApi.predictText(text)
-			.then((data) => { 
-				if(data.warning) throw new Error(data.warning.detail || data.warning.message);
-				let {probabilities} = data;
-				
+			.then((data) => {
+				if (data.warning) throw new Error(data.warning.detail || data.warning.message);
+				const { probabilities } = data;
+
 				this.setState({
 					status: HttpStatus.FINISHED,
 					probabilities: {
 						resolution: { ...probabilities.resolution },
 						areas_of_testing: { ...probabilities.areas_of_testing },
-						'Time to Resolve': { ...fixTTRBarChartAxisDisplayStyle(probabilities['Time to Resolve'])},
+						"Time to Resolve": {
+							...fixTTRBarChartAxisDisplayStyle(probabilities["Time to Resolve"]),
+						},
 						Priority: { ...probabilities.Priority },
 					},
 				});
 				this.getMetrics();
 			})
-			.catch(err =>{ 
+			.catch((err) => {
 				this.props.addToast(err.message, ToastStyle.Error);
 				this.setState({ status: HttpStatus.FAILED });
 			});
@@ -129,7 +134,7 @@ class DescriptionAssessmentPage extends React.Component<PropsFromRedux, State> {
 			newKeywords = [];
 		}
 
-		this.setState((state)=>({
+		this.setState((state) => ({
 			keywords: {
 				...state.keywords,
 				[predictMetric.metric]: newKeywords,
@@ -137,7 +142,7 @@ class DescriptionAssessmentPage extends React.Component<PropsFromRedux, State> {
 		}));
 	};
 
-	getMetrics = (empty: boolean = false) => {
+	getMetrics = (empty = false) => {
 		DescriptionAssessmentApi.getMetrics()
 			.then((metrics) => {
 				if (metrics.warning) {
@@ -153,24 +158,26 @@ class DescriptionAssessmentPage extends React.Component<PropsFromRedux, State> {
 	};
 
 	render() {
-		let style = this.state.isModelTrained ? {} : { filter: `blur(3px)` };
+		const style = this.state.isModelTrained ? {} : { filter: `blur(3px)` };
 		return (
 			<div className="dAssessment-page">
 				<Header pageTitle="Description Assessment" />
 
-				{
-					!this.state.isModelTrained &&
-          <div className="dAssessment-page__collecting-data collecting-data">
-              <div className="collecting-data__message">
-                  Can't calculate predictions. Please train models.
-              </div>
+				{!this.state.isModelTrained && (
+					<div className="dAssessment-page__collecting-data collecting-data">
+						<div className="collecting-data__message">
+							Can't calculate predictions. Please train models.
+						</div>
 
-              <img src={this.imageForNotTrainingModel} alt="Can't calculate predictions" />
-          </div>
-				}
+						<img src={this.imageForNotTrainingModel} alt="Can't calculate predictions" />
+					</div>
+				)}
 
 				<div className="dAssessment-page__content">
-					<div className="dAssessment-page__column dAssessment-page__column_position_left" style={style}>
+					<div
+						className="dAssessment-page__column dAssessment-page__column_position_left"
+						style={style}
+					>
 						<Card
 							previewImage={textFieldPreview}
 							status={HttpStatus.FINISHED}
@@ -186,73 +193,74 @@ class DescriptionAssessmentPage extends React.Component<PropsFromRedux, State> {
 						</Card>
 
 						<Card
-							previewImage={testingProbabilityPreview} title="Area Of Testing Probability"
+							previewImage={testingProbabilityPreview}
+							title="Area Of Testing Probability"
 							status={this.state.status}
 							className="probability dAssessment-page__card"
 						>
-							{
-								this.state.probabilities &&
-                <TagCloud
-		                tags={(this.state.probabilities! as Probabilities).areas_of_testing as Terms}
-                    percentage
-                />
-							}
+							{this.state.probabilities && (
+								<TagCloud tags={this.state.probabilities.areas_of_testing as Terms} percentage />
+							)}
 						</Card>
-
 					</div>
 
-					<div className="dAssessment-page__column dAssessment-page__column_position_right" style={style}>
+					<div
+						className="dAssessment-page__column dAssessment-page__column_position_right"
+						style={style}
+					>
 						<Card
-							previewImage={bugResolutionPreview} title="Bug Resolution"
+							previewImage={bugResolutionPreview}
+							title="Bug Resolution"
 							status={this.state.status}
 							className="bug-resolution dAssessment-page__card"
 							hoverHeader
 						>
-							{
-								this.state.probabilities &&
-                <div className="bug-resolution__charts">
-									{
-										Object.values((this.state.probabilities! as Probabilities).resolution).map((data, index) => (
-											<DonutChart
-												key={index}
-												className="bug-resolution__chart"
-												data={data as DonutChartData}
-												colorSchema={index % 2 === 0 ? DonutChartColorSchemes.greenBlue : DonutChartColorSchemes.orangeViolet}
-											/>
-										))
-									}
-                </div>
-							}
+							{this.state.probabilities && (
+								<div className="bug-resolution__charts">
+									{Object.values(this.state.probabilities.resolution).map((data, index) => (
+										<DonutChart
+											key={index}
+											className="bug-resolution__chart"
+											data={data as DonutChartData}
+											colorSchema={
+												index % 2 === 0
+													? DonutChartColorSchemes.greenBlue
+													: DonutChartColorSchemes.orangeViolet
+											}
+										/>
+									))}
+								</div>
+							)}
 						</Card>
 
 						<Card
-							previewImage={priorityPreview} title="Priority"
+							previewImage={priorityPreview}
+							title="Priority"
 							status={this.state.status}
 							className="priority dAssessment-page__card"
 						>
-							{
-								this.state.probabilities &&
-                <CustomBarChart
-                    percentage={true}
-                    data={(this.state.probabilities! as Probabilities).Priority as DonutChartData}
-                />
-							}
+							{this.state.probabilities && (
+								<CustomBarChart
+									percentage
+									data={this.state.probabilities.Priority as DonutChartData}
+								/>
+							)}
 						</Card>
 
 						<Card
-							previewImage={ttrPreview} title="Time to Resolve (TTR)"
+							previewImage={ttrPreview}
+							title="Time to Resolve (TTR)"
 							status={this.state.status}
 							className="ttr dAssessment-page__card"
 						>
-							{
-								this.state.probabilities &&
-                <CustomBarChart
-                    data={(this.state.probabilities! as Probabilities)['Time to Resolve'] as DonutChartData}
-                    verticalDirection
-                    multiColors
-                    percentage
-                />
-							}
+							{this.state.probabilities && (
+								<CustomBarChart
+									data={this.state.probabilities["Time to Resolve"] as DonutChartData}
+									verticalDirection
+									multiColors
+									percentage
+								/>
+							)}
 						</Card>
 					</div>
 				</div>
@@ -265,10 +273,7 @@ const mapDispatchToProps = {
 	addToast,
 };
 
-const connector = connect(
-	undefined,
-	mapDispatchToProps,
-);
+const connector = connect(undefined, mapDispatchToProps);
 type PropsFromRedux = ConnectedProps<typeof connector>;
 
 export default connector(DescriptionAssessmentPage);

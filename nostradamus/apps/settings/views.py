@@ -9,12 +9,17 @@ from apps.settings.main.common import (
     read_settings,
     get_filter_settings,
     get_qa_metrics_settings,
-    get_training_settings,
     update_resolutions,
-    update_training_settings,
     get_predictions_table_settings,
-    check_loaded_issues,
+    check_issues_exist,
     split_values,
+    get_bug_resolutions,
+    get_source_field,
+    get_mark_up_entities,
+    update_source_field,
+    update_bug_resolutions,
+    update_mark_up_entities,
+    remove_training_parameters,
 )
 from apps.settings.serializers import (
     UserFilterSerializer,
@@ -28,7 +33,6 @@ from apps.settings.serializers import (
     QAMetricsFiltersSettingsSerializer,
     BugResolutionSettingsSerializer,
     FiltersSettingsSerializer,
-    TrainingSettingsPostSerializer,
 )
 from utils.redis import (
     redis_conn,
@@ -39,9 +43,11 @@ from utils.redis import (
 
 
 class FilterSettingsView(APIView):
-    @swagger_auto_schema(responses={200: FiltersSettingsSerializer},)
+    @swagger_auto_schema(
+        responses={200: FiltersSettingsSerializer},
+    )
     def get(self, request):
-        check_loaded_issues()
+        check_issues_exist()
 
         filter_settings = get_filter_settings(request.user)
         names = sorted(get_fields())
@@ -55,16 +61,18 @@ class FilterSettingsView(APIView):
         responses={200: UserFilterSerializer},
     )
     def post(self, request):
-        check_loaded_issues()
+        check_issues_exist()
 
-        data = request.data.copy()
+        request_data = request.data.copy()
 
-        read_settings(data, request.user)
+        read_settings(request_data, request.user)
 
-        filter_settings_serializer = UserFilterSerializer(data=data, many=True)
+        filter_settings_serializer = UserFilterSerializer(
+            data=request_data, many=True
+        )
         filter_settings_serializer.is_valid(raise_exception=True)
 
-        UserFilterSerializer.delete_old_filters(data[0]["settings"])
+        UserFilterSerializer.delete_old_filters(request_data[0]["settings"])
         filter_settings_serializer.save()
 
         clear_page_cache(["analysis_and_training"], request.user.id)
@@ -73,9 +81,11 @@ class FilterSettingsView(APIView):
 
 
 class QAMetricsSettingsView(APIView):
-    @swagger_auto_schema(responses={200: QAMetricsFiltersSettingsSerializer},)
+    @swagger_auto_schema(
+        responses={200: QAMetricsFiltersSettingsSerializer},
+    )
     def get(self, request):
-        check_loaded_issues()
+        check_issues_exist()
 
         qa_metrics_settings = get_qa_metrics_settings(request.user)
         names = sorted(get_fields())
@@ -89,17 +99,19 @@ class QAMetricsSettingsView(APIView):
         responses={200: UserQAMetricsFilterSerializer},
     )
     def post(self, request):
-        check_loaded_issues()
+        check_issues_exist()
 
-        data = request.data.copy()
-        read_settings(data, request.user)
+        request_data = request.data.copy()
+        read_settings(request_data, request.user)
 
         settings_serializer = UserQAMetricsFilterSerializer(
-            data=data, many=True
+            data=request_data, many=True
         )
         settings_serializer.is_valid(raise_exception=True)
 
-        UserQAMetricsFilterSerializer.delete_old_filters(data[0]["settings"])
+        UserQAMetricsFilterSerializer.delete_old_filters(
+            request_data[0]["settings"]
+        )
         settings_serializer.save()
 
         remove_cache_record("qa_metrics:filters", request.user.id)
@@ -113,9 +125,11 @@ class QAMetricsSettingsView(APIView):
 
 
 class PredictionsTableSettingsView(APIView):
-    @swagger_auto_schema(responses={200: PredictionsTableSettingsSerializer},)
+    @swagger_auto_schema(
+        responses={200: PredictionsTableSettingsSerializer},
+    )
     def get(self, request):
-        check_loaded_issues()
+        check_issues_exist()
 
         predictions_table_settings = get_predictions_table_settings(
             request.user
@@ -133,17 +147,19 @@ class PredictionsTableSettingsView(APIView):
         responses={200: UserPredictionsTableSerializer},
     )
     def post(self, request):
-        check_loaded_issues()
+        check_issues_exist()
 
-        data = request.data.copy()
-        read_settings(data, request.user)
+        request_data = request.data.copy()
+        read_settings(request_data, request.user)
 
         settings_serializer = UserPredictionsTableSerializer(
-            data=data, many=True
+            data=request_data, many=True
         )
         settings_serializer.is_valid(raise_exception=True)
 
-        UserPredictionsTableSerializer.delete_old_fields(data[0]["settings"])
+        UserPredictionsTableSerializer.delete_old_fields(
+            request_data[0]["settings"]
+        )
         settings_serializer.save()
 
         clear_cache(
@@ -160,37 +176,47 @@ class TrainingSettingsView(APIView):
         responses={200: UserTrainingSerializer},
     )
     def post(self, request):
-        check_loaded_issues()
+        check_issues_exist()
 
-        data = request.data.copy()
+        request_data = request.data.copy()
+        user = request.user
 
-        data["predictions_table"] = get_predictions_table_settings(
-            request.user
+        request_data["predictions_table"] = get_predictions_table_settings(
+            user
         )
-        data["source_field"] = get_training_settings(request.user)[
-            "source_field"
-        ]
-        update_resolutions(data, request.user)
-        remove_cache_record("settings:predictions_table", request.user.id)
 
-        training_serializer = TrainingSettingsPostSerializer(data=data)
+        request_data["source_field"] = get_source_field(user)
+
+        update_resolutions(request_data, user)
+        remove_cache_record("settings:predictions_table", user.id)
+
+        training_serializer = UserTrainingSerializer(data=request_data)
         training_serializer.is_valid(raise_exception=True)
 
-        update_training_settings(training_serializer.data, request.user)
+        update_bug_resolutions(
+            user, training_serializer.data["bug_resolution"]
+        )
+        update_mark_up_entities(
+            user, training_serializer.data["mark_up_entities"]
+        )
+
+        remove_training_parameters(user)
 
         return Response({"result": "success"})
 
 
 class SourceFieldView(APIView):
-    @swagger_auto_schema(responses={200: SourceFieldGetViewSerializer},)
+    @swagger_auto_schema(
+        responses={200: SourceFieldGetViewSerializer},
+    )
     def get(self, request):
-        check_loaded_issues()
+        check_issues_exist()
 
-        training_settings = get_training_settings(request.user)
+        source_field = get_source_field(request.user)
         source_field_names = sorted(get_fields())
 
         result = {
-            "source_field": training_settings.get("source_field", ""),
+            "source_field": source_field,
             "source_field_names": source_field_names,
         }
 
@@ -198,27 +224,25 @@ class SourceFieldView(APIView):
 
     @swagger_auto_schema(request_body=SourceFieldSerializer)
     def post(self, request):
-        training_settings = get_training_settings(request.user)
 
         source_field_serializer = SourceFieldSerializer(data=request.data)
         source_field_serializer.is_valid(raise_exception=True)
 
-        training_settings["source_field"] = source_field_serializer.data.get(
-            "source_field"
-        )
-
-        update_training_settings(training_settings, request.user)
+        update_source_field(request.user, source_field_serializer.data)
+        remove_training_parameters(request.user)
 
         return Response({"result": "success"})
 
 
 class MarkUpEntitiesView(APIView):
-    @swagger_auto_schema(responses={200: MarkUpEntiitiesSerializer},)
+    @swagger_auto_schema(
+        responses={200: MarkUpEntiitiesSerializer},
+    )
     def get(self, request):
-        check_loaded_issues()
+        check_issues_exist()
 
-        training_settings = get_training_settings(request.user)
-        source_field = training_settings.get("source_field", "")
+        mark_up_entities = get_mark_up_entities(request.user)
+        source_field = get_source_field(request.user)
 
         if not source_field:
             return Response({})
@@ -227,7 +251,7 @@ class MarkUpEntitiesView(APIView):
         unique_values = split_values(unique_values)
 
         result = {
-            "mark_up_entities": training_settings["mark_up_entities"],
+            "mark_up_entities": mark_up_entities,
             "entity_names": sorted(unique_values),
         }
 
@@ -235,13 +259,13 @@ class MarkUpEntitiesView(APIView):
 
 
 class BugResolutionView(APIView):
-    @swagger_auto_schema(responses={200: BugResolutionSettingsSerializer},)
+    @swagger_auto_schema(
+        responses={200: BugResolutionSettingsSerializer},
+    )
     def get(self, request):
-        check_loaded_issues()
+        check_issues_exist()
 
-        resolution_settings = get_training_settings(request.user)[
-            "bug_resolution"
-        ]
+        resolution_settings = get_bug_resolutions(request.user)
         resolution = get_unique_values("Resolution")
 
         result = {

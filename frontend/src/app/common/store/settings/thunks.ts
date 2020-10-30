@@ -1,11 +1,10 @@
-import { uploadData, setSettingsStatus } from "app/common/store/settings/actions";
+import { uploadData, setSettingsStatus, clearSettings } from "app/common/store/settings/actions";
 import { SettingsSections, SettingsDataUnion } from "app/common/store/settings/types"
 import { SettingsApi } from "app/common/api/settings.api";
 import { HttpError, HttpStatus } from 'app/common/types/http.types';
 import { addToast } from "app/modules/toasts-overlay/store/actions";
 import { ToastStyle } from "app/modules/toasts-overlay/store/types";
 import { clearSettingsTrainingData } from "app/modules/settings/fields/settings_training/store/actions";
-import { clearSettings } from "app/common/store/settings/actions";
 
 export const uploadSettingsData = (section: SettingsSections) => {
   return async (dispatch: any) => {

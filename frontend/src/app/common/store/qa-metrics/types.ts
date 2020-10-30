@@ -1,13 +1,13 @@
-import { HttpStatus } from 'app/common/types/http.types';
+import { HttpStatus } from "app/common/types/http.types";
 
-export type QAMetricsStorePart = 'filters' | 'data' | 'table';
+export type QAMetricsStorePart = "filters" | "data" | "table";
 
 export interface QAMetricsStore {
-	isModelTrained: boolean,
+	isModelTrained: boolean;
 	statuses: {
-		[key in QAMetricsStorePart]: HttpStatus
-	},
-	records_count: QAMetricsRecordsCount,
+		[key in QAMetricsStorePart]: HttpStatus;
+	};
+	records_count: QAMetricsRecordsCount;
 	predictions_table: QAMetricsData[];
 	prediction_table_rows_count: number;
 	areas_of_testing_chart: QAMetricsData;
@@ -16,15 +16,15 @@ export interface QAMetricsStore {
 	resolution_chart: QAMetricsResolutionChartData;
 }
 
-export interface QAMetricsRecordsCount{
-	total: number,
-	filtered: number
+export interface QAMetricsRecordsCount {
+	total: number;
+	filtered: number;
 }
 
 export interface QAMetricsData {
-	[key: string]: unknown
+	[key: string]: unknown;
 }
 
 export interface QAMetricsResolutionChartData {
-	[key: string]: QAMetricsData
+	[key: string]: QAMetricsData;
 }

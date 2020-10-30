@@ -1,17 +1,22 @@
 @import "colors";
 
+* {
+  scrollbar-width: thin !important;
+  scrollbar-color: #7e7e7e transparent !important;
+}
+
 body {
-  font-family: 'Quicksand', sans-serif;
-  font-feature-settings: 'cpsp' on, 'liga' off;
+  font-family: "Quicksand", sans-serif;
+  font-feature-settings: "cpsp" on, "liga" off;
 
-  font-weight: 600;
+	font-weight: 600;
 
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
 
-  background-color: $lightBlue;
+	background-color: $lightBlue;
 }
 
 a {
-  text-decoration: none;
+	text-decoration: none;
 }

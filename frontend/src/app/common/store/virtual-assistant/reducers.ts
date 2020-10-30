@@ -1,29 +1,37 @@
-import {VirtualAssistantStore, VirtualAssistantActionTypes} from "app/common/store/virtual-assistant/types";
-import { InferValueTypes } from 'app/common/store/utils'; 
-import * as actions from './actions';
+import {
+	VirtualAssistantStore,
+	VirtualAssistantActionTypes,
+} from "app/common/store/virtual-assistant/types";
+import { InferValueTypes } from "app/common/store/utils";
+import * as actions from "app/common/store/virtual-assistant/actions";
 
 const initialState: VirtualAssistantStore = {
-  isOpen: false,
-  messages: [],
-}
+	isOpen: false,
+	messages: [],
+	typingStatus: false
+};
 
 type actionsUserTypes = ReturnType<InferValueTypes<typeof actions>>;
 
-export const virtualAssistantReducer = (state: VirtualAssistantStore = initialState, action: actionsUserTypes) => {
-  let messages = state.messages.slice()
-  switch(action.type)
-  {
-    case VirtualAssistantActionTypes.activateVirtualAssistant:
-      return {...state, isOpen:!state.isOpen}
+export default function virtualAssistantReducer(
+	state: VirtualAssistantStore = initialState,
+	action: actionsUserTypes
+): VirtualAssistantStore {
+	switch (action.type) {
+		case VirtualAssistantActionTypes.activateVirtualAssistant:
+			return { ...state, isOpen: !state.isOpen };
 
-    case VirtualAssistantActionTypes.activateMessage:
-      messages.push({...action.message})
-      return {...state, messages}
+		case VirtualAssistantActionTypes.activateMessage:
+			const messages = [{ ...action.message }, ...state.messages];
+			return { ...state, messages };
 
-    case VirtualAssistantActionTypes.clearMessages:
-      return {...initialState};
+		case VirtualAssistantActionTypes.setTypingStatus:
+			return { ...state, typingStatus: action.typingStatus };
 
-    default:
-      return {...state}
-  }
+		case VirtualAssistantActionTypes.clearMessages:
+			return { ...initialState };
+
+		default:
+			return { ...state };
+	}
 }

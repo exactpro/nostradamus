@@ -1,42 +1,46 @@
 @import "../../../../styles/colors";
 
 .numeric-range {
-  display: flex;
-  align-items: center;
+	display: flex;
+	align-items: center;
 
-  &__field {
-    width: 80px;
-  }
+	&__field {
+		width: 110px;
+	}
 
   &__input {
     padding-left: 12px;
+    padding-right: 30px;
     text-align: center;
+    box-sizing: border-box;
 
-    /* Chrome, Safari, Edge, Opera */
-    &::-webkit-outer-spin-button,
-    &::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
+		/* Chrome, Safari, Edge, Opera */
+		&::-webkit-outer-spin-button,
+		&::-webkit-inner-spin-button {
+			-webkit-appearance: none;
+			margin: 0;
+		}
 
-    /* Firefox */
-    &[type=number] {
-      -moz-appearance: textfield;
-    }
-  }
+		/* Firefox */
+		&[type="number"] {
+			-moz-appearance: textfield;
+		}
+	}
 
   &__reset {
     padding-left: 0;
+    position: absolute;
+    right: 0%;
   }
 
-  &__separator {
-    margin: 0 6px;
+	&__separator {
+		margin: 0 6px;
 
-    width: 30px;
+		width: 30px;
 
-    font-size: 16px;
-    line-height: 20px;
-    color: $darkGray;
-    text-align: center;
-  }
+		font-size: 16px;
+		line-height: 20px;
+		color: $darkGray;
+		text-align: center;
+	}
 }

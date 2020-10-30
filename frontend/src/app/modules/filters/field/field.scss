@@ -1,20 +1,19 @@
 @import "../../../styles/colors";
 
 .field-wrapper {
-
 }
 
 .field {
-  position: relative;
+	position: relative;
 
-  height: 40px;
+	height: 40px;
 
-  background: $veryLightGray;
+	background: $veryLightGray;
 
-  border-top-left-radius: 4px;
-  border-top-right-radius: 4px;
-  border-bottom: 1px solid $deepDarkBlue;
+	border-top-left-radius: 4px;
+	border-top-right-radius: 4px;
+	border-bottom: 1px solid $deepDarkBlue;
 
-  display: flex;
-  align-items: center;
+	display: flex;
+	align-items: center;
 }

@@ -1,22 +1,22 @@
 {
-  "statistics": {
-    "Comments": {
-      "minimum": "0",
-      "maximum": "131",
-      "mean": "4",
-      "std": "5"
-    },
-    "Attachments": {
-      "minimum": "0",
-      "maximum": "29",
-      "mean": "0",
-      "std": "1"
-    },
-    "Time to Resolve": {
-      "minimum": "0",
-      "maximum": "3241",
-      "mean": "115",
-      "std": "285"
-    }
-  }
+	"statistics": {
+		"Comments": {
+			"minimum": "0",
+			"maximum": "131",
+			"mean": "4",
+			"std": "5"
+		},
+		"Attachments": {
+			"minimum": "0",
+			"maximum": "29",
+			"mean": "0",
+			"std": "1"
+		},
+		"Time to Resolve": {
+			"minimum": "0",
+			"maximum": "3241",
+			"mean": "115",
+			"std": "285"
+		}
+	}
 }

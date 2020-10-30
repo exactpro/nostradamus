@@ -1,74 +1,73 @@
 .tag-cloud {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-content: center;
-  align-items: center;
-  width: 100%;
-  height: 100%;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	align-content: center;
+	align-items: center;
+	width: 100%;
+	height: 100%;
 
-  &__row {
-    width: 100%;
-    display: flex;
-    justify-content: center;
+	&__row {
+		width: 100%;
+		display: flex;
+		justify-content: center;
 
-    position: relative;
-    z-index: 0;
-  }
+		position: relative;
+		z-index: 0;
+	}
 
-  .top-left {
-    display: flex;
-    flex-wrap: wrap-reverse;
-    flex-direction: row-reverse;
-  }
+	.top-left {
+		display: flex;
+		flex-wrap: wrap-reverse;
+		flex-direction: row-reverse;
+	}
 
-  .top-right {
-    display: flex;
-    flex-wrap: wrap-reverse;
-    align-content: flex-start;
-  }
+	.top-right {
+		display: flex;
+		flex-wrap: wrap-reverse;
+		align-content: flex-start;
+	}
 
-  .bottom-left {
-    display: flex;
-    flex-direction: row-reverse;
-    flex-wrap: wrap;
-    align-content: flex-start;
-  }
+	.bottom-left {
+		display: flex;
+		flex-direction: row-reverse;
+		flex-wrap: wrap;
+		align-content: flex-start;
+	}
 
-  .bottom-right {
-    display: flex;
-    flex-wrap: wrap;
-  }
+	.bottom-right {
+		display: flex;
+		flex-wrap: wrap;
+	}
 
+	&__term {
+		margin: 2.5px;
+		display: inline-flex;
+		height: 2em;
+		padding: 0 1em;
+		border-radius: 0.3em;
+		align-items: center;
 
-  &__term {
-    margin: 2.5px;
-    display: inline-flex;
-    height: 2em;
-    padding: 0 1em;
-    border-radius: .3em;
-    align-items: center;
+		&_color {
+			&_violet {
+				background: rgba(124, 82, 188, 0.2);
+				color: #694cbf;
+			}
 
-    &_color {
-      &_violet {
-        background: rgba(124, 82, 188, 0.2);
-        color: #694CBF;
-      }
+			&_pink {
+				background: rgba(185, 126, 188, 0.2);
+				color: #b97ebc;
+			}
 
-      &_pink {
-        background: rgba(185, 126, 188, 0.2);
-        color: #B97EBC;
-      }
+			&_green {
+				background: rgba(114, 191, 162, 0.2);
+				color: #72bfa2;
+			}
 
-      &_green {
-        background: rgba(114, 191, 162, 0.2);
-        color: #72BFA2;
-      }
-
-      &_yellow {
-        background: rgba(232, 170, 108, 0.2);
-        color: #ffa666;
-      }
-    }
-  }
+			&_yellow {
+				background: rgba(232, 170, 108, 0.2);
+				color: #ffa666;
+			}
+		}
+	}
 }

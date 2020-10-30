@@ -1,183 +1,193 @@
 @import "src/app/styles/_colors.scss";
 
 .defect-submission {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  
-  &-legend{
-    position: absolute;
-    max-width: calc(100% - 200px);
-    right: 20px;
-    transform: translateY(calc(-100% - 20px));
-    display: flex;
-    flex-direction: row;
-    align-items: center;  
+	height: 100%;
+	display: flex;
+	flex-direction: column;
 
-    &__wrapper{
-      display: flex;
-      align-items: center;
+	&-legend {
+		position: absolute;
+		max-width: calc(100% - 200px);
+		right: 20px;
+		transform: translateY(calc(-100% - 20px));
+		display: flex;
+		flex-direction: row;
+		align-items: center;
 
-      &:first-child{
-        margin-right: 30px;
-      }
-    }
+		&__wrapper {
+			display: flex;
+			align-items: center;
 
-    &__point{
-      width: 15px;
-      min-width: 15px;
-      height: 15px;
-      min-height: 15px;
-      border-radius: 100%;
-      margin-right: 10px;
+			&:first-child {
+				margin-right: 30px;
+			}
+		}
 
-      &_created{
-        background: $crimson;
-      }
+		&__point {
+			width: 15px;
+			min-width: 15px;
+			height: 15px;
+			min-height: 15px;
+			border-radius: 100%;
+			margin-right: 10px;
 
-      &_resolved{
-        background: $lightGreen;
-      }
-    }
+			&_created {
+				background: $crimson;
+			}
 
-    &__title{
-      font-family: Quicksand;
-      font-style: normal;
-      font-weight: 500;
-      font-size: 15px;
-      line-height: 19px;
-      font-feature-settings: 'cpsp' on, 'liga' off;
-      color: $gray; 
-    }
-  }
+			&_resolved {
+				background: $lightGreen;
+			}
+		}
 
-  &__graph-pointer{
-    position: absolute; 
-    display: none;
-    border-radius: 100%;
-    width: 10px;
-    height: 10px;
-    border: 2px solid white;
-    transform: translate(-30%, -50%);
+		&__title {
+			font-family: Quicksand;
+			font-style: normal;
+			font-weight: 500;
+			font-size: 15px;
+			line-height: 19px;
+			font-feature-settings: "cpsp" on, "liga" off;
+			color: $gray;
+		}
+	}
 
-    &_created{
-      background: $crimson;
-    }
+	&__graph-pointer {
+		position: absolute;
+		display: none;
+		border-radius: 100%;
+		width: 10px;
+		height: 10px;
+		border: 2px solid white;
+		transform: translate(-30%, -50%);
 
-    &_resolved{
-      background: $lightGreen;
-    }
-  } 
+		&_created {
+			background: $crimson;
+		}
 
-  &__graph-tooltip{ position: absolute; }
+		&_resolved {
+			background: $lightGreen;
+		}
+	}
 
-  &__scroll-container {
-    display: flex;
-    height: 100%;
-  }
+	&__graph-tooltip {
+		position: absolute;
+	}
 
-  &__helper-graph svg > *:not(.yAxis) {
-    display: none;
-  }
+	&__scroll-container {
+		display: flex;
+		height: 100%;
+	}
 
-  .recharts-cartesian-axis-tick {
-    font-size: 13px;
-    color: $gray;
-  }
+	&__helper-graph svg > *:not(.yAxis) {
+		display: none;
+	}
 
-  &__graph {
-    height: 100%;
-    width: 100%;
-    position: relative;
-    display: flex;
-    flex-direction: row;
-    overflow-x: scroll;
-  }
+	.recharts-cartesian-axis-tick {
+		font-size: 13px;
+		color: $gray;
+	}
 
-  
+	&__graph {
+		height: 100%;
+		width: 100%;
+		position: relative;
+		display: flex;
+		flex-direction: row;
+		overflow-x: scroll;
+	}
 
-  &__filter {
-    margin-top: 18px;
+	&__filter {
+		margin-top: 18px;
 
-    display: flex;
-    justify-content: flex-end;
-  }
+		display: flex;
+		justify-content: flex-end;
+	}
 
-  &__period {
-    padding: 5px 15px;
+	&__period {
+		padding: 5px 15px;
 
-    cursor: pointer;
+		cursor: pointer;
 
-    font-size: 16px;
-    line-height: 20px;
-    color: $darkBlue;
+		font-size: 16px;
+		line-height: 20px;
+		color: $darkBlue;
 
-    border-radius: 1000px;
+		border-radius: 1000px;
 
-    margin-left: 10px;
+		margin-left: 10px;
 
-    transition-property: background-color, color;
-    transition-duration: .1s;
-    transition-timing-function: linear;
+		transition-property: background-color, color;
+		transition-duration: 0.1s;
+		transition-timing-function: linear;
 
-    &_active {
-      background-color: $veryLightGray;
-      color: $darkGray;
-      cursor: default;
-    }
+		&_active {
+			background-color: $veryLightGray;
+			color: $darkGray;
+			cursor: default;
+		}
 
-    &:hover:not(&_active) {
-      color: $deepDarkBlue;
-    }
-  }
+		&:hover:not(&_active) {
+			color: $deepDarkBlue;
+		}
+	}
 }
 
-.line-chart
-{  
+.line-chart {
+	&__graph-line {
+		stroke-width: 3px;
 
-  &__graph-line{
-    stroke-width: 3px;
+		&_created {
+			stroke: $crimson;
+		}
 
-    &_created{
-      stroke: $crimson;
-    }
+		&_resolved {
+			stroke: $lightGreen;
+		}
+	}
 
-    &_resolved{
-      stroke: $lightGreen;
-    }
-    
-  }
+	&__cirlce {
+		transform: translateX(13px);
+	}
 
-  &__cirlce{
-    transform: translateX(13px);
-  }
+	&__rect {
+		stroke: none;
+		fill: #e5f2f9;
+	}
 
-  &__rect{
-    stroke: none;
-    fill: #E5F2F9; 
-  }
+	&__vertical-line {
+		stroke: white;
+		z-index: 10;
+		stroke-width: 6px;
 
-  &__vertical-line{
-    stroke: white;
-    z-index: 10;
-    stroke-width: 6px; 
+		&:last-of-type {
+			transform: translateX(-1px);
+			stroke-width: 3px;
+		}
+	}
+	&__vertical-line:hover {
+		stroke: $grayDisabled;
+	}
 
-    &:last-of-type{
-      transform: translateX( - 1px);;
-      stroke-width: 3px;
-    }
-  }
-  &__vertical-line:hover{
-    stroke: $grayDisabled;
-  }
+	&__axis-text {
+		font-family: Quicksand;
+		font-style: normal;
+		font-weight: 500;
+		font-size: 13px;
+		transform: translateY(20px);
+	}
+}
 
-  &__axis-text{
-    font-family: Quicksand;
-    font-style: normal;
-    font-weight: 500;
-    font-size: 13px;
-    color: $gray;
-    transform: translateY(20px);
- 
-  }
+@media screen and (max-width: 1280px) {
+	.defect-submission-legend {
+		&__point {
+			width: 11px !important;
+			min-width: 11px !important;
+			height: 11px !important;
+			min-height: 11px !important;
+		}
+
+		&__title {
+			font-size: 13px !important;
+		}
+	}
 }

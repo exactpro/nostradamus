@@ -1,92 +1,92 @@
 @import "../../styles/colors";
 
 .training-button {
-  height: 50px;
+	height: 50px;
 
-  border-radius: 1000px;
+	border-radius: 1000px;
 
-  background-color: rgba(255, 255, 255, 0.3);
-  padding-left: 0;
-  padding-right: 20px;
+	background-color: rgba(255, 255, 255, 0.3);
+	padding-left: 0;
+	padding-right: 20px;
 
-  transition: background-color, padding-left, box-shadow;
-  transition-duration: .1s;
-  transition-timing-function: linear;
+	transition: background-color, padding-left, box-shadow;
+	transition-duration: 0.1s;
+	transition-timing-function: linear;
 
-  display: flex;
-  align-items: center;
-  position: relative;
+	display: flex;
+	align-items: center;
+	position: relative;
 
-  color: $darkBlue;
-  font-size: 17px;
-  line-height: 17px;
+	color: $darkBlue;
+	font-size: 17px;
+	line-height: 17px;
 
-  &:disabled {
-    color: $grayDisabled;
-    pointer-events: none;
-    .training-button__icon {
-      color: $grayDisabled;
-    }
-  }
+	&:disabled {
+		color: $grayDisabled;
+		pointer-events: none;
+		.training-button__icon {
+			color: $grayDisabled;
+		}
+	}
 
-  &_preview {
-    padding-left: 10px;
-  }
+	&_preview {
+		padding-left: 10px;
+	}
 
-  &_loading {
-    color: $grayDisabledText;
-    pointer-events: none;
-  }
+	&_loading {
+		color: $grayDisabledText;
+		pointer-events: none;
+	}
 
-  &_success {
-    color: $green;
-    .training-button__icon {
-      color: $green;
-    }
-    .training-button__icon-container {
-      border-color: $green;
-    }
-  }
+	&_success {
+		color: $green;
+		.training-button__icon {
+			color: $green;
+		}
+		.training-button__icon-container {
+			border-color: $green;
+		}
+	}
 
-  &_error{
-    color: $lightRed;
-    .training-button__icon {
-      color: $lightRed;
-    }
-    .training-button__icon-container {
-      border-color: $lightRed;
-    }
-  }
+	&_error {
+		color: $lightRed;
+		.training-button__icon {
+			color: $lightRed;
+		}
+		.training-button__icon-container {
+			border-color: $lightRed;
+		}
+	}
 
-  &__icon-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+	&__icon-container {
+		display: flex;
+		align-items: center;
+		justify-content: center;
 
-    height: 50px;
-    width: 50px;
+		height: 50px;
+		width: 50px;
 
-    margin-right: 11px;
+		margin-right: 11px;
 
-    border: 2px solid transparent;
-    border-radius: 50px;
-  }
+		border: 2px solid transparent;
+		border-radius: 50px;
+	}
 
-  &__icon {
-    color: $darkBlue;
+	&__icon {
+		color: $darkBlue;
 
-    transition: font-size;
-    transition-duration: .1s;
-    transition-timing-function: linear;
-  }
+		transition: font-size;
+		transition-duration: 0.1s;
+		transition-timing-function: linear;
+	}
 
-  &__spinner {
-    position: absolute;
-    left: 0;
-    top:0;
-  }
+	&__spinner {
+		position: absolute;
+		left: 0;
+		top: 0;
+	}
 
-  &:hover {
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
-  }
+	&:hover {
+		box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+	}
 }

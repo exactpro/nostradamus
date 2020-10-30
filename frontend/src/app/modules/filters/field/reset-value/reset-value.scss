@@ -1,15 +1,16 @@
 .reset-value {
-  opacity: 0.6;
+	opacity: 0.6;
 
-  transition-property: opacity;
-  transition-timing-function: linear;
-  transition-duration: .2s;
+	transition-property: opacity;
+	transition-timing-function: linear;
+	transition-duration: 0.2s;
 
-  background-color: transparent;
+	background-color: transparent;
 
-  padding: 0 12px;
+	padding: 0 12px;
 
-  &:hover, &:focus {
-    opacity: 1;
-  }
+	&:hover,
+	&:focus {
+		opacity: 1;
+	}
 }

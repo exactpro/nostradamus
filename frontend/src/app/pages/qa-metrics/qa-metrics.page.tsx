@@ -1,52 +1,69 @@
-import Button, { ButtonStyled } from 'app/common/components/button/button';
-import { CustomBarChart } from 'app/common/components/charts/bar-chart/bar-chart';
+import Button, { ButtonStyled } from "app/common/components/button/button";
+import { CustomBarChart } from "app/common/components/charts/bar-chart/bar-chart";
 import DonutChart, {
 	DonutChartColorSchemes,
 	DonutChartData,
-} from 'app/common/components/charts/donut-chart/donut-chart';
-import { TagCloud } from 'app/common/components/charts/tag-cloud/tag-cloud';
-import CircleSpinner from 'app/common/components/circle-spinner/circle-spinner';
-import { IconType } from 'app/common/components/icon/icon';
+} from "app/common/components/charts/donut-chart/donut-chart";
+import { TagCloud } from "app/common/components/charts/tag-cloud/tag-cloud";
+import CircleSpinner from "app/common/components/circle-spinner/circle-spinner";
+import { IconType } from "app/common/components/icon/icon";
 import {
 	updateQAMetricsData,
-	updateQAMetricsTable, saveQAMetricsFilters, initQAMetrics,
-} from 'app/common/store/qa-metrics/thunks';
-import { RootStore } from 'app/common/types/store.types';
-import { FilterFieldBase } from 'app/modules/filters/field/field-type';
-import { Filters } from 'app/modules/filters/filters';
-import PredictionsTable from 'app/modules/predictions-table/predictions-table';
-import { Terms } from 'app/modules/significant-terms/store/types';
-import notTrainModel1 from 'assets/images/notTrainModel1.svg';
-import notTrainModel2 from 'assets/images/notTrainModel2.svg';
-import notTrainModel3 from 'assets/images/notTrainModel3.svg';
-import React from 'react';
+	updateQAMetricsTable,
+	saveQAMetricsFilters,
+	initQAMetrics,
+} from "app/common/store/qa-metrics/thunks";
+import { RootStore } from "app/common/types/store.types";
+import { FilterFieldBase } from "app/modules/filters/field/field-type";
+import { Filters } from "app/modules/filters/filters";
+import PredictionsTable from "app/modules/predictions-table/predictions-table";
+import { Terms } from "app/modules/significant-terms/store/types";
+import notTrainModel1 from "assets/images/notTrainModel1.svg";
+import notTrainModel2 from "assets/images/notTrainModel2.svg";
+import notTrainModel3 from "assets/images/notTrainModel3.svg";
+import React from "react";
 
-import Card from 'app/common/components/card/card';
-import { HttpStatus } from 'app/common/types/http.types';
+import Card from "app/common/components/card/card";
+import { HttpStatus } from "app/common/types/http.types";
 
-import Header from 'app/modules/header/header';
+import Header from "app/modules/header/header";
 
-import bugResolutionPreview from 'assets/images/dAssessment__bug-resolution__preview.png';
-import priorityPreview from 'assets/images/dAssessment__priority__preview.png';
-import testingProbabilityPreview from 'assets/images/dAssessment__testing-probability__preview.png';
-import filterLoadingPreview from 'assets/images/filter-loading-preview.png';
-import ttrPreview from 'assets/images/dAssessment__ttr__preview.png';
+import bugResolutionPreview from "assets/images/dAssessment__bug-resolution__preview.png";
+import priorityPreview from "assets/images/dAssessment__priority__preview.png";
+import testingProbabilityPreview from "assets/images/dAssessment__testing-probability__preview.png";
+import filterLoadingPreview from "assets/images/filter-loading-preview.png";
+import ttrPreview from "assets/images/dAssessment__ttr__preview.png";
 
-import './qa-metrics.page.scss';
-import { connect, ConnectedProps } from 'react-redux';
-import MainStatistic from 'app/modules/main-statistic/main-statistic';
+import "./qa-metrics.page.scss";
+import { connect, ConnectedProps } from "react-redux";
+import MainStatistic from "app/modules/main-statistic/main-statistic";
 
 interface State {
-	filters: FilterFieldBase[]
+	filters: FilterFieldBase[];
 }
 
 class QAMetricsPage extends React.Component<PropsFromRedux, State> {
+	imageForNotTrainingModel = "";
 
-	state = {
-		filters: [],
-	};
+	constructor(props: PropsFromRedux) {
+		super(props);
 
-	imageForNotTrainingModel: string = '';
+		this.state = {
+			filters: [],
+		};
+	}
+
+	componentDidMount() {
+		this.randomImageForNotTrainingModel();
+
+		this.props.initQAMetrics().then((filters: FilterFieldBase[]) => {
+			if (filters && filters.length) {
+				this.setState({ filters: [...filters] }, () => {
+					this.loadData();
+				});
+			}
+		});
+	}
 
 	randomImageForNotTrainingModel = () => {
 		switch (Math.floor(Math.random() * 3)) {
@@ -62,19 +79,6 @@ class QAMetricsPage extends React.Component<PropsFromRedux, State> {
 		}
 	};
 
-	componentDidMount() {
-		this.randomImageForNotTrainingModel();
-
-		this.props.initQAMetrics().then(filters => {
-			if (filters && filters.length) {
-				this.setState(
-					{ filters: [...filters] },
-					() => { this.loadData(); },
-				);
-			}
-		});
-	}
-
 	loadData = () => {
 		if (this.props.records_count.filtered) {
 			this.props.updateQAMetricsData();
@@ -89,24 +93,22 @@ class QAMetricsPage extends React.Component<PropsFromRedux, State> {
 		this.setState({ filters: [] });
 
 		this.props.saveQAMetricsFilters(filters).then(() => {
-			this.setState(
-				{ filters: [...filters] },
-				() => { this.loadData(); },
-			);
+			this.setState({ filters: [...filters] }, () => {
+				this.loadData();
+			});
 		});
 	};
 
 	resetFilters = () => {
-
 		this.setState({ filters: [] });
-		this.props.saveQAMetricsFilters([]).then((filters) => {
+		this.props.saveQAMetricsFilters([]).then((filters: FilterFieldBase[]) => {
 			this.loadData();
-			this.setState({ filters: [ ...filters] });
+			this.setState({ filters: [...filters] });
 		});
 	};
 
 	render() {
-		let style = this.props.isModelTrained ? {} : { filter: `blur(3px)` };
+		const style = this.props.isModelTrained ? {} : { filter: `blur(3px)` };
 
 		return (
 			<div className="qa-metrics-page">
@@ -117,26 +119,27 @@ class QAMetricsPage extends React.Component<PropsFromRedux, State> {
 					/>
 				</Header>
 
-				{
-					!this.props.isModelTrained &&
-          <div className="qa-metrics-page__collecting-data collecting-data">
-              <div className="collecting-data__message">
-                  Can't calculate predictions. Please train models.
-              </div>
+				{!this.props.isModelTrained && (
+					<div className="qa-metrics-page__collecting-data collecting-data">
+						<div className="collecting-data__message">
+							Can't calculate predictions. Please train models.
+						</div>
 
-              <img src={this.imageForNotTrainingModel} alt="Can't calculate predictions" />
-          </div>
-				}
+						<img src={this.imageForNotTrainingModel} alt="Can't calculate predictions" />
+					</div>
+				)}
 
 				<div className="qa-metrics-page__content">
-					<div className="qa-metrics-page__column qa-metrics-page__column_position_left" style={style}>
+					<div
+						className="qa-metrics-page__column qa-metrics-page__column_position_left"
+						style={style}
+					>
 						<Card
 							previewImage={filterLoadingPreview}
 							status={this.props.statuses.filters}
 							className="qa-metric-filters qa-metrics-page__card"
 						>
 							<div className="qa-metric-filters__container">
-
 								<Button
 									className="qa-metric-filters__section-filters"
 									text="Filter"
@@ -145,55 +148,58 @@ class QAMetricsPage extends React.Component<PropsFromRedux, State> {
 									selected
 								/>
 
-								{
-									this.state.filters.length > 0 &&
-                  <Filters
-                      className="qa-metric-filters__filter"
-                      filters={this.state.filters}
-                      applyFilters={this.applyFilters}
-                      resetFilters={this.resetFilters}
-                  />
-								}
-
+								{this.state.filters.length > 0 && (
+									<Filters
+										className="qa-metric-filters__filter"
+										filters={this.state.filters}
+										applyFilters={this.applyFilters}
+										resetFilters={this.resetFilters}
+									/>
+								)}
 							</div>
 						</Card>
 
 						<Card
-							previewImage={testingProbabilityPreview} title="Area Of Testing Probability"
+							previewImage={testingProbabilityPreview}
+							title="Area Of Testing Probability"
 							status={this.props.statuses.data}
 							className="probability qa-metrics-page__card"
 						>
-							<TagCloud
-								tags={this.props.areas_of_testing_chart as Terms}
-								percentage
-							/>
+							<TagCloud tags={this.props.areas_of_testing_chart as Terms} percentage />
 						</Card>
-
 					</div>
 
-					<div className="qa-metrics-page__column qa-metrics-page__column_position_right" style={style}>
+					<div
+						className="qa-metrics-page__column qa-metrics-page__column_position_right"
+						style={style}
+					>
 						<Card
-							previewImage={bugResolutionPreview} title="Bug Resolution"
+							previewImage={bugResolutionPreview}
+							title="Bug Resolution"
 							status={this.props.statuses.data}
 							className="bug-resolution qa-metrics-page__card"
 							hoverHeader
 						>
 							<div className="bug-resolution__charts">
-								{
-									Object.values(this.props.resolution_chart).map((data, index) => (
-										<DonutChart
-											key={index}
-											className="bug-resolution__chart"
-											data={data as DonutChartData}
-											colorSchema={index % 2 === 0 ? DonutChartColorSchemes.greenBlue : DonutChartColorSchemes.orangeViolet}
-										/>
-									))
-								}
+								{Object.values(this.props.resolution_chart).map((data, index) => (
+									// eslint-disable-next-line react/no-array-index-key
+									<DonutChart
+										key={index}
+										className="bug-resolution__chart"
+										data={data as DonutChartData}
+										colorSchema={
+											index % 2 === 0
+												? DonutChartColorSchemes.greenBlue
+												: DonutChartColorSchemes.orangeViolet
+										}
+									/>
+								))}
 							</div>
 						</Card>
 
 						<Card
-							previewImage={priorityPreview} title="Priority"
+							previewImage={priorityPreview}
+							title="Priority"
 							status={this.props.statuses.data}
 							className="priority qa-metrics-page__card"
 						>
@@ -201,7 +207,8 @@ class QAMetricsPage extends React.Component<PropsFromRedux, State> {
 						</Card>
 
 						<Card
-							previewImage={ttrPreview} title="Time to Resolve (TTR)"
+							previewImage={ttrPreview}
+							title="Time to Resolve (TTR)"
 							status={this.props.statuses.data}
 							className="ttr qa-metrics-page__card"
 						>
@@ -215,27 +222,23 @@ class QAMetricsPage extends React.Component<PropsFromRedux, State> {
 					</div>
 				</div>
 
-				{
-					this.props.statuses.data === HttpStatus.FINISHED &&
-          <div className="qa-metrics-page__content" style={style}>
-              <Card
-                  title="Predictions Table"
-                  className="qa-metrics-page__predictions-table qa-metrics-page__card"
-                  hoverHeader
-              >
-								{
-									this.props.statuses.table === HttpStatus.RELOADING &&
-                  <CircleSpinner alignCenter />
-								}
+				{this.props.statuses.data === HttpStatus.FINISHED && (
+					<div className="qa-metrics-page__content" style={style}>
+						<Card
+							title="Predictions Table"
+							className="qa-metrics-page__predictions-table qa-metrics-page__card"
+							hoverHeader
+						>
+							{this.props.statuses.table === HttpStatus.RELOADING && <CircleSpinner alignCenter />}
 
-                  <PredictionsTable
-                      tableData={this.props.predictions_table}
-                      totalCount={this.props.prediction_table_rows_count}
-                      onChangePage={this.loadNewTableData}
-                  />
-              </Card>
-          </div>
-				}
+							<PredictionsTable
+								tableData={this.props.predictions_table}
+								totalCount={this.props.prediction_table_rows_count}
+								onChangePage={this.loadNewTableData}
+							/>
+						</Card>
+					</div>
+				)}
 			</div>
 		);
 	}
@@ -257,14 +260,11 @@ const mapDispatchToProps = {
 	updateQAMetricsData,
 	updateQAMetricsTable,
 	saveQAMetricsFilters,
-	initQAMetrics
+	initQAMetrics,
 };
 
-const connector = connect(
-	mapStateToProps,
-	mapDispatchToProps,
-);
+const connector = connect(mapStateToProps, mapDispatchToProps);
 
-type PropsFromRedux = ConnectedProps<typeof connector>
+type PropsFromRedux = ConnectedProps<typeof connector>;
 
 export default connector(QAMetricsPage);

@@ -1,11 +1,21 @@
+/* eslint-disable consistent-return */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+
+// TODO: Declare static types for this thunk
 
 import { SettingsApi } from "app/common/api/settings.api";
 import { TrainingSubSection } from "app/modules/settings/fields/settings_training/store/types";
 import { SettingsSections } from "app/common/store/settings/types"
 import { addToast } from "app/modules/toasts-overlay/store/actions";
 import { ToastStyle } from "app/modules/toasts-overlay/store/types";
-import { setSettingsTrainingData, setSettingsTrainingStatus } from "./actions";
 import { HttpStatus } from "app/common/types/http.types";
+import {
+	setSettingsTrainingData,
+	setSettingsTrainingStatus,
+} from "app/modules/settings/fields/settings_training/store/actions";
 
 export const uploadSettingsTrainingSubfieldData = (subfield: TrainingSubSection) => {
     return async (dispatch: any) => {

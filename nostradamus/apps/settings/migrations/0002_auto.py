@@ -16,6 +16,10 @@ class Migration(migrations.Migration):
 
     dependencies = [("settings", "0001_initial")]
     operations = [
-        migrations.RunPython(create_nostradamus_team,),
-        migrations.RunPython(create_qa_role,),
+        migrations.RunPython(
+            create_nostradamus_team,
+        ),
+        migrations.RunPython(
+            create_qa_role,
+        ),
     ]

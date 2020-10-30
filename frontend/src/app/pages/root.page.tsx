@@ -1,22 +1,23 @@
 import { checkCollectingIssuesFinished } from 'app/common/store/common/thunks';
 
-import { RouterNames } from 'app/common/types/router.types';
-import { RootStore } from 'app/common/types/store.types';
+import { RouterNames } from "app/common/types/router.types";
+import { RootStore } from "app/common/types/store.types";
 
-import Settings from 'app/modules/settings/settings';
+import Settings from "app/modules/settings/settings";
 
-import Sidebar from 'app/modules/sidebar/sidebar';
-import VirtualAssistant from 'app/modules/virtual-assistant/virtual-assistant';
-import AnalysisAndTrainingPage from 'app/pages/analysis-and-training/analysis-and-training.page';
-import DescriptionAssessmentPage from 'app/pages/description-assessment/description-assessment.page';
-import QAMetricsPage from 'app/pages/qa-metrics/qa-metrics.page';
+import Sidebar from "app/modules/sidebar/sidebar";
+import VirtualAssistant from "app/modules/virtual-assistant/virtual-assistant";
+import AnalysisAndTrainingPage from "app/pages/analysis-and-training/analysis-and-training.page";
+import DescriptionAssessmentPage from "app/pages/description-assessment/description-assessment.page";
+import QAMetricsPage from "app/pages/qa-metrics/qa-metrics.page";
 
-import 'app/pages/root.page.scss';
-import React from 'react';
-import { connect, ConnectedProps } from 'react-redux';
-import { Redirect, Route, Switch, withRouter } from 'react-router-dom';
+import "app/pages/root.page.scss";
+import React, { ReactElement } from "react";
+import { connect, ConnectedProps } from "react-redux";
+import { Redirect, Route, Switch, withRouter } from "react-router-dom";
 
-const SidebarWithRouter = withRouter(props => <Sidebar {...props} />);
+// eslint-disable-next-line react/jsx-props-no-spreading
+const SidebarWithRouter = withRouter((props) => <Sidebar {...props} />);
 
 class RootPage extends React.Component<Props> {
 
@@ -24,13 +25,13 @@ class RootPage extends React.Component<Props> {
 		this.props.checkCollectingIssuesFinished();
 	}
 
-	render() {
+	render(): ReactElement {
 		return (
 			<div className="root-page">
 				<SidebarWithRouter />
 				<Settings />
 				<VirtualAssistant />
-				
+
 				<div className="root-page__content">
 					<article>
 						<Switch>
@@ -50,7 +51,7 @@ class RootPage extends React.Component<Props> {
 								<QAMetricsPage />
 							</Route>
 
-							<Route path={RouterNames.mainApp + '*'}>
+							<Route path={`${RouterNames.mainApp}*`}>
 								<Redirect to={RouterNames.notFound} />
 							</Route>
 						</Switch>

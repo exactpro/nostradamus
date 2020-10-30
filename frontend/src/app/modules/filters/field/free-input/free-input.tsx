@@ -1,25 +1,24 @@
-import ExactMatch from 'app/modules/filters/field/exact-match/exact-match';
-import { FilterFieldBase } from 'app/modules/filters/field/field-type';
+import ExactMatch from "app/modules/filters/field/exact-match/exact-match";
+import { FilterFieldBase } from "app/modules/filters/field/field-type";
 
-import 'app/modules/filters/field/free-input/free-input.scss';
-import { FilterField } from 'app/modules/filters/field/filter-field.class';
-import ResetValue from 'app/modules/filters/field/reset-value/reset-value';
-import { UpdateFieldFunction } from 'app/modules/filters/filters.class';
-import cn from 'classnames';
-import React from 'react';
+import "app/modules/filters/field/free-input/free-input.scss";
+import { FilterField } from "app/modules/filters/field/filter-field.class";
+import ResetValue from "app/modules/filters/field/reset-value/reset-value";
+import { UpdateFieldFunction } from "app/modules/filters/filters.class";
+import cn from "classnames";
+import React from "react";
 
 interface Props {
-	className?: string
-	field: FilterFieldBase,
-	updateFunction: UpdateFieldFunction
+	className?: string;
+	field: FilterFieldBase;
+	updateFunction: UpdateFieldFunction;
 }
 
 interface State {
-	value: string
+	value: string;
 }
 
 class FreeInput extends React.Component<Props, State> {
-
 	field: FilterField;
 
 	constructor(props: Props) {
@@ -35,7 +34,7 @@ class FreeInput extends React.Component<Props, State> {
 
 	handleChanges = (event: React.ChangeEvent<HTMLInputElement>) => {
 		this.field.updateValue(event.target.value);
-		this.forceUpdate()
+		this.forceUpdate();
 	};
 
 	toggleExactMatch = () => {
@@ -44,7 +43,7 @@ class FreeInput extends React.Component<Props, State> {
 	};
 
 	render() {
-		let field = this.field;
+		const { field } = this;
 
 		return (
 			<div className="field">
@@ -52,12 +51,12 @@ class FreeInput extends React.Component<Props, State> {
 
 				<input
 					type="text"
-					className={cn('free-input', this.props.className)}
+					className={cn("free-input", this.props.className)}
 					name={field.name}
 					value={String(field.current_value)}
 					onChange={this.handleChanges}
 					onBlur={this.field.applyField}
-					placeholder={"Input " + this.field.name}
+					placeholder={`Input ${this.field.name}`}
 				/>
 
 				<ResetValue onClick={this.resetValue} className="field__reset" />

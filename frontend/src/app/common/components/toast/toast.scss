@@ -1,129 +1,134 @@
 @import "../../../styles/colors";
 
 .toast {
-  position: absolute;
-  z-index: 11;
-  margin-bottom: 10px;
-  width: 28vw;
-  min-width: 350px;
-  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.25);
-  border-radius: 8px;
-  padding: 12px 25px;
-  padding-bottom: 11px;
+	position: absolute;
+	z-index: 11;
+	margin-bottom: 10px;
+	width: 28vw;
+	min-width: 350px;
+	box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.25);
+	border-radius: 8px;
+	padding: 12px 25px;
+	padding-bottom: 11px;
 
-  font-size: 15px;
-  line-height: 19px;
-  color: $white;
+	font-size: 15px;
+	line-height: 19px;
+	color: $white;
 
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
 
-  overflow: hidden;
+	overflow: hidden;
 
-  //transition-property: top, right;
-  //transition-duration: .2s;
-  //transition-timing-function: ease-out;
+	//transition-property: top, right;
+	//transition-duration: .2s;
+	//transition-timing-function: ease-out;
 
-  transition:
-    top .2s ease-out,
-    right .2s ease-out,
-    width .5s cubic-bezier(0, 0.47, 0.26, 1.01)  0s,
-    height .5s ease-out 0s;
+	transition: top 0.2s ease-out, right 0.2s ease-out,
+		width 0.5s cubic-bezier(0, 0.47, 0.26, 1.01) 0s, height 0.5s ease-out 0s;
 
-  &_styled {
-    &_info {background: $activeHover;}
-    &_success {background: $green;}
-    &_error {background: $lightRed;}
-    &_warn {background: $lightOrange;}
-  }
+	&_styled {
+		&_info {
+			background: $activeHover;
+		}
+		&_success {
+			background: $green;
+		}
+		&_error {
+			background: $lightRed;
+		}
+		&_warn {
+			background: $lightOrange;
+		}
+	}
 
-  &__message {
-    text-overflow: ellipsis;
-    overflow: hidden;
-    white-space: nowrap;
-    padding-right: 10px;
-  }
+	&__message {
+		text-overflow: ellipsis;
+		overflow: hidden;
+		white-space: nowrap;
+		padding-right: 10px;
+	}
 
-  &_expandable:hover:not(&_expanded) {
-    cursor: pointer;
-    height: 60px !important;
-    width: calc(28vw + 20px) !important;
-  }
-  &_expandable:hover &__message {
-    border-color: $white;
-  }
+	&_expandable:hover:not(&_expanded) {
+		cursor: pointer;
+		height: 60px !important;
+		width: calc(28vw + 20px) !important;
+	}
+	&_expandable:hover &__message {
+		border-color: $white;
+	}
 
-  &_expanded {
-    z-index: 12;
-    max-height: none !important;
-    height: 80px !important;
-    width: calc(28vw + 100px) !important;
-  }
+	&_expanded {
+		z-index: 12;
+		max-height: none !important;
+		height: 80px !important;
+		width: calc(28vw + 100px) !important;
+	}
 
-  &_expanded &__message {
-    max-width: none;
-    text-overflow: unset;
-    overflow: hidden;
-    white-space: normal;
-  }
+	&_expanded &__message {
+		max-width: none;
+		text-overflow: unset;
+		overflow: hidden;
+		white-space: normal;
+	}
 
-  &_expanded.toast_withActions {
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: flex-start;
-  }
+	&_expanded.toast_withActions {
+		flex-direction: column;
+		justify-content: space-between;
+		align-items: flex-start;
+	}
 
-  &__buttons {
-    opacity: 0;
-    width: 0;
-    transition: opacity 0s linear;
-    display: flex;
-    justify-content: space-between;
-  }
+	&__buttons {
+		opacity: 0;
+		width: 0;
+		transition: opacity 0s linear;
+		display: flex;
+		justify-content: space-between;
+	}
 
-  &_expanded &__buttons {
-    opacity: 1;
-    width: 100%;
-    transition: opacity .2s linear;
-  }
+	&_expanded &__buttons {
+		opacity: 1;
+		width: 100%;
+		transition: opacity 0.2s linear;
+	}
 
-  &__button {
-    width: 100%;
-    background-color: transparent;
-    border-right: 1px solid rgba(255, 255, 255, 0.3);
-    color: $white;
+	&__button {
+		width: 100%;
+		background-color: transparent;
+		border-right: 1px solid rgba(255, 255, 255, 0.3);
+		color: $white;
 
-    &:last-child {
-      border-right: none;
-    }
-  }
+		&:last-child {
+			border-right: none;
+		}
+	}
 
-  &__close {
-    opacity: 0.8;
-    transition: opacity .1s linear;
-    cursor: pointer;
+	&__close {
+		opacity: 0.8;
+		transition: opacity 0.1s linear;
+		cursor: pointer;
 
-    &:hover {
-      opacity: 1;
-    }
-  }
+		&:hover {
+			opacity: 1;
+		}
+	}
 
-  //animation:right .2s linear ;
-  animation-name: right;
-  animation-duration: .2s;
-  animation-delay: .2s;
-  animation-timing-function: ease-out;
-  animation-fill-mode: both;
+	//animation:right .2s linear ;
+	animation-name: right;
+	animation-duration: 0.2s;
+	animation-delay: 0.2s;
+	animation-timing-function: ease-out;
+	animation-fill-mode: both;
 }
 
 @keyframes right {
-  0% {
-    right: -100%;
-    opacity: 0;
-  }
-  100% {
-    right: 30px;
-    opacity: 1;
-  }
+	0% {
+		right: -100%;
+		opacity: 0;
+	}
+	100% {
+		right: 30px;
+		opacity: 1;
+	}
 }

@@ -1,26 +1,23 @@
-import React from 'react';
+import React, { ReactElement } from "react";
 
-import './header.scss';
+import "./header.scss";
 
 interface HeaderProps {
-  pageTitle: string
+	pageTitle: string;
 }
 
-class Header extends React.Component<HeaderProps> {
+class Header extends React.PureComponent<HeaderProps> {
+	render(): ReactElement {
+		const { props } = this;
 
-  render() {
-    return (
-      <header className="header">
-        <h1 className="header__title">
-          {this.props.pageTitle}
-        </h1>
+		return (
+			<header className="header">
+				<h1 className="header__title">{props.pageTitle}</h1>
 
-        {
-          this.props.children
-        }
-      </header>
-    );
-  }
+				{props.children}
+			</header>
+		);
+	}
 }
 
 export default Header;

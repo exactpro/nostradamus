@@ -11,7 +11,7 @@ class TokenCreator:
         self.__user = self.__get_user()
 
     def create_jwt(self) -> dict:
-        """" Generates jwt with user data if input credentials are valid.
+        """Generates jwt with user data if input credentials are valid.
 
         Returns:
         ----------
@@ -25,7 +25,7 @@ class TokenCreator:
             return payload
 
     def __create_jwt_payload(self) -> dict:
-        """" Receives all information about __user object.
+        """Receives all information about __user object.
 
         Returns:
         ----------
@@ -48,7 +48,7 @@ class TokenCreator:
         return payload
 
     def __check_password(self) -> bool:
-        """" Checks that user and user password are valid.
+        """Checks that user and user password are valid.
 
         Returns:
         ----------
@@ -61,7 +61,7 @@ class TokenCreator:
         raise IncorrectUserCredentials
 
     def __get_user(self) -> User:
-        """" Generates private User object for password checking.
+        """Generates private User object for password checking.
 
         Returns:
         ----------

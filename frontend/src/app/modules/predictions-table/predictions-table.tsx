@@ -1,10 +1,10 @@
-import Icon, { IconType } from 'app/common/components/icon/icon';
+import Icon, { IconSize, IconType } from 'app/common/components/icon/icon';
 import { QAMetricsData } from 'app/common/store/qa-metrics/types';
 import React from 'react';
 
-import './predictions-table.scss';
+import "./predictions-table.scss";
 import cn from "classnames";
-import Tooltip from 'app/common/components/tooltip/tooltip';
+import Tooltip from "app/common/components/tooltip/tooltip";
 
 interface IProps {
 	tableData: QAMetricsData[];
@@ -18,19 +18,19 @@ interface IState {
 }
 
 class PredictionsTable extends React.Component<IProps, IState> {
-
 	state = {
 		limit: 20,
 		currentPage: 1,
 	};
 
 	onChangeLimit = (e: React.ChangeEvent<HTMLSelectElement>) => {
-		let newLimit = Number(e.target.value);
-		let oldLimit = this.state.limit;
-		let newCurrentPage = Math.ceil(this.state.currentPage * oldLimit / newLimit);
-		
-		if((newCurrentPage-1)*newLimit>this.props.totalCount) newCurrentPage = Math.ceil(this.props.totalCount / newLimit);
-		
+		const newLimit = Number(e.target.value);
+		const oldLimit = this.state.limit;
+		let newCurrentPage = Math.ceil((this.state.currentPage * oldLimit) / newLimit);
+
+		if ((newCurrentPage - 1) * newLimit > this.props.totalCount)
+			newCurrentPage = Math.ceil(this.props.totalCount / newLimit);
+
 		this.setState({
 			limit: newLimit,
 			currentPage: newCurrentPage,
@@ -45,108 +45,103 @@ class PredictionsTable extends React.Component<IProps, IState> {
 		this.props.onChangePage(newPage, this.state.limit);
 	};
 
-
 	// TODO: refactor method to function
 	determineColor = (value: string): string => {
 		switch (value) {
-			case 'Won’t Fixed':
-				return 'green';
-			case 'Not Won’t Fixed':
-				return 'dark-blue';
+			case "Won’t Fixed":
+				return "green";
+			case "Not Won’t Fixed":
+				return "dark-blue";
 
-			case 'Rejected':
-				return 'orange';
-			case 'Not Rejected':
-				return 'violet-dark';
+			case "Rejected":
+				return "orange";
+			case "Not Rejected":
+				return "violet-dark";
 
-			case '0–30 days':
-				return 'cold';
-			case '31–90 days':
-				return 'yellow-strong';
-			case '91–180 days':
-				return 'orange';
-			case '> 180 days':
-				return 'light-red';
+			case "0–30 days":
+				return "cold";
+			case "31–90 days":
+				return "yellow-strong";
+			case "91–180 days":
+				return "orange";
+			case "> 180 days":
+				return "light-red";
 
 			default:
-				return 'default';
+				return "default";
 		}
 	};
 
 	render() {
-		let { tableData } = this.props;
+		const { tableData } = this.props;
 
-		let columnsNames: string[] = Object.keys(tableData[0]);
+		const columnsNames: string[] = Object.keys(tableData[0]);
 
 		return (
 			<div className="predictions-table">
-
 				{this.renderTableHeader()}
 
-
-				{/*for top fixed table header*/}
+				{/* for top fixed table header */}
 				<table className="predictions-table__table predictions-table__table_with-head">
 					<thead>
-					<tr>
-						{
-							columnsNames.map((columnName, index) => (
+						<tr>
+							{columnsNames.map((columnName, index) => (
 								<th key={index}>{columnName}</th>
-							))
-						}
-					</tr>
+							))}
+						</tr>
 					</thead>
 
 					<tbody>
-					{
-						tableData.map((item, index) => (
+						{tableData.map((item, index) => (
 							<tr key={index}>
-								{
-									columnsNames.map((columnName, index) => (
-										<td key={index}>{String(item[columnName])}</td>
-									))
-								}
+								{columnsNames.map((columnName, index) => (
+									<td key={index}>{String(item[columnName])}</td>
+								))}
 							</tr>
-						))
-					}
+						))}
 					</tbody>
 				</table>
 
-				{/*data table*/}
+				{/* data table */}
 				<div className="predictions-table__scrollable-container">
 					<table className="predictions-table__table predictions-table__table_with-body">
 						<thead>
-						<tr>
-							{
-								columnsNames.map((columnName, index) => (
+							<tr>
+								{columnsNames.map((columnName, index) => (
 									<th key={index}>{columnName}</th>
-								))
-							}
-						</tr>
+								))}
+							</tr>
 						</thead>
 
 						<tbody>
-						{
-							tableData.map((item, index) => (
+							{tableData.map((item, index) => (
 								<tr key={index}>
-									{
-										columnsNames.map((columnName, index) => {
-											let str = String(item[columnName]);
+									{columnsNames.map((columnName, index) => {
+										const str = String(item[columnName]);
 
-											let charActualWidth = 10; // Actual average width of symbols with font-size 16px
-											let isTooltipDisplayed = str.replace(/\W/g, '').length * charActualWidth > 400? true: false; // if sum width of all symbols larger than td max-width than display tooltip 											
-											
-											return(
-											<td key={index} className={'color_' + this.determineColor(String(item[columnName]))}>
-													<Tooltip message = {str}
-															 isDisplayed = {isTooltipDisplayed}>
-														<p className={cn({"predictions-table__table-cell-title": isTooltipDisplayed})}>{str}</p>
-													</Tooltip>
-												</td>)}
-										)
-									}
+										const charActualWidth = 10; // Actual average width of symbols with font-size 16px
+										const isTooltipDisplayed =
+											str.replace(/\W/g, "").length * charActualWidth > 400; // if sum width of all symbols larger than td max-width than display tooltip
+
+										return (
+											<td
+												key={index}
+												className={`color_${this.determineColor(String(item[columnName]))}`}
+											>
+												<Tooltip message={str} isDisplayed={isTooltipDisplayed}>
+													<p
+														className={cn({
+															"predictions-table__table-cell-title": isTooltipDisplayed,
+														})}
+													>
+														{str}
+													</p>
+												</Tooltip>
+											</td>
+										);
+									})}
 								</tr>
-							))
-						}
+							))}
 						</tbody>
 					</table>
 				</div>
@@ -155,12 +150,12 @@ class PredictionsTable extends React.Component<IProps, IState> {
 	}
 
 	renderTableHeader = () => {
-		let { currentPage, limit } = this.state;
+		const { currentPage, limit } = this.state;
 
-		let rowFrom = (currentPage - 1) * limit + 1;
+		const rowFrom = (currentPage - 1) * limit + 1;
 		let rowTo = currentPage * limit;
 
-		let totalPage = Math.ceil(this.props.totalCount / limit);
+		const totalPage = Math.ceil(this.props.totalCount / limit);
 
 		if (rowTo > this.props.totalCount) {
 			rowTo = this.props.totalCount;
@@ -172,6 +167,7 @@ class PredictionsTable extends React.Component<IProps, IState> {
 					<span className="predictions-table-pagination__label">Show by</span>
 
 					<select
+						className="predictions-table-pagination__select"
 						value={this.state.limit}
 						onChange={this.onChangeLimit}
 					>
@@ -179,46 +175,43 @@ class PredictionsTable extends React.Component<IProps, IState> {
 						<option value={50}>50</option>
 						<option value={100}>100</option>
 					</select>
+					<Icon type={IconType.down} size={IconSize.small} className="predictions-table-pagination__select-icon"/>
 				</div>
 
 				<div className="predictions-table-pagination__field">
 					<span className="predictions-table-pagination__label">Shown</span>
 
-					{
-						totalPage > 1 &&
-            <button
-                onClick={this.setPage(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="predictions-table-pagination__button"
-            >
-                <Icon
-                    type={IconType.left}
-                    size={16}
-                    className="predictions-table-pagination__icon"
-                />
-            </button>
-					}
+					{totalPage > 1 && (
+						<button
+							onClick={this.setPage(currentPage - 1)}
+							disabled={currentPage === 1}
+							className="predictions-table-pagination__button"
+						>
+							<Icon type={IconType.left} size={16} className="predictions-table-pagination__icon" />
+						</button>
+					)}
 
 					<div>
-						<span className="predictions-table-pagination__value">{rowFrom}-{rowTo}</span>
+						<span className="predictions-table-pagination__value">
+							{rowFrom}-{rowTo}
+						</span>
 						<span className="predictions-table-pagination__label">of</span>
 						<span className="predictions-table-pagination__value">{this.props.totalCount}</span>
 					</div>
 
-					{
-						totalPage > 1 &&
-            <button
-                onClick={this.setPage(currentPage + 1)}
-                disabled={currentPage === totalPage}
-                className="predictions-table-pagination__button"
-            >
-                <Icon
-                    type={IconType.right}
-                    size={16}
-                    className="predictions-table-pagination__icon"
-                />
-            </button>
-					}
+					{totalPage > 1 && (
+						<button
+							onClick={this.setPage(currentPage + 1)}
+							disabled={currentPage === totalPage}
+							className="predictions-table-pagination__button"
+						>
+							<Icon
+								type={IconType.right}
+								size={16}
+								className="predictions-table-pagination__icon"
+							/>
+						</button>
+					)}
 				</div>
 			</div>
 		);

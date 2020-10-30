@@ -1,16 +1,15 @@
-.qa-metrics-section{
+.qa-metrics-section {
+	&__predictions {
+		margin-top: 30px;
+	}
 
-  &__predictions{
-    margin-top: 30px;
-  }
+	&__filter {
+		margin-top: 50px;
+	}
 
-  &__filter{
-    margin-top: 50px;
-  }
-
-  &__spinner{
-    position: relative;
-    width: 100%;
-    height: 40vh;
-  }
+	&__spinner {
+		position: relative;
+		width: 100%;
+		height: 40vh;
+	}
 }

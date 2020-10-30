@@ -1,6 +1,6 @@
 export interface CommonStore {
-	isCollectingFinished: boolean,
-	isTrainFinished: boolean,
+	isCollectingFinished: boolean;
+	isTrainFinished: boolean;
 }
 
 export interface InitialApiResponse { 

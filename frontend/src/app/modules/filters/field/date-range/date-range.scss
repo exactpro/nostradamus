@@ -1,196 +1,203 @@
 @import "../../../../styles/colors";
 
 .date-range {
-  display: inline-flex;
-  align-items: center;
-  position: relative;
+	display: inline-flex;
+	align-items: center;
+	position: relative;
 
-  &__field {
-    width: 180px;
-  }
+	&__field {
+		width: 180px;
+	}
 
   &__pop-up-parent{
     display: flex;
+    align-items: center;
   }
-  
+
   &__pop-up-child{
     width: 306px;
   }
 
   &__input {
     padding-left: 12px;
+    padding-right: 50px;
+    box-sizing: border-box;
     text-align: center;
 
-    /* Chrome, Safari, Edge, Opera */
-    &::-webkit-outer-spin-button,
-    &::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
+		/* Chrome, Safari, Edge, Opera */
+		&::-webkit-outer-spin-button,
+		&::-webkit-inner-spin-button {
+			-webkit-appearance: none;
+			margin: 0;
+		}
 
-    /* Firefox */
-    &[type=number] {
-      -moz-appearance: textfield;
-    }
+		/* Firefox */
+		&[type="number"] {
+			-moz-appearance: textfield;
+		}
 
-    &_empty {
-      color: $gray !important;
-    }
-  }
+		&_empty {
+			color: $gray !important;
+		}
+	}
 
   &__icon-button {
+    position: absolute;
+    right: -10px;
+
     opacity: 0.6;
     transition-property: opacity;
     transition-duration: .1s;
     transition-timing-function: linear;
 
-    cursor: pointer;
+		cursor: pointer;
 
-    margin-right: 12px; 
+    margin-right: 12px;
+    background-color: transparent;
 
-    &:hover, &:focus {
-      opacity: 1;
-    }
+		&:hover,
+		&:focus {
+			opacity: 1;
+		}
 
     &_clear{
       margin-right: 0px;
+      background-color: transparent;
+      right: 20px;
     }
   }
 
-  &__separator {
-    margin: 0 6px;
+	&__separator {
+		margin: 0 6px;
 
-    width: 30px;
+		width: 30px;
 
-    font-size: 16px;
-    line-height: 20px;
-    color: $darkGray;
-    text-align: center;
-  }
+		font-size: 16px;
+		line-height: 20px;
+		color: $darkGray;
+		text-align: center;
+	}
 
-  &__calendar {
-    position: absolute;
-    top: calc(100% + 3px);
-    width: 100%;
-    right: 0;
+	&__calendar {
+		position: absolute;
+		top: calc(100% + 3px);
+		width: 100%;
+		right: 0;
 
-    z-index: 10;
-  }
+		z-index: 10;
+	}
 
-  // calendar
+	// calendar
 
-  .react-calendar {
-    background: $white;
+	.react-calendar {
+		background: $white;
 
-    padding: 15px 16px;
+		padding: 15px 16px;
 
-    width: 306px;
+		width: 306px;
 
-    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.15);
-    border: 1px solid $lightBlueText;
-    border-radius: 6px;
+		box-shadow: 0 3px 5px rgba(0, 0, 0, 0.15);
+		border: 1px solid $lightBlueText;
+		border-radius: 6px;
 
-    font-family: inherit;
-    font-weight: 500;
+		font-family: inherit;
+		font-weight: 500;
 
-    & * {
-      font-family: inherit;
-      font-weight: inherit;
-      text-decoration: none;
-      text-transform: none;
-    }
+		& * {
+			font-family: inherit;
+			font-weight: inherit;
+			text-decoration: none;
+			text-transform: none;
+		}
 
-    &__navigation {
-      height: 24px;
-      margin-bottom: 14px;
-      font-weight: 600;
-      align-items: center; 
+		&__navigation {
+			height: 24px;
+			margin-bottom: 14px;
+			font-weight: 600;
+			align-items: center;
 
-      button {
-        min-width: auto;
-        
-        &:enabled:hover,
-        &:enabled:active,
-        &:enabled:focus{
-          background: transparent;
-        }
-      }
+			button {
+				min-width: auto;
 
-      &__label{
-        color: $darkGray;
-      }
+				&:enabled:hover,
+				&:enabled:active,
+				&:enabled:focus {
+					background: transparent;
+				}
+			}
 
-      &__arrow{
-        font-size: 25px;
-        transform: translateY(-10%);
-      }
-    }
+			&__label {
+				color: $darkGray;
+			}
 
-    &__month-view__days {
-      margin-top: 27px;
+			&__arrow {
+				font-size: 25px;
+				transform: translateY(-10%);
+			}
+		}
 
-      &__day{
-        border-radius: 100%;
-      }
-    }
+		&__month-view__days {
+			margin-top: 27px;
 
-    &__month-view__weekdays {
-      text-decoration: none;
-      font-size: 12px;
-      line-height: 15px;
-      letter-spacing: 0.4px;
-      color: $darkBlue;
-    }
+			&__day {
+				border-radius: 100%;
+			}
+		}
 
-    &__navigation__label {
-      font-size: 14px;
-      line-height: 21px;
-      text-align: center;
-      letter-spacing: 0.1px;
-      color: $darkGray; 
-    }
+		&__month-view__weekdays {
+			text-decoration: none;
+			font-size: 12px;
+			line-height: 15px;
+			letter-spacing: 0.4px;
+			color: $darkBlue;
+		}
 
-    &__navigation__prev2-button,
-    &__navigation__next2-button {
-      display: none;
-    } 
+		&__navigation__label {
+			font-size: 14px;
+			line-height: 21px;
+			text-align: center;
+			letter-spacing: 0.1px;
+			color: $darkGray;
+		}
 
-    &__tile {
-      padding: 9.5px;
-      color: $darkGray;
+		&__navigation__prev2-button,
+		&__navigation__next2-button {
+			display: none;
+		}
 
-      &:hover,
-      &--now { 
-        border-radius: 100% !important; 
-      }
+		&__tile {
+			padding: 9.5px;
+			color: $darkGray;
 
-      &:hover{
-        background-color: $lightGray; 
-      }
+			&:hover,
+			&--now {
+				border-radius: 100% !important;
+			}
 
-      // for checked range
-      &:focus,
-      &--active,
-      &--active:enabled:hover, 
-      &--active:enabled:focus,
-      &--active:focus,
-      &--rangeStart,
-      &--rangeEnd
-      {
-        border-radius: 100% !important; 
-        color: $white !important;
-        background-color: $blue !important; 
-      } 
+			&:hover {
+				background-color: $lightGray;
+			}
 
+			// for checked range
+			&:focus,
+			&--active,
+			&--active:enabled:hover,
+			&--active:enabled:focus,
+			&--active:focus,
+			&--rangeStart,
+			&--rangeEnd {
+				border-radius: 100% !important;
+				color: $white !important;
+				background-color: $blue !important;
+			}
 
-      &--hasActive {
-        color: white;
-      }  
-
-    }
-  }
+			&--hasActive {
+				color: white;
+			}
+		}
+	}
 }
 
 .react-calendar__tile--now {
-  background-color: #D9EAF2;
+	background-color: #d9eaf2;
 }

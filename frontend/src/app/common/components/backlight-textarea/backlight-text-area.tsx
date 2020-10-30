@@ -1,19 +1,19 @@
-import { Keywords } from 'app/modules/predict-text/predict-text';
-import React, { ReactElement } from 'react';
+import { Keywords, PredictMetricsName } from "app/modules/predict-text/predict-text";
+import React, { ReactElement } from "react";
 
-import './backlight-textarea.scss';
+import "./backlight-textarea.scss";
 
 interface Props {
-	text: string,
-	keywords: Keywords | undefined,
-	disabled?: boolean,
-	onChangeText: (text: string) => void
+	text: string;
+	keywords: Keywords | undefined;
+	layoutArr: PredictMetricsName[];
+	disabled?: boolean;
+	onChangeText: (text: string) => void;
 }
 
 class BacklightTextArea extends React.Component<Props> {
-
 	backdropContainerRef: React.RefObject<HTMLDivElement>;
-	textareaPlaceholder: string ="Copy or type your description here";
+	textareaPlaceholder = "Copy or type your description here";
 
 	constructor(props: Props) {
 		super(props);
@@ -23,16 +23,17 @@ class BacklightTextArea extends React.Component<Props> {
 
 	syncScroll = () => {
 		if (this.backdropContainerRef.current) {
-			let scrollTop = (this.backdropContainerRef.current
-				.getElementsByClassName('backlight-textarea__textarea')
-				.item(0) as Element)
-				.scrollTop;
+			const { scrollTop } = this.backdropContainerRef.current
+				.getElementsByClassName("backlight-textarea__textarea")
+				.item(0) as Element;
 
-			let texts = this.backdropContainerRef.current
-				.getElementsByClassName('backlight-textarea__text');
+			const texts = this.backdropContainerRef.current.getElementsByClassName(
+				"backlight-textarea__text"
+			);
 
 			// @ts-ignore
-			for (let text of texts) {
+			// eslint-disable-next-line no-restricted-syntax
+			for (const text of texts) {
 				(text as Element).scrollTop = scrollTop;
 			}
 		}
@@ -47,45 +48,41 @@ class BacklightTextArea extends React.Component<Props> {
 		this.syncScroll();
 	}
 
-	addBacklight = (text: string, keywords?: Keywords) => {
-		let result: any[] = [];
-
-		if (keywords) {
-			keywords.resolution.forEach((keyword) => {
-				result.push(wrapSubstrToColor(text, keyword, 'red'));
-			});
-
-			keywords.Priority.forEach((keyword) => {
-				result.push(wrapSubstrToColor(text, keyword, 'yellow'));
-			});
-
-			keywords.areas_of_testing.forEach((keyword) => {
-				result.push(wrapSubstrToColor(text, keyword, 'purple'));
-			});
-
-			return result.length ? result : [ text ];
-		} else {
-			return [ text ];
+	getColor = (metric: PredictMetricsName) => {
+		switch (metric) {
+			case "Priority":
+				return "yellow";
+			case "resolution":
+				return "red";
+			case "areas_of_testing":
+				return "purple";
 		}
+	};
+
+	addBacklight = (text: string, keywords?: Keywords) => {
+		const res: any[] = [];
+		if (keywords) {
+			this.props.layoutArr.forEach((metric) => {
+				keywords[metric].forEach((word) => {
+					res.push(wrapSubstrToColor(text, word, this.getColor(metric)));
+				});
+			});
+		}
+
+		return res.length ? res : [text];
 	};
 
 	render() {
 		return (
 			<div className="backlight-textarea">
-
 				<div className="backlight-textarea__backdrop" ref={this.backdropContainerRef}>
-					{
-						this.addBacklight(this.props.text, this.props.keywords).map((text, index) => 
-										<pre
-											key={index}
-											className="backlight-textarea__text">
-												{ 
-													text? 
-														text: 
-														<span className="backlight-textarea__placeholder">{this.textareaPlaceholder}</span> 
-												}
-										</pre>)
-					}
+					{this.addBacklight(this.props.text, this.props.keywords).map((text, index) => (
+						<pre key={index} className="backlight-textarea__text">
+							{text || (
+								<span className="backlight-textarea__placeholder">{this.textareaPlaceholder}</span>
+							)}
+						</pre>
+					))}
 
 					<textarea
 						onScroll={this.syncScroll}
@@ -94,35 +91,39 @@ class BacklightTextArea extends React.Component<Props> {
 						onChange={this.onChange}
 						disabled={this.props.disabled}
 						placeholder="Copy or type your description here"
-					>{/*text area*/}</textarea>
+					>
+						{/* text area */}
+					</textarea>
 				</div>
 			</div>
 		);
 	}
-
 }
 
 export default BacklightTextArea;
 
 function wrapSubstrToColor(text: string, substr: string, color: string) {
-	let splitText: ReactElement[] = [];
+	const splitText: ReactElement[] = [];
 
-	let find = () => {
+	const find = () => {
 		return text.toLowerCase().indexOf(substr.toLocaleLowerCase());
 	};
 
 	let key = 0;
 	while (find() > -1) {
-		let startPos = find();
+		const startPos = find();
 		splitText.push(
-			<React.Fragment key={++key}>{text.slice(0, startPos)}</React.Fragment>,
-			<span key={++key} className={`color-${color}`}>{text.slice(startPos, startPos + substr.length)}</span>,
+			<React.Fragment key={key + 1}>{text.slice(0, startPos)}</React.Fragment>,
+			<span key={key + 2} className={`color-${color}`}>
+				{text.slice(startPos, startPos + substr.length)}
+			</span>
 		);
-
+		// eslint-disable-next-line no-param-reassign
 		text = text.slice(startPos + substr.length);
+		key += 2;
 	}
 
-	splitText.push(<React.Fragment key={++key}>{text}</React.Fragment>);
+	splitText.push(<React.Fragment key={key + 1}>{text}</React.Fragment>);
 
 	return splitText;
 }

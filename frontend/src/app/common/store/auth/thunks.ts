@@ -1,14 +1,14 @@
-import { AuthApi } from 'app/common/api/auth.api';
-import { HttpClient } from 'app/common/api/http-client';
-import { deleteExtraSpaces } from 'app/common/functions/helper';
-import { saveDataToLocalStorage } from 'app/common/functions/local-storage';
-import { setStatus, setTeamList, setUser } from 'app/common/store/auth/actions';
-import { HttpStatus } from 'app/common/types/http.types';
-import { RouterNames } from 'app/common/types/router.types';
-import { User, UserSignIn, UserSignUp } from 'app/common/types/user.types';
-import { addToast } from 'app/modules/toasts-overlay/store/actions';
-import { ToastStyle } from 'app/modules/toasts-overlay/store/types';
-import { push } from 'connected-react-router';
+import { AuthApi } from "app/common/api/auth.api";
+import HttpClient from "app/common/api/http-client";
+import { deleteExtraSpaces } from "app/common/functions/helper";
+import { saveDataToLocalStorage } from "app/common/functions/local-storage";
+import { setStatus, setTeamList, setUser } from "app/common/store/auth/actions";
+import { HttpStatus } from "app/common/types/http.types";
+import { RouterNames } from "app/common/types/router.types";
+import { User, UserSignIn, UserSignUp } from "app/common/types/user.types";
+import { addToast } from "app/modules/toasts-overlay/store/actions";
+import { ToastStyle } from "app/modules/toasts-overlay/store/types";
+import { push } from "connected-react-router";
 
 export const userSignIn = (signInData: UserSignIn) => {
 	return async (dispatch: any) => {

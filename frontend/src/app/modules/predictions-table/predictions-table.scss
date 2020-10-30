@@ -1,133 +1,156 @@
 @import "src/app/styles/colors";
 
 .predictions-table {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+	display: flex;
+	flex-direction: column;
+	height: 100%;
 
-  &__pagination {
+	&__pagination {
+	}
 
-  }
+	&__scrollable-container {
+		overflow-y: scroll;
+	}
 
-  &__scrollable-container {
+	&__table-cell-title {
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
 
-    overflow-y: scroll;
-  }
+	&__table {
+		width: 100%;
 
-  &__table-cell-title{
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+		&_with-head {
+			margin-top: 20px;
 
-  &__table {
-    width: 100%;
+			tbody {
+				visibility: collapse;
+			}
+		}
 
-    &_with-head {
-      margin-top: 20px;
+		&_with-body {
+			thead {
+				visibility: collapse;
+			}
+		}
 
-      tbody {
-        visibility: collapse;
-      }
-    }
+		th {
+			font-size: 16px;
+			line-height: 20px;
+			color: $darkGray;
 
-    &_with-body {
-      thead {
-        visibility: collapse;
-      }
-    }
+			padding: 0 18px;
 
-    th {
-      font-size: 16px;
-      line-height: 20px;
-      color: $darkGray;
+			&:first-child {
+				padding-left: 0;
+			}
 
-      padding: 0 18px;
+			&:first-child,
+			&:last-child {
+				text-align: left;
+			}
+		}
 
-      &:first-child {
-        padding-left: 0;
-      }
+		tr {
+		}
 
-      &:first-child, &:last-child {
-        text-align: left;
-      }
-    }
+		td {
+			max-width: 400px;
+			text-align: center;
+			padding: 20px 18px 0;
 
-    tr {
+			font-size: 16px;
+			line-height: 20px;
+			font-weight: 500;
+			color: $darkGray;
 
-    }
+			&:first-child {
+				padding-left: 0;
+			}
 
-    td {
-      max-width: 400px;
-      text-align: center;
-      padding: 20px 18px 0;
+			&:first-child,
+			&:last-child {
+				text-align: left;
+			}
+		}
+	}
 
-      font-size: 16px;
-      line-height: 20px;
-      font-weight: 500;
-      color: $darkGray;
-
-      &:first-child {
-        padding-left: 0;
-      }
-
-      &:first-child, &:last-child {
-        text-align: left;
-      }
-    }
-  }
-
-  .color {
-    &_green { color: $green }
-    &_dark-blue { color: $darkBlue }
-    &_orange { color: $orange }
-    &_violet-dark { color: $violetDark }
-    &_cold { color: $cold }
-    &_yellow-strong { color: $yellowStrong }
-    &_orange { color: $orange }
-    &_light-red { color: $lightRed }
-  }
-
+	.color {
+		&_green {
+			color: $green;
+		}
+		&_dark-blue {
+			color: $darkBlue;
+		}
+		&_orange {
+			color: $orange;
+		}
+		&_violet-dark {
+			color: $violetDark;
+		}
+		&_cold {
+			color: $cold;
+		}
+		&_yellow-strong {
+			color: $yellowStrong;
+		}
+		&_orange {
+			color: $orange;
+		}
+		&_light-red {
+			color: $lightRed;
+		}
+	}
 }
 
 .predictions-table-pagination {
-  display: flex;
-  justify-content: flex-end;
+	display: flex;
+	justify-content: flex-end;
 
-  &__field {
-    display: flex;
-    align-items: center;
+	&__field {
+		display: flex;
+		align-items: center;
 
     &:not(:last-child) {
       margin-right: 40px;
     }
   }
+  &__select{
+    -moz-appearance: none;
+    -webkit-appearance: none;
+    width: 50px;
 
+    &-icon{
+      transform: translateX(-100%);
+      pointer-events: none;
+    }
+  }
   &__button {
     margin: 0 5px;
     background-color: transparent;
 
-    &__icon {
-      color: $darkGray;
-    }
+		&__icon {
+			color: $darkGray;
+		}
 
-    &:disabled {
-      color: $grayDisabled;
-    }
-  }
+		&:disabled {
+			color: $grayDisabled;
+		}
+	}
 
-  &__label {
-    margin: 0 10px;
+	&__label {
+		margin: 0 10px;
 
-    font-size: 16px;
-    line-height: 20px;
-    font-weight: 500;
-    color: $grayDisabledText;
-  }
+		font-size: 16px;
+		line-height: 20px;
+		font-weight: 500;
+		color: $grayDisabledText;
+	}
 
-  &__value {
-    font-size: 16px;
-    line-height: 20px;
-    color: $darkGray;
-  }
+	&__value {
+		font-size: 16px;
+		line-height: 20px;
+		color: $darkGray;
+	}
 }

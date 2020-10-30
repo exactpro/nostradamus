@@ -1,76 +1,78 @@
-import { AnalysisAndTrainingApi } from 'app/common/api/analysis-and-training.api';
-import Button, { ButtonStyled } from 'app/common/components/button/button';
-import Card from 'app/common/components/card/card';
-import { IconType } from 'app/common/components/icon/icon';
-import { Timer } from 'app/common/functions/timer';
-import { setCollectingDataStatus } from 'app/common/store/settings/actions';
+import { AnalysisAndTrainingApi } from "app/common/api/analysis-and-training.api";
+import Button, { ButtonStyled } from "app/common/components/button/button";
+import Card from "app/common/components/card/card";
+import { IconType } from "app/common/components/icon/icon";
+import { Timer } from "app/common/functions/timer";
+import { setCollectingDataStatus } from "app/common/store/settings/actions";
 import {
 	AnalysisAndTrainingDefectSubmission,
 	AnalysisAndTrainingStatistic,
 	DefectSubmissionData,
 	SignificantTermsData,
-} from 'app/common/types/analysis-and-training.types';
-import { HttpStatus } from 'app/common/types/http.types';
-import DefectSubmission from 'app/modules/defect-submission/defect-submission';
-import { FilterFieldBase } from 'app/modules/filters/field/field-type';
-import { checkFieldIsFilled } from 'app/modules/filters/field/field.helper-function';
-import { Filters } from 'app/modules/filters/filters';
-import FrequentlyUsedTerms from 'app/modules/frequently-used-terms/frequently-used-terms';
-import Header from 'app/modules/header/header';
-import MainStatistic, { MainStatisticData } from 'app/modules/main-statistic/main-statistic';
-import SignificantTerms from 'app/modules/significant-terms/significant-terms';
-import { Terms } from 'app/modules/significant-terms/store/types';
-import Statistic from 'app/modules/statistic/statistic';
-import { addToast, addToastWithAction } from 'app/modules/toasts-overlay/store/actions';
-import { ToastStyle } from 'app/modules/toasts-overlay/store/types';
-import TrainingButton from 'app/modules/training-button/training-button';
+} from "app/common/types/analysis-and-training.types";
+import { HttpStatus } from "app/common/types/http.types";
+import DefectSubmission from "app/modules/defect-submission/defect-submission";
+import { FilterFieldBase } from "app/modules/filters/field/field-type";
+import { checkFieldIsFilled } from "app/modules/filters/field/field.helper-function";
+import { Filters, FiltersPopUp } from "app/modules/filters/filters";
+import FrequentlyUsedTerms from "app/modules/frequently-used-terms/frequently-used-terms";
+import Header from "app/modules/header/header";
+import MainStatistic, { MainStatisticData } from "app/modules/main-statistic/main-statistic";
+import SignificantTerms from "app/modules/significant-terms/significant-terms";
+import { Terms } from "app/modules/significant-terms/store/types";
+import Statistic from "app/modules/statistic/statistic";
+import {
+	addToast,
+	addToastWithAction,
+	removeToastByOuterId,
+} from "app/modules/toasts-overlay/store/actions";
+import { ToastStyle } from "app/modules/toasts-overlay/store/types";
+import TrainingButton from "app/modules/training-button/training-button";
 
-import 'app/pages/analysis-and-training/analysis-and-training.page.scss';
+import "app/pages/analysis-and-training/analysis-and-training.page.scss";
 
-import calculateData1 from 'assets/images/calculateData1.svg';
-import calculateData2 from 'assets/images/calculateData2.svg';
-import calculateData3 from 'assets/images/calculateData3.svg';
+import calculateData1 from "assets/images/calculateData1.svg";
+import calculateData2 from "assets/images/calculateData2.svg";
+import calculateData3 from "assets/images/calculateData3.svg";
 
-import defectSubmissionLoadingPreview from 'assets/images/defect-submission-loading-preview.png';
-import filterLoadingPreview from 'assets/images/filter-loading-preview.png';
-import frequentlyUsedTermsLoadingPreview from 'assets/images/frequently-used-terms-loading-preview.png';
-import significantTermsLoadingPreview from 'assets/images/significant-terms-loading-preview.png';
-import statisticsLoadingPreview from 'assets/images/statistics-loading-preview.png';
-import { socket } from 'index';
-import React from 'react';
-import { connect, ConnectedProps } from 'react-redux';
-import { removeToastByOuterId } from "app/modules/toasts-overlay/store/actions";
+import defectSubmissionLoadingPreview from "assets/images/defect-submission-loading-preview.png";
+import filterLoadingPreview from "assets/images/filter-loading-preview.png";
+import frequentlyUsedTermsLoadingPreview from "assets/images/frequently-used-terms-loading-preview.png";
+import significantTermsLoadingPreview from "assets/images/significant-terms-loading-preview.png";
+import statisticsLoadingPreview from "assets/images/statistics-loading-preview.png";
+import { socket } from "index";
+import React from "react";
+import { connect, ConnectedProps } from "react-redux";
 
 interface State {
-	loadingStatus: number,
-	filters: FilterFieldBase[],
-	totalStatistic: MainStatisticData | undefined,
-	frequentlyTerms: string[],
-	isCollectingFinished: boolean,
-	statistic: AnalysisAndTrainingStatistic | undefined,
-	significantTerms: SignificantTermsData,
-	defectSubmission: DefectSubmissionData,
+	loadingStatus: number;
+	filters: FilterFieldBase[];
+	totalStatistic: MainStatisticData | undefined;
+	frequentlyTerms: string[];
+	isCollectingFinished: boolean;
+	statistic: AnalysisAndTrainingStatistic | undefined;
+	significantTerms: SignificantTermsData;
+	defectSubmission: DefectSubmissionData;
 	statuses: {
-		[key: string]: HttpStatus,
-		filter: HttpStatus,
-		frequentlyTerms: HttpStatus,
-		defectSubmission: HttpStatus,
-		statistic: HttpStatus,
-		significantTerms: HttpStatus
-	},
+		[key: string]: HttpStatus;
+		filter: HttpStatus;
+		frequentlyTerms: HttpStatus;
+		defectSubmission: HttpStatus;
+		statistic: HttpStatus;
+		significantTerms: HttpStatus;
+	};
 	warnings: {
-		frequentlyTerms: string
-	}
+		frequentlyTerms: string;
+	};
 }
 
 const LOADING_TIME = 5 * 60 * 1000;
 
 class AnalysisAndTrainingPage extends React.Component<PropsFromRedux, State> {
-
 	interval: NodeJS.Timer | null = null;
 	timer: Timer | null = null;
-	isComponentMounted: boolean = false;
-	updateDataToastID: number = 0;
+	isComponentMounted = false;
+	updateDataToastID = 0;
 
 	imageForCalculating: string;
 
@@ -98,13 +100,15 @@ class AnalysisAndTrainingPage extends React.Component<PropsFromRedux, State> {
 			significantTerms: HttpStatus.PREVIEW,
 		},
 		warnings: {
-			frequentlyTerms: '',
+			frequentlyTerms: "",
 		},
 	};
 
-	constructor(props: PropsFromRedux) {
-		super(props);
-		this.props.setCollectingDataStatus(this.state.isCollectingFinished);
+	constructor(innerProps: PropsFromRedux) {
+		super(innerProps);
+
+		const { props, state } = this;
+		props.setCollectingDataStatus(state.isCollectingFinished);
 
 		switch (Math.floor(Math.random() * 3)) {
 			case 1:
@@ -119,65 +123,29 @@ class AnalysisAndTrainingPage extends React.Component<PropsFromRedux, State> {
 		}
 	}
 
-	uploadDashboardData = (typeUpload: 'full' | 'data' | 'filters' = 'data') => {
-		if (typeUpload === 'full' || typeUpload === 'filters') {
-			this.uploadFilters();
-		}
-
-		if (typeUpload === 'full' || typeUpload === 'data') {
-			this.uploadFrequentlyTerms();
-			this.uploadStatistic();
-			this.uploadDefectSubmission();
-			this.uploadSignificantTermsData();
-		}
-	};
-
 	componentDidMount(): void {
 		this.isComponentMounted = true;
-		this.uploadTotalStatistic()
-			.then(() => {
-				if (this.state.isCollectingFinished) {
-					if (this.state.totalStatistic?.filtered) {
-						this.uploadDashboardData('full');
-					} else {
-						this.uploadDashboardData('filters');
-					}
+		const { isCollectingFinished } = this.state;
+
+		this.uploadTotalStatistic().then((filtered) => {
+			if (isCollectingFinished) {
+				if (filtered) {
+					this.uploadDashboardData("full");
+				} else {
+					this.uploadDashboardData("filters");
 				}
-			});
+			}
+		});
 
 		this.startSocket();
 	}
 
-	componentWillUnmount = () => {  
-		this.isComponentMounted = false;
-		if(this.updateDataToastID) {
-			this.props.removeToastByOuterId(this.updateDataToastID);
-		} 
-	}
+	componentDidUpdate(): void {
+		const { isCollectingFinished } = this.state;
 
-	startSocket = () => {
-		socket.startMonitor('message', (val) => {
-			if (this.state.isCollectingFinished && this.isComponentMounted) {  
-				++this.updateDataToastID;
-				this.props.addToastWithAction('Data has been updated', ToastStyle.Info, [
-					{
-						buttonName: 'Load',
-						callBack: () => {
-							this.uploadTotalStatistic().then(_=> this.uploadDashboardData('full'));
-						},
-					},
-				], this.updateDataToastID);
-				
-			} else if(!this.state.isCollectingFinished){
-				document.location.reload();
-			}
-		});
-	};
-
-	componentDidUpdate(prevProps: Readonly<PropsFromRedux>, prevState: Readonly<State>, snapshot?: any): void {
-		if (!this.state.isCollectingFinished && !this.interval) {
+		if (!isCollectingFinished && !this.interval) {
 			this.interval = setInterval(() => {
-				this.setState((state)=>({
+				this.setState((state) => ({
 					loadingStatus: state.loadingStatus < 100 ? state.loadingStatus + 1 : 100,
 				}));
 
@@ -190,35 +158,83 @@ class AnalysisAndTrainingPage extends React.Component<PropsFromRedux, State> {
 		}
 	}
 
+	componentWillUnmount = () => {
+		const { props } = this;
+
+		this.isComponentMounted = false;
+		if (this.updateDataToastID) {
+			props.removeToastByOuterId(this.updateDataToastID);
+		}
+	};
+
+	uploadDashboardData = (typeUpload: "full" | "data" | "filters" = "data") => {
+		if (typeUpload === "full" || typeUpload === "filters") {
+			this.uploadFilters();
+		}
+
+		if (typeUpload === "full" || typeUpload === "data") {
+			this.uploadFrequentlyTerms();
+			this.uploadStatistic();
+			this.uploadDefectSubmission();
+			this.uploadSignificantTermsData();
+		}
+	};
+
+	startSocket = () => {
+		const { props, state } = this;
+
+		socket.startMonitor("message", () => {
+			if (state.isCollectingFinished && this.isComponentMounted) {
+				this.updateDataToastID += 1;
+				props.addToastWithAction(
+					"Data has been updated",
+					ToastStyle.Info,
+					[
+						{
+							buttonName: "Load",
+							callBack: () => {
+								this.uploadTotalStatistic().then((_) => this.uploadDashboardData("full"));
+							},
+						},
+					],
+					this.updateDataToastID
+				);
+			} else if (!state.isCollectingFinished) {
+				document.location.reload();
+			}
+		});
+	};
+
 	validateUploadData = (data: any, cardName: string) => {
-		if(!(data && Object.keys(data).length)){
-			this.setState((state)=>({
-				statuses: {...state.statuses, [cardName]: HttpStatus.PREVIEW}
+		if (!(data && Object.keys(data).length)) {
+			this.setState((state) => ({
+				statuses: { ...state.statuses, [cardName]: HttpStatus.PREVIEW },
 			}));
 			return true;
 		}
 		return false;
-	}
+	};
 
 	uploadSignificantTermsData = async () => {
-		this.setState((state)=>({
+		this.setState((state) => ({
 			statuses: { ...state.statuses, significantTerms: HttpStatus.LOADING },
 		}));
 
 		let significant_terms: SignificantTermsData;
 
 		try {
-			significant_terms = (await AnalysisAndTrainingApi.getSignificantTermsData()).significant_terms;
+			significant_terms = (await AnalysisAndTrainingApi.getSignificantTermsData())
+				.significant_terms;
 		} catch (e) {
-			this.setState((state)=>({
+			this.setState((state) => ({
 				statuses: { ...state.statuses, significantTerms: HttpStatus.FAILED },
 			}));
 			return;
 		}
 
-		if(this.validateUploadData(significant_terms, "significantTerms")) return; 
+		if (this.validateUploadData(significant_terms, "significantTerms")) return;
 
-		this.setState((state)=>({
+		this.setState((state) => ({
 			statuses: { ...state.statuses, significantTerms: HttpStatus.FINISHED },
 			significantTerms: {
 				metrics: [...significant_terms.metrics],
@@ -229,7 +245,7 @@ class AnalysisAndTrainingPage extends React.Component<PropsFromRedux, State> {
 	};
 
 	uploadSignificantTermsList = async (metric: string) => {
-		this.setState((state)=>({
+		this.setState((state) => ({
 			statuses: { ...state.statuses, significantTerms: HttpStatus.LOADING },
 			significantTerms: {
 				...state.significantTerms,
@@ -240,17 +256,18 @@ class AnalysisAndTrainingPage extends React.Component<PropsFromRedux, State> {
 		let significant_terms: Terms;
 
 		try {
-			significant_terms = (await AnalysisAndTrainingApi.getSignificantTermsList(metric)).significant_terms;
+			significant_terms = (await AnalysisAndTrainingApi.getSignificantTermsList(metric))
+				.significant_terms;
 		} catch (e) {
-			this.setState((state)=>({
+			this.setState((state) => ({
 				statuses: { ...state.statuses, significantTerms: HttpStatus.FAILED },
 			}));
 			return;
 		}
 
-		if(this.validateUploadData(significant_terms, "significantTerms")) return;
+		if (this.validateUploadData(significant_terms, "significantTerms")) return;
 
-		this.setState((state)=>({
+		this.setState((state) => ({
 			statuses: { ...state.statuses, significantTerms: HttpStatus.FINISHED },
 			significantTerms: {
 				...state.significantTerms,
@@ -260,7 +277,7 @@ class AnalysisAndTrainingPage extends React.Component<PropsFromRedux, State> {
 	};
 
 	uploadDefectSubmission = async (period?: string) => {
-		this.setState((state)=>({
+		this.setState((state) => ({
 			defectSubmission: {
 				...state.defectSubmission,
 				activePeriod: period,
@@ -273,15 +290,15 @@ class AnalysisAndTrainingPage extends React.Component<PropsFromRedux, State> {
 		try {
 			defectSubmission = await AnalysisAndTrainingApi.getDefectSubmission(period);
 		} catch (e) {
-			this.setState((state)=>({
+			this.setState((state) => ({
 				statuses: { ...state.statuses, defectSubmission: HttpStatus.FAILED },
 			}));
 			return;
 		}
 
-		if(this.validateUploadData(defectSubmission, "defectSubmission")) return;
+		if (this.validateUploadData(defectSubmission, "defectSubmission")) return;
 
-		this.setState((state)=>({
+		this.setState((state) => ({
 			defectSubmission: {
 				data: defectSubmission,
 				activePeriod: defectSubmission!.period,
@@ -291,7 +308,7 @@ class AnalysisAndTrainingPage extends React.Component<PropsFromRedux, State> {
 	};
 
 	uploadFrequentlyTerms = async () => {
-		this.setState((state)=>({
+		this.setState((state) => ({
 			statuses: { ...state.statuses, frequentlyTerms: HttpStatus.LOADING },
 		}));
 
@@ -300,21 +317,21 @@ class AnalysisAndTrainingPage extends React.Component<PropsFromRedux, State> {
 		try {
 			body = await AnalysisAndTrainingApi.getFrequentlyTerms();
 		} catch (e) {
-			this.setState((state)=>({
+			this.setState((state) => ({
 				statuses: { ...state.statuses, frequentlyTerms: HttpStatus.FAILED },
 			}));
 			return;
 		}
 
-		if(this.validateUploadData(body, "frequentlyTerms")) return;
+		if (this.validateUploadData(body, "frequentlyTerms")) return;
 
 		if (body.frequently_terms) {
-			this.setState((state)=>({
+			this.setState((state) => ({
 				frequentlyTerms: [...body.frequently_terms],
 				statuses: { ...state.statuses, frequentlyTerms: HttpStatus.FINISHED },
 			}));
 		} else {
-			this.setState((state)=>({
+			this.setState((state) => ({
 				warnings: {
 					...state.warnings,
 					frequentlyTerms: body.warning.detail || body.warning.message,
@@ -325,42 +342,46 @@ class AnalysisAndTrainingPage extends React.Component<PropsFromRedux, State> {
 	};
 
 	uploadFilters = async () => {
-		this.setState((state)=>({
+		this.setState((state) => ({
 			statuses: { ...state.statuses, filter: HttpStatus.LOADING },
 		}));
 
 		let filters: FilterFieldBase[];
 
 		try {
-			filters = await AnalysisAndTrainingApi.getFilter();			
+			filters = await AnalysisAndTrainingApi.getFilter();
 		} catch (e) {
-			this.setState((state)=>({
+			this.setState((state) => ({
 				statuses: { ...state.statuses, filter: HttpStatus.FAILED },
 			}));
 			return;
 		}
 
-		this.setState((state)=>({
+		this.setState((state) => ({
 			filters: [...filters],
 			statuses: { ...state.statuses, filter: HttpStatus.FINISHED },
 		}));
 	};
 
 	applyFilters = async (filters: FilterFieldBase[]) => {
-		this.setState((state)=>({
+		this.setState((state) => ({
 			filters: [],
 			statuses: { ...state.statuses, filter: HttpStatus.LOADING },
 		}));
 
-		let response: { filters: FilterFieldBase[]; records_count: MainStatisticData | undefined; };
+		let response: { filters: FilterFieldBase[]; records_count: MainStatisticData | undefined };
 
 		try {
 			response = await AnalysisAndTrainingApi.saveFilter({
-				action: 'apply',
-				filters: [...filters.filter((field) => checkFieldIsFilled(field.filtration_type, field.current_value))],
+				action: "apply",
+				filters: [
+					...filters.filter((field) =>
+						checkFieldIsFilled(field.filtration_type, field.current_value)
+					),
+				],
 			});
 		} catch (e) {
-			this.setState((state)=>({
+			this.setState((state) => ({
 				filters,
 				statuses: { ...state.statuses, filter: HttpStatus.FAILED },
 			}));
@@ -368,7 +389,7 @@ class AnalysisAndTrainingPage extends React.Component<PropsFromRedux, State> {
 		}
 
 		if (response.records_count && response.records_count.filtered) {
-			this.setState((state)=>({
+			this.setState((state) => ({
 				filters: response.filters,
 				totalStatistic: response.records_count,
 				statuses: { ...state.statuses, filter: HttpStatus.FINISHED },
@@ -376,9 +397,9 @@ class AnalysisAndTrainingPage extends React.Component<PropsFromRedux, State> {
 
 			this.uploadDashboardData();
 		} else {
-			this.props.addToast('Data cannot be found. Please change filters.', ToastStyle.Warning);
+			this.props.addToast(FiltersPopUp.noDataFound, ToastStyle.Warning);
 
-			this.setState((state)=>({
+			this.setState((state) => ({
 				filters: response.filters,
 				statuses: { ...state.statuses, filter: HttpStatus.FINISHED },
 			}));
@@ -386,26 +407,26 @@ class AnalysisAndTrainingPage extends React.Component<PropsFromRedux, State> {
 	};
 
 	resetFilters = async () => {
-		this.setState((state)=>({
+		this.setState((state) => ({
 			filters: [],
 			statuses: { ...state.statuses, filter: HttpStatus.LOADING },
 		}));
 
-		let response: { filters: FilterFieldBase[]; records_count: MainStatisticData | undefined; };
+		let response: { filters: FilterFieldBase[]; records_count: MainStatisticData | undefined };
 
 		try {
 			response = await AnalysisAndTrainingApi.saveFilter({
-				action: 'apply',
+				action: "apply",
 				filters: [],
 			});
 		} catch (e) {
-			this.setState((state)=>({
+			this.setState((state) => ({
 				statuses: { ...state.statuses, filter: HttpStatus.FAILED },
 			}));
 			return;
 		}
 
-		this.setState((state)=>({
+		this.setState((state) => ({
 			filters: response.filters,
 			totalStatistic: response.records_count,
 			statuses: { ...state.statuses, filter: HttpStatus.FINISHED },
@@ -415,30 +436,32 @@ class AnalysisAndTrainingPage extends React.Component<PropsFromRedux, State> {
 	};
 
 	uploadStatistic = async () => {
-		this.setState((state)=>({
+		this.setState((state) => ({
 			statuses: { ...state.statuses, statistic: HttpStatus.LOADING },
 		}));
 
 		let statistic: AnalysisAndTrainingStatistic | undefined;
 
 		try {
-			statistic = await AnalysisAndTrainingApi.getStatistic();			
+			statistic = await AnalysisAndTrainingApi.getStatistic();
 		} catch (e) {
-			this.setState((state)=>({
+			this.setState((state) => ({
 				statuses: { ...state.statuses, statistic: HttpStatus.FAILED },
 			}));
 			return;
 		}
 
-		if(this.validateUploadData(statistic, "statistic")) return;
+		if (this.validateUploadData(statistic, "statistic")) return;
 
-		this.setState((state)=>({
+		this.setState((state) => ({
 			statistic,
 			statuses: { ...state.statuses, statistic: HttpStatus.FINISHED },
 		}));
 	};
 
 	uploadTotalStatistic = async () => {
+		const { props } = this;
+
 		this.setState({
 			statuses: {
 				filter: HttpStatus.LOADING,
@@ -449,7 +472,7 @@ class AnalysisAndTrainingPage extends React.Component<PropsFromRedux, State> {
 			},
 		});
 
-		let totalStatistic = await AnalysisAndTrainingApi.getTotalStatistic();
+		const totalStatistic = await AnalysisAndTrainingApi.getTotalStatistic();
 
 		// check that data is collected
 		if (totalStatistic.records_count) {
@@ -459,9 +482,12 @@ class AnalysisAndTrainingPage extends React.Component<PropsFromRedux, State> {
 			});
 
 			if (!totalStatistic.records_count.filtered) {
-				this.props.addToast('With cached filters we didn\'t find data. Try to change filter.', ToastStyle.Warning);
+				props.addToast(
+					"With cached filters we didn't find data. Try to change filter.",
+					ToastStyle.Warning
+				);
 
-				this.setState((state)=>({
+				this.setState((state) => ({
 					isCollectingFinished: true,
 					statuses: {
 						...state.statuses,
@@ -471,7 +497,7 @@ class AnalysisAndTrainingPage extends React.Component<PropsFromRedux, State> {
 						significantTerms: HttpStatus.PREVIEW,
 					},
 				}));
-				this.props.setCollectingDataStatus(true);
+				props.setCollectingDataStatus(true);
 			}
 		} else {
 			// there isn't data
@@ -485,50 +511,53 @@ class AnalysisAndTrainingPage extends React.Component<PropsFromRedux, State> {
 					significantTerms: HttpStatus.PREVIEW,
 				},
 			});
-			this.props.setCollectingDataStatus(false);
+			props.setCollectingDataStatus(false);
 		}
+
+		return totalStatistic.records_count ? totalStatistic.records_count.filtered : 0;
 	};
 
 	render() {
-		let blurIntensive = 10 - (this.state.loadingStatus / 100 * 9);
-		let style = this.state.isCollectingFinished ? {} : { filter: `blur(${blurIntensive}px)` };
+		const { state } = this;
+
+		const blurIntensive = 10 - (state.loadingStatus / 100) * 9;
+		const style = state.isCollectingFinished ? {} : { filter: `blur(${blurIntensive}px)` };
 
 		return (
 			<div className="at-page">
 				<Header pageTitle="Analysis & Training">
-					<MainStatistic className="at-page__main-statistic" statistic={this.state.totalStatistic} />
+					<div className="at-page__header-container">
+					<MainStatistic className="at-page__main-statistic" statistic={state.totalStatistic} />
 
 					<TrainingButton className="at-page__train-button" dashboardStatus={HttpStatus.FINISHED} />
+					</div>
 				</Header>
 
-				{
-					!this.state.isCollectingFinished &&
-          <div className="at-page__collecting-data collecting-data">
-              <div className="collecting-data__message">
-                  Making calculations… Please wait a few minutes
-              </div>
+				{!state.isCollectingFinished && (
+					<div className="at-page__collecting-data collecting-data">
+						<div className="collecting-data__message">
+							Making calculations… Please wait a few minutes
+						</div>
 
-              <img src={this.imageForCalculating} alt="Calculating Data" />
+						<img src={this.imageForCalculating} alt="Calculating Data" />
 
-              <div className="collecting-data__loader">
-                  <div className="collecting-data__loader-inner" style={{ width: this.state.loadingStatus + '%' }}>
-
-                  </div>
-              </div>
-          </div>
-				}
+						<div className="collecting-data__loader">
+							<div
+								className="collecting-data__loader-inner"
+								style={{ width: `${state.loadingStatus}%` }}
+							/>
+						</div>
+					</div>
+				)}
 
 				<div className="at-page__content">
 					<div className="at-page__column at-page__column_position_left" style={style}>
-
 						<Card
 							className="configuration-tab at-page__card at-page__card_filter"
 							previewImage={filterLoadingPreview}
-							status={this.state.statuses.filter}
+							status={state.statuses.filter}
 						>
-
 							<div className="configuration-tab__container">
-
 								<div className="configuration-tab__buttons">
 									<Button
 										className="configuration-tab__section-filters"
@@ -539,63 +568,66 @@ class AnalysisAndTrainingPage extends React.Component<PropsFromRedux, State> {
 									/>
 								</div>
 
-								{
-									this.state.filters.length &&
+								{state.filters.length && (
 									<Filters
 										className="configuration-tab__filters"
-										filters={this.state.filters}
+										filters={state.filters}
 										applyFilters={this.applyFilters}
 										resetFilters={this.resetFilters}
 									/>
-								}
+								)}
 							</div>
 						</Card>
 
 						<Card
-							previewImage={statisticsLoadingPreview} title="Statistics"
-							status={this.state.statuses.statistic}
+							previewImage={statisticsLoadingPreview}
+							title="Statistics"
+							status={state.statuses.statistic}
 							className="statistics at-page__card"
 							hoverHeader
 						>
-							{this.state.statistic && <Statistic statistic={this.state.statistic} />}
+							{state.statistic && <Statistic statistic={state.statistic} />}
 						</Card>
-
 					</div>
 
 					<div className="at-page__column at-page__column_position_right" style={style}>
 						<Card
-							previewImage={defectSubmissionLoadingPreview} title="Defect Submission"
-							status={this.state.statuses.defectSubmission}
+							previewImage={defectSubmissionLoadingPreview}
+							title="Defect Submission"
+							status={state.statuses.defectSubmission}
 							className="defect-submission-card at-page__card"
 						>
 							<DefectSubmission
-								defectSubmission={this.state.defectSubmission.data}
-								activeTimeFilter={this.state.defectSubmission.activePeriod!}
+								defectSubmission={state.defectSubmission.data}
+								activeTimeFilter={state.defectSubmission.activePeriod!}
 								onChangePeriod={this.uploadDefectSubmission}
 							/>
 						</Card>
 
 						<Card
-							previewImage={frequentlyUsedTermsLoadingPreview} title="Frequently Used Terms"
+							previewImage={frequentlyUsedTermsLoadingPreview}
+							title="Frequently Used Terms"
 							// status={HttpStatus.WARNING}
-							status={this.state.statuses.frequentlyTerms}
+							status={state.statuses.frequentlyTerms}
 							className="frequently-used-terms at-page__card"
-							warningMessage={this.state.warnings.frequentlyTerms}
+							warningMessage={state.warnings.frequentlyTerms}
 						>
-							<FrequentlyUsedTerms frequentlyTermsList={this.state.frequentlyTerms} />
+							<FrequentlyUsedTerms frequentlyTermsList={state.frequentlyTerms} />
 						</Card>
 
 						<Card
-							previewImage={significantTermsLoadingPreview} title="Significant Terms"
-							status={this.state.statuses.significantTerms}
-							className="at-page__significant-terms at-page__card" hoverHeader
+							previewImage={significantTermsLoadingPreview}
+							title="Significant Terms"
+							status={state.statuses.significantTerms}
+							className="at-page__significant-terms at-page__card"
+							hoverHeader
 						>
 							<SignificantTerms
-								status={this.state.statuses.significantTerms}
+								status={state.statuses.significantTerms}
 								onChangeMetric={this.uploadSignificantTermsList}
-								metrics={this.state.significantTerms.metrics}
-								chosen_metric={this.state.significantTerms.chosen_metric}
-								terms={this.state.significantTerms.terms}
+								metrics={state.significantTerms.metrics}
+								chosen_metric={state.significantTerms.chosen_metric}
+								terms={state.significantTerms.terms}
 							/>
 						</Card>
 					</div>
@@ -611,14 +643,11 @@ const mapDispatchToProps = {
 	addToastWithAction,
 	addToast,
 	setCollectingDataStatus,
-	removeToastByOuterId
+	removeToastByOuterId,
 };
 
-const connector = connect(
-	mapStateToProps,
-	mapDispatchToProps,
-);
+const connector = connect(mapStateToProps, mapDispatchToProps);
 
-type PropsFromRedux = ConnectedProps<typeof connector>
+type PropsFromRedux = ConnectedProps<typeof connector>;
 
 export default connector(AnalysisAndTrainingPage);

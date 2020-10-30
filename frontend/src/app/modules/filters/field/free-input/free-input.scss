@@ -1,23 +1,23 @@
 @import "../../../../styles/colors";
 
 .free-input {
-  width: 100%;
+	width: 100%;
 
-  background-color: transparent;
+	background-color: transparent;
 
-  padding: 10px 0;
+	padding: 10px 0;
 
-  font-family: 'Quicksand', sans-serif;
-  font-weight: 600;
+	font-family: "Quicksand", sans-serif;
+	font-weight: 600;
 
-  font-size: 16px;
-  line-height: 20px;
-  color: $darkGray;
+	font-size: 16px;
+	line-height: 20px;
+	color: $darkGray;
 
-  &::placeholder {
-    color: $gray;
-    font-size: 16px;
-    line-height: 20px;
-    font-weight: 500;
-  }
+	&::placeholder {
+		color: $gray;
+		font-size: 16px;
+		line-height: 20px;
+		font-weight: 500;
+	}
 }

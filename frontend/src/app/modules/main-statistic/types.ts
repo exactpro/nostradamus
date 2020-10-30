@@ -1,4 +1,4 @@
 export interface MainStatistic {
-  total: number,
-  filtered: number
+	total: number;
+	filtered: number;
 }

@@ -19,12 +19,16 @@ from apps.extractor.main.connector import get_fields, get_unique_values
 from apps.settings.main.common import (
     get_filter_settings,
     get_qa_metrics_settings,
-    get_training_settings,
     get_predictions_table_settings,
     update_resolutions,
-    update_training_settings,
     split_values,
     read_settings,
+    get_source_field,
+    update_source_field,
+    update_bug_resolutions,
+    get_bug_resolutions,
+    get_mark_up_entities,
+    update_mark_up_entities,
 )
 
 
@@ -77,12 +81,6 @@ class TestSettings(TestCase):
 
         assert settings
 
-    def test_training_settings(self):
-        user = User.objects.get(name=TEST_USER["name"])
-        settings = get_training_settings(user)
-
-        assert settings
-
     def test_update_resolutions(self):
         user = User.objects.get(name=TEST_USER["name"])
         data = {
@@ -94,7 +92,7 @@ class TestSettings(TestCase):
                 {"metric": "Resolution", "value": "Duplicate"},
             ],
             "predictions_table": get_predictions_table_settings(user),
-            "source_field": get_training_settings(user)["source_field"],
+            "source_field": "Priority",
         }
 
         update_resolutions(data, user)
@@ -112,16 +110,64 @@ class TestSettings(TestCase):
 
         assert len(settings_clear) != len(settings)
 
-    def test_update_training_settings(self):
+    def test_update_source_field(self):
+        from apps.settings.serializers import (
+            SourceFieldSerializer,
+        )
+
         user = User.objects.get(name=TEST_USER["name"])
-        settings = {
-            "bug_resolution": [],
-            "mark_up_entities": [],
+        source_field = {
             "source_field": "Priority",
         }
-        update_training_settings(settings, user)
+        source_field_serializer = SourceFieldSerializer(source_field)
+        update_source_field(user, source_field_serializer.data)
 
-        assert get_training_settings(user).get("source_field") == "Priority"
+        assert get_source_field(user) == "Priority"
+
+    def test_update_bug_resolution(self):
+        from apps.settings.serializers import (
+            UserTrainingSerializer,
+        )
+
+        user = User.objects.get(name=TEST_USER["name"])
+        bug_resolution = {
+            "bug_resolution": [
+                {"metric": "Resolution", "value": "Cannot Reproduce"},
+                {"metric": "Resolution", "value": "Abandoned"},
+            ],
+        }
+        bug_resolution_serializer = UserTrainingSerializer(data=bug_resolution)
+        bug_resolution_serializer.is_valid()
+
+        update_bug_resolutions(
+            user, bug_resolution_serializer.data["bug_resolution"]
+        )
+
+        assert {"bug_resolution": get_bug_resolutions(user)} == bug_resolution
+
+    def test_update_mark_up_entities(self):
+        from apps.settings.serializers import (
+            UserTrainingSerializer,
+        )
+
+        user = User.objects.get(name=TEST_USER["name"])
+        mark_up_entities = {
+            "mark_up_entities": [
+                {"area_of_testing": "TestAOT", "entities": ["Minor"]}
+            ]
+        }
+        mark_up_entities_serializer = UserTrainingSerializer(
+            data=mark_up_entities
+        )
+        mark_up_entities_serializer.is_valid()
+
+        update_mark_up_entities(
+            user, mark_up_entities_serializer.data["mark_up_entities"]
+        )
+
+        assert {
+            "mark_up_entities": get_mark_up_entities(user)
+        } == mark_up_entities
 
     def test_get_predictions_table_settings(self):
         user = User.objects.get(name=TEST_USER["name"])

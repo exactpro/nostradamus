@@ -1,153 +1,188 @@
-import React, {Component} from "react";
-import cn from "classnames" 
-import {FilterElementType, FilterDropdownType} from "app/modules/settings/elements/elements-types";
-import SelectWindow from "app/common/components/select-window/select-window";
-import Icon, {IconSize, IconType} from "app/common/components/icon/icon";
+/* eslint-disable jsx-a11y/no-noninteractive-tabindex */
+import React, { Component } from "react";
+import cn from "classnames";
+import {
+	FilterElementType,
+	FilterDropdownType,
+} from "app/modules/settings/elements/elements-types";
+import SelectWindow from "app/common/components/native-components/select-window/select-window";
+import Icon, { IconSize, IconType } from "app/common/components/icon/icon";
 import "app/modules/settings/elements/input-training-element/input-training-element.scss";
 
-interface InputTrainingElementProps{
-  type: FilterElementType,
-  onChange: (value: string)=>void,
-  onClear: (index: number) => void,
-  onClearAll: () => void,
-  values: string[],
-  dropDownValues: string[],
+interface InputTrainingElementProps {
+	type: FilterElementType;
+	onChange: (value: string) => void;
+	onClear: (index: number) => void;
+	onClearAll: () => void;
+	values: string[];
+	dropDownValues: string[];
 }
 
-interface InputTrainingElementState{
-  isSelectWindowOpen: boolean,
-  isSelectedListOpen: boolean,
+interface InputTrainingElementState {
+	isSelectWindowOpen: boolean;
+	isSelectedListOpen: boolean;
 }
 
-export default class InputTrainingElement extends Component<InputTrainingElementProps, InputTrainingElementState>{
+export default class InputTrainingElement extends Component<
+	InputTrainingElementProps,
+	InputTrainingElementState
+> {
+	// eslint-disable-next-line react/static-property-placement
+	static defaultProps = {
+		type: FilterElementType.simple,
+		dropDownValues: Object.values(FilterDropdownType),
+	};
 
-  constructor(props: InputTrainingElementProps){
-    super(props);
+	// eslint-disable-next-line no-undef
+	timerID: NodeJS.Timeout | null = null;
+	inputTrainingElementRef: React.RefObject<HTMLDivElement> = React.createRef();
+	allowedEditing = false;
 
-    this.state = {
-      isSelectWindowOpen:false,
-      isSelectedListOpen: false,
-    };
-  }
+	constructor(props: InputTrainingElementProps) {
+		super(props);
 
-  static defaultProps={
-    type: FilterElementType.simple,
-    dropDownValues: Object.values(FilterDropdownType),
-  }
+		this.state = {
+			isSelectWindowOpen: false,
+			isSelectedListOpen: false,
+		};
+	}
 
-  timerID: NodeJS.Timeout | null = null;
-  inputTrainingElementRef: React.RefObject<HTMLDivElement> = React.createRef();
-  allowedEditing: boolean = false;
+	onFocusTrainingElement = (): void => {
+		if (!this.allowedEditing) return;
+		if (this.timerID) clearTimeout(this.timerID);
+		this.setState({ isSelectWindowOpen: true });
+	};
 
-  onFocusTrainingElement = () => {
-    if(!this.allowedEditing) return;
-    if(this.timerID) clearTimeout(this.timerID);
-    this.setState({isSelectWindowOpen: true})
-  };
+	onBlurTrainingElement = (): void => {
+		this.timerID = setTimeout(
+			() => this.setState({ isSelectWindowOpen: false, isSelectedListOpen: false }),
+			0
+		);
+	};
 
-  onBlurTrainingElement = () => {
-    this.timerID = setTimeout(()=>this.setState({isSelectWindowOpen: false,
-                                                 isSelectedListOpen: false}), 0)
-  };
+	openSelectedValuesList = (): void => {
+		this.setState((state) => ({
+			isSelectedListOpen: !state.isSelectedListOpen,
+		}));
+	};
 
-  openSelectedValuesList = () => {
-    this.setState((state)=>({
-      isSelectedListOpen: !state.isSelectedListOpen, 
-    }))
-  };
+	selectDropdownValue = (value: string, isChecked: boolean) => (): void => {
+		const { values, onChange } = this.props;
+		if (isChecked) {
+			this.deleteValueBlock(values.findIndex((item) => item === value))();
+			return;
+		}
+		onChange(value);
+	};
 
-  selectDropdownValue = (value: string, isChecked: boolean) => () => {
-    if(isChecked) { 
-      this.deleteValueBlock(this.props.values.findIndex(item=>item===value))();
-      return;
-    }
-    this.props.onChange(value);
-  }
+	deleteValueBlock = (index: number) => (): void => {
+		const { values, onClear } = this.props;
+		const { isSelectedListOpen } = this.state;
 
-  deleteValueBlock = (index: number) => () => {
-    if(this.props.values.length===1 && this.state.isSelectedListOpen) this.inputTrainingElementRef.current?.blur();
-    this.props.onClear(index);
-  }
+		if (this.inputTrainingElementRef.current && values.length === 1 && isSelectedListOpen) {
+			this.inputTrainingElementRef.current.blur();
+		}
+		onClear(index);
+	};
 
-  deleteAllValueBlocks = () => {
-    this.props.onClearAll();
-  }
+	deleteAllValueBlocks = (): void => {
+		const { onClearAll } = this.props;
+		onClearAll();
+	};
 
-  renderValueBlocks = (content: string, index: number) => {
-    return (
-      <div key={index} className="input-training-element-value-block">
-        <div className="input-training-element-value-block__wrapper">
-          <p className="input-training-element-value-block__number">{index+1}</p>
-          <p className="input-training-element-value-block__content">{content}</p>
-          {
-            this.allowedEditing &&
-            <button className="input-training-element-value-block__close"
-                  onClick={this.deleteValueBlock(index)}>
-            <Icon size={ IconSize.small } type={ IconType.close }/>
-            </button>
-          }
-        </div>
-      </div>
-    )
-  }
+	renderValueBlocks = (content: string, index: number): React.ReactNode => {
+		return (
+			<div key={index} className="input-training-element-value-block">
+				<div className="input-training-element-value-block__wrapper">
+					<p className="input-training-element-value-block__number">{index + 1}</p>
+					<p className="input-training-element-value-block__content">{content}</p>
+					{this.allowedEditing && (
+						<button
+							type="button"
+							className="input-training-element-value-block__close"
+							onClick={this.deleteValueBlock(index)}
+						>
+							<Icon size={IconSize.small} type={IconType.close} />
+						</button>
+					)}
+				</div>
+			</div>
+		);
+	};
 
-  isStrIncludesSubstr = (str: string, substr: string) =>  str.toLowerCase().includes(substr.toLowerCase());
+	isStrIncludesSubstr = (str: string, substr: string): boolean =>
+		str.toLowerCase().includes(substr.toLowerCase());
 
-  render(){
-    
-    this.allowedEditing = [FilterElementType.simple, FilterElementType.edited].includes(this.props.type)
-    
-    let values = this.props.values;
-    let dropdownValues = this.state.isSelectedListOpen? this.props.values: this.props.dropDownValues;
-    
-    return(
-      <div className="input-training-element"
-           tabIndex={0}
-           onFocus={this.onFocusTrainingElement}
-           onBlur={this.onBlurTrainingElement}
-           ref={this.inputTrainingElementRef}>
-        
-        {
-          this.allowedEditing && 
-          <div className="input-training-element-icons">
-            <button className="input-training-element-icons__close"
-                    onClick={this.deleteAllValueBlocks}>
-              <Icon size={IconSize.small} type={IconType.close}/>
-            </button>
-            <Icon className={cn("input-training-element-icons__down",
-                                {"input-training-element-icons__down_rotated": this.state.isSelectWindowOpen})} 
-                  size={IconSize.small}
-                  type={IconType.down}/>        
-          </div>
-        }        
+	render() {
+		const { values, dropDownValues, type } = this.props;
+		const { isSelectedListOpen, isSelectWindowOpen } = this.state;
 
-        <div className={cn("input-training-element-block-container", "input-training-element-block-container_"+this.props.type)}>
-          {
-            values.length?
-              [...values].splice(0,2).map((item,index)=>this.renderValueBlocks(item, index))
-              :<p className="input-training-element-block-container__placeholder">Entities Name</p>
-          }
-        </div>
+		this.allowedEditing = [FilterElementType.simple, FilterElementType.edited].includes(type);
 
-        {
-          values.length>2 && this.allowedEditing && 
-          <button className="input-training-element__spread-button"
-                  onClick={this.openSelectedValuesList}> 
-            + {values.length-2} more 
-          </button>
-        }
+		const dropdownValues = isSelectedListOpen ? values : dropDownValues;
 
-        {
-          this.state.isSelectWindowOpen &&
-          <div className="input-training-element__select-window">
-            <SelectWindow selectWindowAllValues={dropdownValues}
-                          selectWindowCheckedValues={values}
-                          searchable={!this.state.isSelectedListOpen}
-                          onSelectValue={this.selectDropdownValue}/>
-          </div>
-        }
-        
-      </div>
-    )
-  }
+		return (
+			<div
+				className="input-training-element"
+				tabIndex={0}
+				onFocus={this.onFocusTrainingElement}
+				onBlur={this.onBlurTrainingElement}
+				ref={this.inputTrainingElementRef}
+			>
+				{this.allowedEditing && (
+					<div className="input-training-element-icons">
+						<button
+							type="button"
+							className="input-training-element-icons__close"
+							onClick={this.deleteAllValueBlocks}
+						>
+							<Icon size={IconSize.small} type={IconType.close} />
+						</button>
+						<Icon
+							className={cn("input-training-element-icons__down", {
+								"input-training-element-icons__down_rotated": isSelectWindowOpen,
+							})}
+							size={IconSize.small}
+							type={IconType.down}
+						/>
+					</div>
+				)}
+
+				<div
+					className={cn(
+						"input-training-element-block-container",
+						`input-training-element-block-container_${type}`
+					)}
+				>
+					{values.length ? (
+						[...values].splice(0, 2).map((item, index) => this.renderValueBlocks(item, index))
+					) : (
+						<p className="input-training-element-block-container__placeholder">Entities Name</p>
+					)}
+				</div>
+
+				{values.length > 2 && this.allowedEditing && (
+					<button
+						type="button"
+						className="input-training-element__spread-button"
+						onClick={this.openSelectedValuesList}
+					>
+						+{values.length - 2}
+						more
+					</button>
+				)}
+
+				{isSelectWindowOpen && (
+					<div className="input-training-element__select-window">
+						<SelectWindow
+							selectWindowAllValues={dropdownValues}
+							selectWindowCheckedValues={values}
+							searchable={!isSelectedListOpen}
+							onSelectValue={this.selectDropdownValue}
+						/>
+					</div>
+				)}
+			</div>
+		);
+	}
 }

@@ -1,0 +1,93 @@
+{
+	"env": {
+		"browser": true,
+		"es6": true,
+		"es2017": true
+	},
+	"extends": [
+		"eslint:recommended",
+		"airbnb",
+		"plugin:@typescript-eslint/eslint-recommended",
+		"plugin:@typescript-eslint/recommended",
+		"plugin:@typescript-eslint/recommended-requiring-type-checking",
+		"prettier",
+		"prettier/react"
+	],
+	"parser": "@typescript-eslint/parser",
+	"parserOptions": {
+		"project": "tsconfig.json",
+		"tsconfigRootDir": "."
+	},
+	"settings": {
+		"import/resolver": {
+			"node": {
+				"extensions": [".js", ".jsx", ".ts", ".tsx"],
+				"moduleDirectory": ["node_modules", "src/"]
+			}
+		}
+	},
+	"plugins": ["@typescript-eslint"],
+	"rules": {
+		"camelcase": "off",
+		"no-shadow": "off",
+		"no-use-before-define": "off",
+		"lines-between-class-members": [
+			"error",
+			"always",
+			{
+				"exceptAfterSingleLine": true
+			}
+		],
+		"no-useless-catch": "off",
+		"no-unused-vars": "off",
+		"no-undef": "off",
+		"no-param-reassign": "off",
+		"import/extensions": "off",
+		"no-unused-expressions": "off",
+		"class-methods-use-this": "off",
+		"no-restricted-globals": "off",
+		"no-case-declarations": "off",
+		"default-case": "off",
+		"consistent-return": "off",
+		"prefer-destructuring": "off",
+		"max-classes-per-file": "off",
+		"no-restricted-syntax": "off",
+		"import/prefer-default-export": "off",
+		"react/jsx-filename-extension": [
+			1,
+			{
+				"extensions": [".js", ".jsx", ".ts", ".tsx"]
+			}
+		],
+		"react/destructuring-assignment": "off",
+		"react/no-unescaped-entities": "off",
+		"react/no-array-index-key": "off",
+		"react/state-in-constructor": "off",
+		"react/sort-comp": "off",
+		"react/static-property-placement": "off",
+		"react/button-has-type": "off",
+		"react/prefer-stateless-function": "off",
+		"react/no-access-state-in-setstate": "off",
+		"react/require-default-props": "off",
+		"jsx-a11y/label-has-associated-control": "off",
+		"jsx-a11y/click-events-have-key-events": "off",
+		"jsx-a11y/no-static-element-interactions": "off",
+		"jsx-a11y/no-noninteractive-element-interactions": "off",
+		"jsx-a11y/no-noninteractive-tabindex": "off",
+		"@typescript-eslint/no-use-before-define": "off",
+		"@typescript-eslint/no-floating-promises": "off",
+		"@typescript-eslint/no-unused-vars": "off",
+		"@typescript-eslint/no-non-null-assertion": "off",
+		"@typescript-eslint/require-await": "off",
+		"@typescript-eslint/ban-ts-comment": "off",
+		"@typescript-eslint/no-explicit-any": "off",
+		"@typescript-eslint/explicit-module-boundary-types": "off",
+		"@typescript-eslint/no-unsafe-call": "off",
+		"@typescript-eslint/no-unsafe-return": "off",
+		"@typescript-eslint/no-unsafe-member-access": "off",
+		"@typescript-eslint/no-unsafe-assignment": "off",
+		"@typescript-eslint/ban-types": "off",
+		"@typescript-eslint/restrict-template-expressions": "off",
+		"@typescript-eslint/no-unused-expressions": "off"
+	}
+}

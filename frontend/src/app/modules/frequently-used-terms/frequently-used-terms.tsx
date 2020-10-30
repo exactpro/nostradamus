@@ -1,109 +1,134 @@
-import React, {RefObject} from 'react';
+import React, { ReactElement, RefObject } from "react";
 
 import Slider from "app/common/components/slider/slider";
 
-import './frequently-used-terms.scss';
+import "./frequently-used-terms.scss";
 
 const ONE_ROW_HEIGHT = 29;
-const ROW_PER_SLIDE = 4;
-const SLIDE_HEIGHT = ONE_ROW_HEIGHT * ROW_PER_SLIDE;
 
 interface FrequentlyUsedTermsState {
-  slides: any[]
+	slides: unknown[];
+	rowPerSlide: number;
+	slideHeight: number;
 }
 
 interface FrequentlyUsedTermsProps {
-  frequentlyTermsList: string[];
+	frequentlyTermsList: string[];
 }
+	
+class FrequentlyUsedTerms extends React.Component<
+	FrequentlyUsedTermsProps,
+	FrequentlyUsedTermsState
+> {
+	myRef: RefObject<HTMLDivElement>;
 
-class FrequentlyUsedTerms extends React.Component<FrequentlyUsedTermsProps, FrequentlyUsedTermsState> {
+	constructor(props: FrequentlyUsedTermsProps) {
+		super(props);
 
-  myRef: RefObject<HTMLDivElement>;
+		this.myRef = React.createRef();
 
-  constructor(props: any) {
-    super(props);
-    this.myRef = React.createRef();
-  }
+		this.state = {
+			slides: [],
+			rowPerSlide: 1,
+			slideHeight: ONE_ROW_HEIGHT,
+		};
+	}
 
-  state = {
-    slides: []
-  };
+	private get containerHeight() {
+		if (this.myRef.current && this.myRef.current.parentNode) {
+			return this.myRef.current.closest("section")!.getBoundingClientRect().height - 100 || 0;
+		}
+		return 0;
+	}
 
-  generateSlide = () => {
-    if (this.myRef.current) {
-      const rowCount = this.myRef.current.offsetHeight / ONE_ROW_HEIGHT;
+	componentDidMount(): void {
+		window.addEventListener("resize", this.onResizeWindow);
+		const { slides } = this.state;
 
-      let slidesCount: number = Math.ceil(rowCount / ROW_PER_SLIDE);
-      let slides: any[] = [];
+		if (!slides.length) {
+			this.generateSlidePage();
+			this.forceUpdate();
+		}
+	}
 
-      for (let i = 0; i < slidesCount; i++) {
-        slides.push(this.renderTerms(i)());
-      }
+	componentDidUpdate(): void {
+		const { slides } = this.state;
 
-      this.setState({ slides })
-    }
-  };
+		if (!slides.length) {
+			this.generateSlide();
+		}
+	}
 
-  onResizeWindow = () => {
-    this.generateSlide();
-  };
+	componentWillUnmount(): void {
+		window.removeEventListener("resize", this.onResizeWindow);
+	}
 
-  renderTerms = (index: number) => () => {
-    let style = {
-      marginTop: SLIDE_HEIGHT * index * -1 + 'px'
-    };
+	generateSlidePage = () => {
+		const rowPerSlide = Math.round(this.containerHeight / ONE_ROW_HEIGHT);
+		const slideHeight = ONE_ROW_HEIGHT * rowPerSlide; 
+		
+		this.setState({rowPerSlide, slideHeight})
+	};
 
-    return (
-      <div className="wrapper" style={style}>
-        {
-          this.props.frequentlyTermsList.map((word, i) => (
-            <div
-              className="word"
-              key={i}>{word}</div>
-          ))
-        }
-      </div>
-    )
-  };
+	generateSlide = (): void => {
+		if (this.myRef.current) {
+			this.generateSlidePage();
+			const rowCount = this.myRef.current.offsetHeight / ONE_ROW_HEIGHT;
 
+			const slidesCount: number = Math.ceil(rowCount / this.state.rowPerSlide);
+			const slides: unknown[] = [];
 
-  componentDidMount(): void {
-    window.addEventListener('resize', this.onResizeWindow);
+			for (let i = 0; i < slidesCount; i += 1) {
+				slides.push(this.renderTerms(i)());
+			}
 
-    if (!this.state.slides.length) {
-      this.forceUpdate();
-    }
-  }
+			this.setState({ slides });
+		}
+	};
 
-  componentDidUpdate() {
-    if (!this.state.slides.length) {
-      this.generateSlide();
-    }
-  }
+	onResizeWindow = (): void => {
+		this.generateSlide();
+	};
 
-  componentWillUnmount(): void {
-    window.removeEventListener('resize', this.onResizeWindow);
-  }
+	renderTerms = (index: number) => (): ReactElement => {
+		const { frequentlyTermsList } = this.props;
+		const {slideHeight} = this.state;
 
-  render() {
-    return (
-      <React.Fragment>
-        <div className="helper">
-          <div className="wrapper" ref={this.myRef}>
-            {
-              this.props.frequentlyTermsList.map((word, i) => (
-                <div
-                  className="word"
-                  key={i}>{word}</div>
-              ))
-            }
-          </div>
-        </div>
+		const style = {
+			marginTop: `${slideHeight * index * -1}px`,
+		};
 
-        <Slider width="100%" height={SLIDE_HEIGHT + 'px'} slides={this.state.slides}/>
-      </React.Fragment>
-    );
-  }
+		return (
+			<div className="wrapper" style={style}>
+				{frequentlyTermsList.map((word) => (
+					<div className="word" key={word}>
+						{word}
+					</div>
+				))}
+			</div>
+		);
+	};
+
+	render(): ReactElement {
+		const { frequentlyTermsList } = this.props;
+		const { slides, slideHeight } = this.state;
+
+		return (
+			<>
+				<div className="helper">
+					<div className="wrapper" ref={this.myRef}>
+						{frequentlyTermsList.map((word) => (
+							<div className="word" key={word}>
+								{word}
+							</div>
+						))}
+					</div>
+				</div>
+
+				<Slider width="100%" height={`${slideHeight}px`} slides={slides} />
+			</>
+		);
+	}
 }
 
 export default FrequentlyUsedTerms;

@@ -1,36 +1,36 @@
 @import "src/app/styles/_colors.scss";
 
 .exact-match {
-  margin: 0 8px;
-  padding: 4px;
+	margin: 0 8px;
+	padding: 4px;
 
-  &:hover {
-    cursor: pointer;
-  }
+	&:hover {
+		cursor: pointer;
+	}
 
-  &__icon {
-    font-size: 8px;
-    color: $grayDisabledText;
-  }
+	&__icon {
+		font-size: 8px;
+		color: $grayDisabledText;
+	}
 
-  &__toggle {
-    width: 16px;
-    height: 16px;
+	&__toggle {
+		width: 16px;
+		height: 16px;
 
-    border-radius: 100%;
+		border-radius: 100%;
 
-    background-color: $white;
+		background-color: $white;
 
-    display: flex;
-    justify-content: center;
-    align-items: center;
+		display: flex;
+		justify-content: center;
+		align-items: center;
 
-    &_checked {
-      background-color: $green;
+		&_checked {
+			background-color: $green;
 
-      .exact-match__icon {
-        color: $white;
-      }
-    }
-  }
+			.exact-match__icon {
+				color: $white;
+			}
+		}
+	}
 }

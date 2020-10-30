@@ -39,8 +39,12 @@ from apps.analysis_and_training.main.filter import (
     get_issues_fields,
 )
 from apps.extractor.main.connector import get_issue_count, get_issues
-from apps.settings.main.common import get_training_settings
-from apps.settings.main.archiver import delete_training_data, get_archive_path
+from apps.settings.main.common import (
+    get_source_field,
+    get_bug_resolutions,
+    get_mark_up_entities,
+)
+
 from apps.extractor.main.preprocessor import get_issues_dataframe
 from utils.redis import redis_conn, remove_cache_record, clear_cache
 from utils.exceptions import InvalidSourceField
@@ -243,10 +247,11 @@ class SignificantTermsView(APIView):
             f"user:{request.user.id}:analysis_and_training:filters"
         )
         filters = loads(cache) if cache else None
-        settings = get_training_settings(request.user)
+        user = request.user
+
         issues = get_issues_dataframe(
             fields=[
-                settings["source_field"],
+                get_source_field(user),
                 "Priority",
                 "Resolution",
                 "Description_tr",
@@ -258,6 +263,12 @@ class SignificantTermsView(APIView):
 
         if issues.empty:
             return Response({})
+
+        settings = {
+            "source_field": get_source_field(user),
+            "bug_resolution": get_bug_resolutions(user),
+            "mark_up_entities": get_mark_up_entities(user),
+        }
 
         significant_terms = get_significant_terms(issues, settings)
         context = {"significant_terms": significant_terms}
@@ -275,12 +286,12 @@ class SignificantTermsView(APIView):
             f"user:{request.user.id}:analysis_and_training:filters"
         )
         filters = loads(cache) if cache else None
-        settings = get_training_settings(request.user)
+        source_field = get_source_field(request.user)
 
         issues = get_issues_dataframe(
             fields=[
                 metric.split()[0],
-                settings.get("source_field"),
+                source_field,
                 "Description_tr",
                 "Assignee",
                 "Reporter",
@@ -291,13 +302,14 @@ class SignificantTermsView(APIView):
         if issues.empty:
             return Response({})
 
+        mark_up_entities = get_mark_up_entities(request.user)
         if metric.split()[0] not in ("Resolution", "Priority"):
-            if settings["source_field"] and settings["mark_up_entities"]:
-                for area in settings["mark_up_entities"]:
+            if source_field and mark_up_entities:
+                for area in mark_up_entities:
                     if area["area_of_testing"] == metric.split()[0]:
                         issues = mark_up_series(
                             issues,
-                            settings["source_field"],
+                            source_field,
                             metric.split()[0],
                             area["entities"],
                         )
@@ -327,34 +339,31 @@ class TrainView(APIView):
         if issues.empty:
             raise BugsNotFoundWarning
 
-        settings = get_training_settings(request.user)
-
-        if settings["source_field"] not in issues.columns:
+        source_field = get_source_field(user)
+        if source_field not in issues.columns:
             raise InvalidSourceField
 
         resolutions = (
-            [resolution["value"] for resolution in settings["bug_resolution"]]
-            if len(settings["bug_resolution"]) != 0
+            [resolution["value"] for resolution in get_bug_resolutions(user)]
+            if len(get_bug_resolutions(user)) != 0
             else []
         )
 
         areas_of_testing = []
 
-        if settings["source_field"]:
+        mark_up_entities = get_mark_up_entities(user)
+        if source_field:
             areas_of_testing = [
-                area["area_of_testing"]
-                for area in settings["mark_up_entities"]
+                area["area_of_testing"] for area in mark_up_entities
             ] + ["Other"]
-            for area in settings["mark_up_entities"]:
+            for area in mark_up_entities:
                 issues = mark_up_series(
                     issues,
-                    settings["source_field"],
+                    get_source_field(user),
                     area["area_of_testing"],
                     area["entities"],
                 )
             issues = mark_up_other_data(issues, areas_of_testing)
-
-        delete_training_data(get_archive_path(user))
 
         train(
             user,

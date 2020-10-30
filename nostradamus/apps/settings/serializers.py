@@ -106,10 +106,6 @@ class UserTrainingSerializer(serializers.Serializer):
     bug_resolution = BugResolutionSerializer(many=True)
 
 
-class TrainingSettingsPostSerializer(UserTrainingSerializer):
-    source_field = serializers.CharField(max_length=128)
-
-
 class SourceFieldSerializer(serializers.Serializer):
     source_field = serializers.CharField(max_length=128, required=True)
 

@@ -26,13 +26,13 @@ from apps.qa_metrics.serializers import (
     QAMetricsTableRequestSerializer,
     QAMetricsSerializer,
 )
-from apps.settings.main.archiver import get_archive_path, read_from_archive
+
 from apps.settings.main.common import (
     get_qa_metrics_settings,
     check_filters_equality,
+    get_training_parameters,
 )
 from utils.const import (
-    TRAINING_PARAMETERS_FILENAME,
     UNRESOLVED_BUGS_FILTER,
 )
 from apps.extractor.main.preprocessor import get_issues_dataframe
@@ -186,11 +186,7 @@ class PredictionsInfoView(APIView):
         else:
             check_training_files(user)
 
-            archive_path = get_archive_path(user)
-            training_parameters = read_from_archive(
-                archive_path, TRAINING_PARAMETERS_FILENAME
-            )
-
+            training_parameters = get_training_parameters(request.user)
             predictions_table_fields = get_predictions_table_fields(user)
 
             issues = calculate_issues_predictions(

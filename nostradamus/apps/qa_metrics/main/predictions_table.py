@@ -1,19 +1,20 @@
 import concurrent.futures
-from pathlib import Path
-from typing import List
+import pickle
+from typing import List, Dict
 
 import pandas as pd
 import numpy as np
 
 from django.db.models import Model
 
-from apps.settings.main.archiver import get_archive_path, read_from_archive
+from apps.analysis_and_training.main.training import ModelPipeline
 from apps.settings.main.common import (
     get_qa_metrics_settings,
     get_predictions_table_settings,
+    get_training_parameters,
 )
+from apps.settings.models import UserSettings, UserModels
 from utils.const import (
-    TRAINING_PARAMETERS_FILENAME,
     UNRESOLVED_BUGS_FILTER,
     MANDATORY_FIELDS,
 )
@@ -92,11 +93,8 @@ def get_predictions(user: User, issues: pd.DataFrame) -> pd.DataFrame:
     """
     chunks = issues.groupby(np.arange(len(issues)) // 1000)
 
-    archive_path = get_archive_path(user)
-    training_parameters = read_from_archive(
-        archive_path, TRAINING_PARAMETERS_FILENAME
-    )
-    models = load_models(params=training_parameters, models_path=archive_path)
+    training_parameters = get_training_parameters(user)
+    models = load_models(user)
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
         df_predictions = {
@@ -114,37 +112,39 @@ def get_predictions(user: User, issues: pd.DataFrame) -> pd.DataFrame:
             ]
         )
 
-        return predictions
+    return predictions
 
 
-def load_models(params: dict, models_path: Path) -> dict:
-    """Read models.
+def load_models(user: Model) -> ModelPipeline:
+    """Load models from database.
 
     Parameters:
     ----------
-    params:
-        Training parameters.
-    models_path:
-        Path to models storage.
+    user:
+        User.
 
     Returns:
     ----------
         Object containing models' pipelines.
     """
     models = {}
-    for param in params:
-        if param in ["Time to Resolve", "Priority"]:
-            models[param] = read_from_archive(models_path, param + ".sav")
-        elif param == "Resolution":
-            models[param] = {
-                class_: read_from_archive(models_path, class_ + ".sav")
-                for class_ in params[param]
-            }
-        elif param == "areas_of_testing":
-            models[param] = {
-                class_: read_from_archive(models_path, class_ + ".sav")
-                for class_ in params[param]
-            }
+    user_settings = UserSettings.objects.get(user=user)
+    db_models = UserModels.objects.filter(settings=user_settings)
+    training_parameters = get_training_parameters(user)
+
+    for db_model in db_models:
+        model_name = db_model.name
+        if model_name in ["Time to Resolve", "Priority"]:
+            models[model_name] = pickle.loads(db_model.model)
+        else:
+            for param in training_parameters:
+                if model_name in training_parameters[param]:
+                    if not models.get(param):
+                        models[param] = {}
+                    models[param].update(
+                        {model_name: pickle.loads(db_model.model)}
+                    )
+
     return models
 
 

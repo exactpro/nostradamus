@@ -5,23 +5,24 @@ from drf_yasg.utils import swagger_auto_schema
 from json import dumps, loads
 
 from apps.extractor.main.cleaner import clean_text
-from apps.settings.main.archiver import read_from_archive
+
 from apps.qa_metrics.main.predictions_table import (
     calculate_resolution_predictions,
     calculate_area_of_testing_predictions,
     load_models,
 )
+from apps.settings.main.common import (
+    get_training_parameters,
+    get_bug_resolutions,
+    get_top_terms,
+)
 from utils.const import (
-    TRAINING_PARAMETERS_FILENAME,
-    TOP_TERMS_FILENAME,
     STOP_WORDS,
 )
 from utils.data_converter import convert_to_integer
 from utils.redis import redis_conn
 
 from utils.predictions import get_probabilities
-from apps.settings.main.archiver import get_archive_path
-from apps.settings.main.common import get_training_settings
 from utils.stemmed_tfidf_vectorizer import StemmedTfidfVectorizer
 from utils.warnings import CannotAnalyzeDescriptionWarning
 
@@ -45,18 +46,13 @@ class DescriptionAssessment(APIView):
 
         check_training_files(user)
 
-        archive_path = get_archive_path(user)
-        settings = get_training_settings(user)
-
         resolutions = (
-            [resolution["value"] for resolution in settings["bug_resolution"]]
-            if len(settings["bug_resolution"]) != 0
+            [resolution["value"] for resolution in get_bug_resolutions(user)]
+            if len(get_bug_resolutions(user)) != 0
             else []
         )
 
-        training_parameters = read_from_archive(
-            archive_path, TRAINING_PARAMETERS_FILENAME
-        )
+        training_parameters = get_training_parameters(request.user)
 
         if "Other" in training_parameters.get("areas_of_testing"):
             training_parameters["areas_of_testing"].remove("Other")
@@ -82,14 +78,9 @@ class Predictor(APIView):
         if not description.strip():
             raise CannotAnalyzeDescriptionWarning
 
-        archive_path = get_archive_path(request.user)
-        training_parameters = read_from_archive(
-            archive_path, TRAINING_PARAMETERS_FILENAME
-        )
+        training_parameters = get_training_parameters(request.user)
 
-        models = load_models(
-            params=training_parameters, models_path=archive_path
-        )
+        models = load_models(request.user)
 
         probabilities = dict()
         for parameter in training_parameters:
@@ -165,7 +156,6 @@ class Highlighting(APIView):
 
         if probabilities[metric][value] > 0.05:
 
-            archive_path = get_archive_path(user)
             description = loads(
                 redis_conn.get(
                     f"user:{user.id}:description_assessment:description"
@@ -176,11 +166,7 @@ class Highlighting(APIView):
             if metric != "areas_of_testing":
                 index = f"{metric.capitalize()}_{value}"
 
-            top_terms = (
-                read_from_archive(archive_path, TOP_TERMS_FILENAME)[index]
-                .dropna()
-                .tolist()
-            )
+            top_terms = get_top_terms(request.user)[index].dropna().tolist()
 
             tfidf = StemmedTfidfVectorizer(stop_words=STOP_WORDS)
             tfidf.fit_transform([description])

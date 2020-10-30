@@ -1,82 +1,82 @@
 @import "../../../../styles/colors";
 
 .drop-down {
-  padding-left: 12px;
-  width: 100%;
-  height: 37px;
+	padding-left: 12px;
+	width: 100%;
+	height: 37px;
 
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
 
-  cursor: pointer;
+	cursor: pointer;
 
-  &_without-left-padding{
-    padding-left: 0px;
-  }
+	&_without-left-padding {
+		padding-left: 0px;
+	}
 
-  &__value-item {
-    display: inline-flex;
-    align-items: flex-end;
+	&__value-item {
+		display: inline-flex;
+		align-items: flex-end;
 
-    padding: 3px 7px 5px;
-    margin-right: 5px;
+		padding: 3px 7px 5px;
+		margin-right: 5px;
 
-    border-radius: 4px;
-    background-color: $grayDisabled;
+		border-radius: 4px;
+		background-color: $grayDisabled;
 
-    color: $darkGray;
+		color: $darkGray;
 
-    max-width: 100px;
+		max-width: 100px;
 
-    &-text {
-      text-overflow: ellipsis;
-      overflow: hidden;
-      white-space: nowrap;
-    }
-  }
+		&-text {
+			text-overflow: ellipsis;
+			overflow: hidden;
+			white-space: nowrap;
+		}
+	}
 
-  &__more-value {
-    font-size: 16px;
-    color: $darkGray;
-    display: inline-block;
-  }
+	&__more-value {
+		font-size: 16px;
+		color: $darkGray;
+		display: inline-block;
+	}
 
-  &__no-value {
-    font-size: 16px;
-    line-height: 20px;
-    font-weight: 500;
+	&__no-value {
+		font-size: 16px;
+		line-height: 20px;
+		font-weight: 500;
 
-    padding: 3px 0 5px;
+		padding: 3px 0 5px;
 
-    color: $gray;
+		color: $gray;
 
-    display: inline-block;
-  }
+		display: inline-block;
+	}
 
-  &__value-item-remove {
-    transform: scale(0.8);
-    padding: 0 !important;
-    margin-left: 6px;
-  }
+	&__value-item-remove {
+		transform: scale(0.8);
+		padding: 0 !important;
+		margin-left: 6px;
+	}
 
-  &__reset {
-    margin-right: 0;
-    margin-left: auto;
-  }
+	&__reset {
+		margin-right: 0;
+		margin-left: auto;
+	}
 
-  &:not(:focus) &__select-window {
-    //display: none;
-  }
+	&:not(:focus) &__select-window {
+		//display: none;
+	}
 
-  &__select-window {
-    position: absolute;
-    z-index: 10;
-    top: calc(100% + 3px);
-    right: 0;
-  }
+	&__select-window {
+		position: absolute;
+		z-index: 10;
+		top: calc(100% + 3px);
+		right: 0;
+	}
 
-  &__browser-select {
-    display: none;
-  }
+	&__browser-select {
+		display: none;
+	}
 }

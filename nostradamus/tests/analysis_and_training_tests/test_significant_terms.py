@@ -126,8 +126,8 @@ class TestSignificantTerms(unittest.TestCase):
         significant_terms = get_significant_terms(issues)
 
         assert significant_terms == {
+            "metrics": [],
             "chosen_metric": "",
-            "referring_to": [],
             "terms": {},
         }
 

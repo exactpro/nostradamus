@@ -1,10 +1,7 @@
-import { FilterFieldNumberValue } from 'app/modules/filters/field/field-type';
+import { FilterFieldNumberValue } from "app/modules/filters/field/field-type";
 
 export const removeLessZero = (value: FilterFieldNumberValue): FilterFieldNumberValue => {
-	return [
-		Number(value[0]) < 0 ? 0 : value[0],
-		Number(value[1]) < 0 ? 0 : value[1],
-	];
+	return [Number(value[0]) < 0 ? 0 : value[0], Number(value[1]) < 0 ? 0 : value[1]];
 };
 
 export const switchValue = (value: FilterFieldNumberValue): FilterFieldNumberValue => {

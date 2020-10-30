@@ -1,121 +1,146 @@
 @import "src/app/styles/_colors.scss";
 
 .qa-metrics-page {
+	&__content {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+	}
 
-  &__content {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    max-width: 1450px;
-  }
+	&__main-statistic {
+		position: absolute;
+		right: 50%;
+	}
 
-  &__main-statistic {
-    margin-left: 30px;
-  }
-  
-  &__column {
-    display: inline-flex;
-    flex-direction: column;
+	&__column {
+		display: inline-flex;
+		flex-direction: column;
 
-    &_position {
-      &_left {
-        width: 47.5862%;
-        max-width: 690px;
-      }
+		&_position {
+			&_left {
+				width: 47.5862%;
+			}
 
-      &_right {
-        width: 51.0344%;
-        max-width: 740px;
-        margin-left: 20px;
-      }
-    }
-  }
+			&_right {
+				width: 51.0344%;
+				margin-left: 20px;
+			}
+		}
+	}
 
-  &__card:not(:first-child) {
-    margin-top: 20px;
-  }
+	&__card:not(:first-child) {
+		margin-top: 20px;
+	}
 
+	.qa-metric-filters {
+		height: 515px;
+		width: 100%;
 
+		&__container {
+			height: 100%;
+			display: flex;
+			flex-direction: column;
+		}
 
-  .qa-metric-filters {
-    height: 450px;
-    width: 100%;
-    max-width: 690px;
+		&__section-filters {
+			align-self: flex-start;
+		}
 
-    &__container{
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-    }
+		&__filter {
+			margin-top: 20px;
+		}
+	}
+	.probability {
+		height: 295px;
+		width: 100%;
+	}
 
-    &__section-filters{
-      align-self: flex-start;
-    }
+	.bug-resolution {
+		height: 195px;
+		width: 100%;
 
-    &__filter {
-      margin-top: 20px;
-    }
-  }
-  .probability {
-    height: 260px;
-    width: 100%;
-    max-width: 690px;
-  }
+		&__charts {
+			display: flex;
+			justify-content: space-between;
+			width: 100%;
+			height: 100%;
+		}
 
-  .bug-resolution {
-    height: 170px;
-    width: 100%;
-    max-width: 740px;
+		&__chart {
+			width: 46%;
+		}
+	}
+	.priority {
+		height: 300px;
+		width: 100%;
+	}
+	.ttr {
+		height: 295px;
+		width: 100%;
+	}
 
-    &__charts {
-      display: flex;
-      justify-content: space-between;
-      width: 100%;
-      height: 100%;
-    }
-
-    &__chart {
-      width: 46%;
-    }
-  }
-  .priority {
-    height: 260px;
-    width: 100%;
-    max-width: 740px;
-  }
-  .ttr {
-    height: 260px;
-    width: 100%;
-    max-width: 740px;
-  }
-
-  &__predictions-table {
-    height: 550px;
-    width: 100%;
-    margin-top: 20px;
-  }
+	&__predictions-table {
+		height: 550px;
+		width: 100%;
+		margin-top: 20px;
+	}
 }
 
 .collecting-data {
-  width: 100%;
-  height: 100%;
+	width: 100%;
+	height: 100%;
 
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 5;
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: 5;
 
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-direction: column;
 
-  &__message {
-    font-size: 30px;
-    line-height: 37px;
-    text-align: center;
-    color: $darkBlue;
-    margin-bottom: 25px;
-  }
+	&__message {
+		font-size: 30px;
+		line-height: 37px;
+		text-align: center;
+		color: $darkBlue;
+		margin-bottom: 25px;
+	}
+}
 
+@media screen and (max-width: 1600px) {
+	.qa-metrics-page {
+		.qa-metric-filters {
+			height: 450px !important;
+		}
+		.bug-resolution {
+			height: 170px !important;
+		}
+		.probability,
+		.ttr {
+			height: 260px !important;
+		}
+		.priority {
+			height: 260px !important;
+		}
+	}
+}
+
+@media screen and (max-width: 1280px) {
+	.qa-metrics-page {
+		.qa-metric-filters {
+			height: 380px !important;
+		}
+		.bug-resolution {
+			height: 140px !important;
+		}
+		.probability,
+		.ttr {
+			height: 220px !important;
+		}
+		.priority {
+			height: 220px !important;
+		}
+	}
 }

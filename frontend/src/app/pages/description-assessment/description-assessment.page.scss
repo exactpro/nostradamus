@@ -1,95 +1,117 @@
 @import "src/app/styles/_colors.scss";
 
 .dAssessment-page {
+	&__content {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+	}
 
-  &__content {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    max-width: 1450px;
-  }
+	&__column {
+		display: inline-flex;
+		flex-direction: column;
 
-  &__column {
-    display: inline-flex;
-    flex-direction: column;
+		&_position {
+			&_left {
+				width: 47.5862%;
+			}
 
-    &_position {
-      &_left {
-        width: 47.5862%;
-        max-width: 690px;
-      }
+			&_right {
+				width: 51.0344%;
+				margin-left: 20px;
+			}
+		}
+	}
 
-      &_right {
-        width: 51.0344%;
-        max-width: 740px;
-        margin-left: 20px;
-      }
-    }
-  }
+	&__card:not(:first-child) {
+		margin-top: 20px;
+	}
 
-  &__card:not(:first-child) {
-    margin-top: 20px;
-  }
+	.text-field {
+		height: 600px;
+		width: 100%;
+	}
+	.probability {
+		height: 335px;
+		width: 100%;
+	}
 
-  .text-field {
-    height: 530px;
-    width: 100%;
-    max-width: 690px;
-  }
-  .probability {
-    height: 280px;
-    width: 100%;
-    max-width: 690px;
-  }
+	.bug-resolution {
+		height: 270px;
+		width: 100%;
 
-  .bug-resolution {
-    height: 230px;
-    width: 100%;
-    max-width: 740px;
+		&__charts {
+			display: flex;
+			justify-content: space-between;
+			width: 100%;
+			height: 100%;
+		}
 
-    &__charts {
-      display: flex;
-      justify-content: space-between;
-      width: 100%;
-      height: 100%;
-    }
-
-    &__chart {
-      width: 46%;
-    }
-  }
-  .priority {
-    height: 280px;
-    width: 100%;
-    max-width: 740px;
-  }
-  .ttr {
-    height: 280px;
-    width: 100%;
-    max-width: 740px;
-  }
+		&__chart {
+			width: 46%;
+		}
+	}
+	.priority {
+		height: 315px;
+		width: 100%;
+	}
+	.ttr {
+		height: 335px;
+		width: 100%;
+	}
 }
 
 .collecting-data {
-  width: 100%;
-  height: 100%;
+	width: 100%;
+	height: 100%;
 
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 5;
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: 5;
 
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-direction: column;
 
-  &__message {
-    font-size: 30px;
-    line-height: 37px;
-    text-align: center;
-    color: $darkBlue;
-    margin-bottom: 25px;
-  }
+	&__message {
+		font-size: 30px;
+		line-height: 37px;
+		text-align: center;
+		color: $darkBlue;
+		margin-bottom: 25px;
+	}
+}
 
+@media screen and (max-width: 1600px) {
+	.dAssessment-page {
+		.text-field {
+			height: 530px !important;
+		}
+		.probability,
+		.ttr,
+		.priority {
+			height: 280px !important;
+		}
+		.bug-resolution {
+			height: 230px !important;
+		}
+	}
+}
+
+@media screen and (max-width: 1280px) {
+	.dAssessment-page {
+		.text-field {
+			height: 448px !important;
+		}
+		.probability,
+		.ttr,
+		.priority {
+			height: 230px !important;
+		}
+		.bug-resolution {
+			height: 200px !important;
+		}
+	}
 }
