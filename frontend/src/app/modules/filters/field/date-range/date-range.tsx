@@ -52,6 +52,17 @@ class DateRange extends React.Component<Props, State> {
 		this.field = new FilterField(this.props.field, this.props.updateFunction);
 	}
 
+	getInitialDateValue = (calendarField: ShowCalendarField) => {
+		const field =
+			calendarField === ShowCalendarField.startDate
+				? this.field.current_value[0]
+				: this.field.current_value[1];
+
+		if (field instanceof Date) return field;
+		if (field) return String(field);
+		return undefined;
+	};
+
 	editZeroDate = (date: string | Date | undefined): string => {
 		if (!date) return "";
 		if (date instanceof Date)
@@ -114,17 +125,33 @@ class DateRange extends React.Component<Props, State> {
 	};
 
 	onBlurInput = (dateField: ShowCalendarField) => () => {
-		const inputtedDate = this.editZeroDate(this.state[dateField]);
-		const dateFieldMoment = moment(inputtedDate, ["DD.MM.YY", "DD.MM.YYYY"], true);
+		const invalidDate = "Invalid date";
+		const dateFormats = ["DD.MM.YY", "DD.MM.YYYY"];
+
+		const inputtedDate = this.editZeroDate(
+			this.state[dateField] || this.getInitialDateValue(dateField)
+		);
+		const dateFieldMoment = moment(inputtedDate, dateFormats, true);
+
+		const validatedDate =
+			!this.state[dateField] ||
+			(dateFieldMoment.isValid() &&
+				dateFieldMoment.isBetween(this.props.minDateValue, this.props.maxDateValue, "day", "[]"))
+				? inputtedDate
+				: invalidDate;
+
+		let startDate = dateField === ShowCalendarField.startDate ? validatedDate : this.state.start;
+		let endDate = dateField === ShowCalendarField.endDate ? validatedDate : this.state.end;
+
+		if (startDate && endDate && moment(endDate, dateFormats) < moment(startDate, dateFormats)) {
+			[startDate, endDate] = [endDate, startDate];
+		}
+
 		this.setState(
-			(state, props) => ({
-				[dateField]:
-					!state[dateField] ||
-					(dateFieldMoment.isValid() &&
-						dateFieldMoment.isBetween(props.minDateValue, props.maxDateValue, "day", "[]"))
-						? inputtedDate
-						: "Invalid date",
-			}),
+			{
+				start: startDate,
+				end: endDate,
+			},
 			this.applyChanges
 		);
 	};
@@ -168,13 +195,15 @@ class DateRange extends React.Component<Props, State> {
 									}
 									onChange={this.handleDirectChanges(ShowCalendarField.startDate)}
 									onBlur={this.onBlurInput(ShowCalendarField.startDate)}
-									value={this.state.start === undefined ? startDate : this.state.start}
+									value={this.state.start || startDate}
 								/>
 
-											<button className="reset-value date-range__icon-button date-range__icon-button_clear"
-															onClick={this.clearInputField(ShowCalendarField.startDate)}>
-												<Icon type={IconType.close} size={16} />
-											</button>
+								<button
+									className="reset-value date-range__icon-button date-range__icon-button_clear"
+									onClick={this.clearInputField(ShowCalendarField.startDate)}
+								>
+									<Icon type={IconType.close} size={16} />
+								</button>
 
 								<button
 									className="date-range__icon-button"
@@ -202,10 +231,12 @@ class DateRange extends React.Component<Props, State> {
 									value={this.state.end || endDate}
 								/>
 
-											<button className="reset-value date-range__icon-button date-range__icon-button_clear"
-															onClick={this.clearInputField(ShowCalendarField.endDate)}>
-												<Icon type={IconType.close} size={16} />
-											</button>
+								<button
+									className="reset-value date-range__icon-button date-range__icon-button_clear"
+									onClick={this.clearInputField(ShowCalendarField.endDate)}
+								>
+									<Icon type={IconType.close} size={16} />
+								</button>
 
 								<button
 									className="date-range__icon-button"

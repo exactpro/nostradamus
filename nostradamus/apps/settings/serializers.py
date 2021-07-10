@@ -26,7 +26,7 @@ class UserFilterBase(serializers.ModelSerializer):
 class UserFilterSerializer(UserFilterBase):
     class Meta:
         model = UserFilter
-        fields = ("name", "filtration_type", "settings")
+        fields = ("name", "type", "settings")
 
     def create(self, validated_data):
         UserFilter.objects.create(
@@ -41,7 +41,7 @@ class UserFilterSerializer(UserFilterBase):
 class UserQAMetricsFilterSerializer(UserFilterBase):
     class Meta:
         model = UserQAMetricsFilter
-        fields = ("name", "filtration_type", "settings")
+        fields = ("name", "type", "settings")
 
     def create(self, validated_data):
         UserQAMetricsFilter.objects.create(
@@ -132,6 +132,36 @@ class BugResolutionSettingsSerializer(serializers.Serializer):
     resolution_names = EntitiesListSerializer()
 
 
-class FiltersSettingsSerializer(serializers.Serializer):
-    filter_settings = UserFilterSerializer()
+class FiltersSerializer(serializers.Serializer):
+    filter_settings = UserFilterSerializer(many=True)
+
+class FiltersSettingsSerializer(FiltersSerializer):
     names = EntitiesListSerializer()
+
+
+class TrainParameterSerializer(serializers.Serializer):
+    parameter = serializers.CharField()
+
+
+class TrainingParameterListSerializer(serializers.Serializer):
+    name = TrainParameterSerializer()
+
+
+class TrainingParametersSerializer(serializers.Serializer):
+    training_parameters = TrainingParameterListSerializer()
+
+
+class TopTermSerializer(serializers.ListField):
+    term = serializers.CharField()
+
+
+class TopTermsListSerializer(serializers.Serializer):
+    terms = TopTermSerializer()
+
+
+class TopTermsSerializer(serializers.Serializer):
+    top_terms = TopTermsListSerializer()
+
+
+class ModelsSerializer(serializers.Serializer):
+    models = serializers.CharField()

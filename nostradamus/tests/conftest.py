@@ -1,11 +1,8 @@
 import datetime
-
 import pytest
-import requests
 import pandas as pd
 
-from random import choice, randint
-from string import ascii_lowercase
+from random import randint
 from django.db import connection
 
 
@@ -23,47 +20,8 @@ def host(request):
 
 
 @pytest.fixture(scope="class")
-def register_url(request):
-    request.cls.register_url = "auth/register/"
-
-
-@pytest.fixture(scope="class")
-def signin_url(request):
-    request.cls.signin_url = "auth/signin/"
-
-
-@pytest.fixture(scope="class")
-def test_user_1(request):
-    request.cls.test_user_1 = {
-        "team": 1,
-        "name": "".join(choice(ascii_lowercase) for _ in range(20)),
-        "email": f"{''.join(choice(ascii_lowercase) for _ in range(20))}@test.com",
-        "password": 123456,
-    }
-
-
-@pytest.fixture(scope="class")
-def test_user_2(request):
-    request.cls.test_user_2 = {
-        "team": 1,
-        "name": "".join(choice(ascii_lowercase) for _ in range(20)),
-        "email": f"{''.join(choice(ascii_lowercase) for _ in range(20))}@test.com",
-        "password": 123456,
-    }
-
-
-@pytest.fixture
-def auth_header():
-    payload = {
-        "credentials": "test_user",
-        "password": 123456,
-    }
-
-    request = requests.post(
-        "http://localhost:8000/auth/signin/", params=payload
-    )
-
-    return {"Authorization": "JWT " + request.json()["token"]}
+def auth_host(request):
+    request.cls.auth_host = "http://auth:8080/"
 
 
 @pytest.fixture
@@ -185,34 +143,34 @@ def train_df():
 def default_settings():
     return {
         "filters": [
-            {"name": "Project", "filtration_type": "drop-down"},
-            {"name": "Attachments", "filtration_type": "numeric"},
-            {"name": "Priority", "filtration_type": "drop-down"},
-            {"name": "Resolved", "filtration_type": "date"},
-            {"name": "Labels", "filtration_type": "string"},
-            {"name": "Created", "filtration_type": "date"},
-            {"name": "Comments", "filtration_type": "numeric"},
-            {"name": "Status", "filtration_type": "drop-down"},
-            {"name": "Key", "filtration_type": "drop-down"},
-            {"name": "Summary", "filtration_type": "string"},
-            {"name": "Resolution", "filtration_type": "drop-down"},
-            {"name": "Description", "filtration_type": "string"},
-            {"name": "Components", "filtration_type": "string"},
+            {"name": "Project", "type": "drop-down"},
+            {"name": "Attachments", "type": "numeric"},
+            {"name": "Priority", "type": "drop-down"},
+            {"name": "Resolved", "type": "date"},
+            {"name": "Labels", "type": "string"},
+            {"name": "Created", "type": "date"},
+            {"name": "Comments", "type": "numeric"},
+            {"name": "Status", "type": "drop-down"},
+            {"name": "Key", "type": "drop-down"},
+            {"name": "Summary", "type": "string"},
+            {"name": "Resolution", "type": "drop-down"},
+            {"name": "Description", "type": "string"},
+            {"name": "Components", "type": "string"},
         ],
         "qa_metrics_filters": [
-            {"name": "Project", "filtration_type": "drop-down"},
-            {"name": "Attachments", "filtration_type": "numeric"},
-            {"name": "Priority", "filtration_type": "drop-down"},
-            {"name": "Resolved", "filtration_type": "date"},
-            {"name": "Labels", "filtration_type": "string"},
-            {"name": "Created", "filtration_type": "date"},
-            {"name": "Comments", "filtration_type": "numeric"},
-            {"name": "Status", "filtration_type": "drop-down"},
-            {"name": "Key", "filtration_type": "drop-down"},
-            {"name": "Summary", "filtration_type": "string"},
-            {"name": "Resolution", "filtration_type": "drop-down"},
-            {"name": "Description", "filtration_type": "string"},
-            {"name": "Components", "filtration_type": "string"},
+            {"name": "Project", "type": "drop-down"},
+            {"name": "Attachments", "type": "numeric"},
+            {"name": "Priority", "type": "drop-down"},
+            {"name": "Resolved", "type": "date"},
+            {"name": "Labels", "type": "string"},
+            {"name": "Created", "type": "date"},
+            {"name": "Comments", "type": "numeric"},
+            {"name": "Status", "type": "drop-down"},
+            {"name": "Key", "type": "drop-down"},
+            {"name": "Summary", "type": "string"},
+            {"name": "Resolution", "type": "drop-down"},
+            {"name": "Description", "type": "string"},
+            {"name": "Components", "type": "string"},
         ],
         "predictions_table": [
             {"name": "Key", "is_default": True, "position": 1},
@@ -232,34 +190,34 @@ def default_settings():
 def new_settings():
     return {
         "filters": [
-            {"name": "Project", "filtration_type": "drop-down"},
-            {"name": "Attachments", "filtration_type": "numeric"},
-            {"name": "Priority", "filtration_type": "drop-down"},
-            {"name": "Resolved", "filtration_type": "numeric"},
-            {"name": "Labels", "filtration_type": "numeric"},
-            {"name": "Created", "filtration_type": "numeric"},
-            {"name": "Comments", "filtration_type": "numeric"},
-            {"name": "Status", "filtration_type": "drop-down"},
-            {"name": "Key", "filtration_type": "drop-down"},
-            {"name": "Summary", "filtration_type": "numeric"},
-            {"name": "Resolution", "filtration_type": "drop-down"},
-            {"name": "Description", "filtration_type": "numeric"},
-            {"name": "Components", "filtration_type": "numeric"},
+            {"name": "Project", "type": "drop-down"},
+            {"name": "Attachments", "type": "numeric"},
+            {"name": "Priority", "type": "drop-down"},
+            {"name": "Resolved", "type": "numeric"},
+            {"name": "Labels", "type": "numeric"},
+            {"name": "Created", "type": "numeric"},
+            {"name": "Comments", "type": "numeric"},
+            {"name": "Status", "type": "drop-down"},
+            {"name": "Key", "type": "drop-down"},
+            {"name": "Summary", "type": "numeric"},
+            {"name": "Resolution", "type": "drop-down"},
+            {"name": "Description", "type": "numeric"},
+            {"name": "Components", "type": "numeric"},
         ],
         "qa_metrics_filters": [
-            {"name": "Project", "filtration_type": "drop-down"},
-            {"name": "Attachments", "filtration_type": "numeric"},
-            {"name": "Priority", "filtration_type": "drop-down"},
-            {"name": "Resolved", "filtration_type": "numeric"},
-            {"name": "Labels", "filtration_type": "numeric"},
-            {"name": "Created", "filtration_type": "numeric"},
-            {"name": "Comments", "filtration_type": "numeric"},
-            {"name": "Status", "filtration_type": "drop-down"},
-            {"name": "Key", "filtration_type": "drop-down"},
-            {"name": "Summary", "filtration_type": "numeric"},
-            {"name": "Resolution", "filtration_type": "drop-down"},
-            {"name": "Description", "filtration_type": "numeric"},
-            {"name": "Components", "filtration_type": "numeric"},
+            {"name": "Project", "type": "drop-down"},
+            {"name": "Attachments", "type": "numeric"},
+            {"name": "Priority", "type": "drop-down"},
+            {"name": "Resolved", "type": "numeric"},
+            {"name": "Labels", "type": "numeric"},
+            {"name": "Created", "type": "numeric"},
+            {"name": "Comments", "type": "numeric"},
+            {"name": "Status", "type": "drop-down"},
+            {"name": "Key", "type": "drop-down"},
+            {"name": "Summary", "type": "numeric"},
+            {"name": "Resolution", "type": "drop-down"},
+            {"name": "Description", "type": "numeric"},
+            {"name": "Components", "type": "numeric"},
         ],
         "predictions_table": [
             {"name": "Key", "is_default": True, "position": 1},
@@ -320,19 +278,19 @@ def training_parameters(request):
 @pytest.fixture(scope="class")
 def default_filters(request):
     request.cls.default_filters = [
-        {"name": "Project", "filtration_type": "drop-down"},
-        {"name": "Attachments", "filtration_type": "numeric"},
-        {"name": "Priority", "filtration_type": "drop-down"},
-        {"name": "Resolved", "filtration_type": "numeric"},
-        {"name": "Labels", "filtration_type": "numeric"},
-        {"name": "Created", "filtration_type": "numeric"},
-        {"name": "Comments", "filtration_type": "numeric"},
-        {"name": "Status", "filtration_type": "drop-down"},
-        {"name": "Key", "filtration_type": "drop-down"},
-        {"name": "Summary", "filtration_type": "numeric"},
-        {"name": "Resolution", "filtration_type": "drop-down"},
-        {"name": "Description", "filtration_type": "numeric"},
-        {"name": "Components", "filtration_type": "numeric"},
+        {"name": "Project", "type": "drop-down"},
+        {"name": "Attachments", "type": "numeric"},
+        {"name": "Priority", "type": "drop-down"},
+        {"name": "Resolved", "type": "numeric"},
+        {"name": "Labels", "type": "numeric"},
+        {"name": "Created", "type": "numeric"},
+        {"name": "Comments", "type": "numeric"},
+        {"name": "Status", "type": "drop-down"},
+        {"name": "Key", "type": "drop-down"},
+        {"name": "Summary", "type": "numeric"},
+        {"name": "Resolution", "type": "drop-down"},
+        {"name": "Description", "type": "numeric"},
+        {"name": "Components", "type": "numeric"},
     ]
 
 
@@ -347,20 +305,20 @@ def JQL(request):
 def correct_result_statistics():
     return {
         "Comments": {
-            "minimum": "0",
-            "maximum": "99",
+            "max": "99",
+            "min": "0",
             "mean": "50",
             "std": "29",
         },
         "Attachments": {
-            "minimum": "0",
-            "maximum": "99",
+            "max": "99",
+            "min": "0",
             "mean": "50",
             "std": "29",
         },
-        "Time to Resolve": {
-            "minimum": "0",
-            "maximum": "99",
+        "Time to Resolve (TTR)": {
+            "max": "99",
+            "min": "0",
             "mean": "50",
             "std": "29",
         },

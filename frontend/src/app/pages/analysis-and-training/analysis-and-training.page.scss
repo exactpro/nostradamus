@@ -5,15 +5,37 @@
 		margin-top: 20px;
 	}
 
-	&__header-container {
-		display: flex;
-		position: absolute;
-		right: 50%;
-		transform: translateX(220px);
+	.header__title {
+		width: 0;
+		white-space: nowrap;
 	}
 
-	&__train-button {
-		margin-left: 30px;
+	&__header-container {
+		width: 100%;
+		display: flex;
+		padding-left: calc(47.5862% - 260px);
+	}
+
+	&__train-panel {
+		display: flex;
+		align-items: center;
+		margin-left: 20px;
+	}
+
+	&__explanatory-mark {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin-left: 10px;
+
+		color: $orange;
+		font-size: 100%;
+
+		width: 24px;
+		height: 24px;
+
+		border: 2px solid $orange;
+		border-radius: 100%;
 	}
 
 	&__content {
@@ -66,6 +88,8 @@
 
 		&__section-filters {
 			z-index: 0;
+			height: 50px;
+			width: 124px;
 		}
 
 		&__filters {
@@ -123,7 +147,7 @@
 			border-radius: 20px;
 			overflow: hidden;
 		}
-		
+
 		&__loader-inner {
 			height: inherit;
 			background-color: $blue;
@@ -150,7 +174,6 @@
 		.frequently-used-terms {
 			height: 215px !important;
 		}
-
 	}
 }
 
@@ -167,6 +190,5 @@
 		.defect-submission-card {
 			height: 290px !important;
 		}
-
 	}
 }

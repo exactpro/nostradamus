@@ -1,18 +1,17 @@
 import concurrent.futures
 import pickle
-from typing import List, Dict
-
+from typing import List
 import pandas as pd
 import numpy as np
 
 from django.db.models import Model
 
-from apps.analysis_and_training.main.training import ModelPipeline
+from apps.settings.main.common import ModelPipeline
 from apps.settings.main.common import (
     get_qa_metrics_settings,
     get_predictions_table_settings,
-    get_training_parameters,
 )
+from apps.settings.main.training import get_training_parameters
 from apps.settings.models import UserSettings, UserModels
 from utils.const import (
     UNRESOLVED_BUGS_FILTER,
@@ -21,6 +20,7 @@ from utils.const import (
 from apps.authentication.models import User
 from apps.extractor.main.preprocessor import get_issues_dataframe
 from utils.predictions import get_probabilities
+
 
 # Required for areas of testing prediction.
 BINARY_CLASSES = [0, 1]

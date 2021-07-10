@@ -100,7 +100,7 @@
 		margin-top: 18px;
 
 		display: flex;
-		justify-content: flex-end;
+		justify-content: center;
 	}
 
 	&__period {
@@ -114,7 +114,9 @@
 
 		border-radius: 1000px;
 
-		margin-left: 10px;
+		&:not(:first-of-type) {
+			margin-left: 10px;
+		}
 
 		transition-property: background-color, color;
 		transition-duration: 0.1s;
@@ -128,6 +130,26 @@
 
 		&:hover:not(&_active) {
 			color: $deepDarkBlue;
+		}
+	}
+
+	&__y-axis-bar{
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		align-items: flex-end;
+		margin-right: 30px;
+
+		@media screen and (max-width: 1600px){
+			margin-right: 25px;
+		}
+		@media screen and (max-width: 1280px){
+			margin-right: 20px;
+		}
+
+		span{
+			transform: none;
+			color: $gray;
 		}
 	}
 }
@@ -171,6 +193,7 @@
 	&__axis-text {
 		font-family: Quicksand;
 		font-style: normal;
+		fill: $gray;
 		font-weight: 500;
 		font-size: 13px;
 		transform: translateY(20px);
@@ -178,6 +201,12 @@
 }
 
 @media screen and (max-width: 1280px) {
+	.defect-submission__period {
+		font-size: 14px !important;
+	}
+	.line-chart__axis-text{
+		font-size: 12px !important; 
+	}
 	.defect-submission-legend {
 		&__point {
 			width: 11px !important;

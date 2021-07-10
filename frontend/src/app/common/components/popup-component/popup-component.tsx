@@ -7,6 +7,10 @@ import "./popup-component.scss";
 
 export enum ChildPosition {
 	top = "top",
+	bottom = "bottom",
+	left = "left",
+	right = "right",
+
 	bottom_right = "bottom_right",
 }
 
@@ -69,6 +73,11 @@ export default class PopupComponent extends React.Component<PopupComponentProps>
 			switch (childPosition) {
 				case ChildPosition.top:
 					return childCoeffs;
+				case ChildPosition.bottom:
+					return {
+						...childCoeffs,
+						top: parentCoords.height,
+					};
 				case ChildPosition.bottom_right:
 					return {
 						top: parentCoords.height,

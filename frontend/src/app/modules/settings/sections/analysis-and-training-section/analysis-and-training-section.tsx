@@ -1,32 +1,38 @@
 import React, { Component } from "react";
 import CircleSpinner from "app/common/components/circle-spinner/circle-spinner";
-import SettingsFilter from "app/modules/settings/fields/settings_filter/setings_filter";
+import SettingsFilter from "app/modules/settings/parts/filter/filter";
 import "app/modules/settings/sections/analysis-and-training-section/analysis-and-training-section.scss";
 import { SettingsSections } from "app/common/store/settings/types";
-import { uploadSettingsData } from "app/common/store/settings/thunks";
-import { uploadSettingsTrainingData } from "app/modules/settings/fields/settings_training/store/thunks";
+import {
+	uploadSettingsATFilterData,
+	sendSettingsATFiltersData,
+} from "app/common/store/settings/thunks";
+import { uploadSettingsTrainingData } from "app/modules/settings/parts/training/store/thunks";
 import { connect, ConnectedProps } from "react-redux";
 import { RootStore } from "app/common/types/store.types";
 import { HttpStatus } from "app/common/types/http.types";
-import SettingsTraining from "app/modules/settings/fields/settings_training/settings_training";
+import SettingsTraining from "app/modules/settings/parts/training/training";
 
 class AnalysisAndTrainingSection extends Component<Props> {
 	componentDidMount = () => {
-		const { uploadSettingsData, uploadSettingsTrainingData } = this.props;
+		const { uploadSettingsATFilterData, uploadSettingsTrainingData } = this.props;
 		// eslint-disable-next-line @typescript-eslint/no-floating-promises
-		uploadSettingsData(SettingsSections.filters);
+		uploadSettingsATFilterData();
 		// eslint-disable-next-line @typescript-eslint/no-floating-promises
 		uploadSettingsTrainingData();
 	};
 
 	render() {
-		const { status, trainingStatus } = this.props;
+		const { status, trainingStatus, sendSettingsATFiltersData } = this.props;
 
 		return (
 			<div className="analysis-and-training-section">
 				{status[SettingsSections.filters] === HttpStatus.FINISHED && (
 					<div className="analysis-and-training-section__filter">
-						<SettingsFilter section={SettingsSections.filters} />
+						<SettingsFilter
+							section={SettingsSections.filters}
+							saveDataFunc={sendSettingsATFiltersData}
+						/>
 					</div>
 				)}
 				{status[SettingsSections.filters] === HttpStatus.RELOADING && (
@@ -61,8 +67,9 @@ const mapStateToProps = ({ settings }: RootStore) => ({
 });
 
 const mapDispatchToProps = {
-	uploadSettingsData,
+	uploadSettingsATFilterData,
 	uploadSettingsTrainingData,
+	sendSettingsATFiltersData,
 };
 
 const connector = connect(mapStateToProps, mapDispatchToProps);

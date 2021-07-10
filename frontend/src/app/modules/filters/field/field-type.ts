@@ -18,7 +18,7 @@ export type ValueUnion =
 
 export interface FilterFieldBase {
 	name: string;
-	filtration_type: FiltrationType;
+	type: FiltrationType;
 	exact_match: boolean;
 	current_value: ValueUnion;
 	values?: FilterFieldDropdownValue;

@@ -2,7 +2,6 @@ import os
 import requests
 
 from unittest import TestCase
-from pytest import mark
 
 os.environ["DJANGO_SETTINGS_MODULE"] = "nostradamus.settings"
 
@@ -33,18 +32,17 @@ from apps.settings.main.common import (
 
 
 TEST_USER = {
-    "team": 1,
-    "name": "test123456",
     "email": "test@test.com",
-    "password": 123456,
+    "name": "test123456",
+    "password": "123456",
+    "team": 1,
 }
 
 
-@mark.usefixtures("host")
 class TestSettings(TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        requests.post("http://localhost:8000/auth/register/", data=TEST_USER)
+        requests.post("http://auth:8080/register/", json=TEST_USER)
         cls.__fill_db()
 
     @classmethod
@@ -64,10 +62,6 @@ class TestSettings(TestCase):
                 for _ in range(100)
             ]
         )
-
-    @classmethod
-    def teardown_class(cls) -> None:
-        User.objects.filter(name=TEST_USER["name"]).delete()
 
     def test_get_filter_settings(self):
         user = User.objects.get(name=TEST_USER["name"])
@@ -187,13 +181,13 @@ class TestSettings(TestCase):
         assert values == ["Major", "Minor"]
 
     def test_get_fields(self):
-        assert get_fields() == ["_id", "Project", "Attachments", "Priority"]
+        assert get_fields() == ["Project", "Attachments", "Priority"]
 
     def test_read_settings(self):
         user = User.objects.get(name=TEST_USER["name"])
         filters = [
-            {"name": "Priority", "filtration_type": "drop-down"},
-            {"name": "Attachments", "filtration_type": "numeric"},
+            {"name": "Priority", "type": "drop-down"},
+            {"name": "Attachments", "type": "numeric"},
         ]
 
         read_settings(filters, user)

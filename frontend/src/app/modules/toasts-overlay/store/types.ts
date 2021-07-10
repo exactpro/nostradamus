@@ -15,6 +15,13 @@ export interface ToastButton {
 	callBack: () => void;
 }
 
+export interface ToastWithActionsParams {
+	message: string,
+	style: ToastStyle,
+	buttons: ToastButton[],
+	outerId?: number
+}
+
 export interface Toast {
 	id: number;
 	outerId?: number;

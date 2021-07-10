@@ -21,26 +21,19 @@
 	&__table {
 		width: 100%;
 
-		&_with-head {
-			margin-top: 20px;
-
-			tbody {
-				visibility: collapse;
-			}
-		}
-
-		&_with-body {
-			thead {
-				visibility: collapse;
-			}
-		}
-
 		th {
+			position: sticky;
+			top: 0;
+			z-index: 5;
+			background: $white;
+			transform: translateY(-5px);
+
 			font-size: 16px;
 			line-height: 20px;
 			color: $darkGray;
+			text-align: start;
 
-			padding: 0 18px;
+			padding: 20px 18px 5px 18px;
 
 			&:first-child {
 				padding-left: 0;
@@ -50,9 +43,6 @@
 			&:last-child {
 				text-align: left;
 			}
-		}
-
-		tr {
 		}
 
 		td {
@@ -64,6 +54,12 @@
 			line-height: 20px;
 			font-weight: 500;
 			color: $darkGray;
+			text-align: start;
+
+			@media screen and (max-width: 1280px) {
+				font-size: 13px;
+				font-weight: 400;
+			}
 
 			&:first-child {
 				padding-left: 0;
@@ -73,33 +69,6 @@
 			&:last-child {
 				text-align: left;
 			}
-		}
-	}
-
-	.color {
-		&_green {
-			color: $green;
-		}
-		&_dark-blue {
-			color: $darkBlue;
-		}
-		&_orange {
-			color: $orange;
-		}
-		&_violet-dark {
-			color: $violetDark;
-		}
-		&_cold {
-			color: $cold;
-		}
-		&_yellow-strong {
-			color: $yellowStrong;
-		}
-		&_orange {
-			color: $orange;
-		}
-		&_light-red {
-			color: $lightRed;
 		}
 	}
 }
@@ -112,23 +81,29 @@
 		display: flex;
 		align-items: center;
 
-    &:not(:last-child) {
-      margin-right: 40px;
-    }
-  }
-  &__select{
-    -moz-appearance: none;
-    -webkit-appearance: none;
-    width: 50px;
+		&:not(:last-child) {
+			margin-right: 40px;
+		}
 
-    &-icon{
-      transform: translateX(-100%);
-      pointer-events: none;
-    }
-  }
-  &__button {
-    margin: 0 5px;
-    background-color: transparent;
+		.dropdown-element {
+			width: 60px;
+
+			&__select {
+				background: transparent;
+				padding: 0;
+				border: none;
+			}
+
+			&-wrapper {
+				transform: translateX(-10px);
+				max-width: min-content;
+			}
+		}
+	}
+
+	&__button {
+		margin: 0 5px;
+		background-color: transparent;
 
 		&__icon {
 			color: $darkGray;

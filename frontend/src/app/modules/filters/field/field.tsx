@@ -20,11 +20,11 @@ interface Props {
 class Field extends React.Component<Props> {
 	render() {
 		const { field } = this.props;
-		const { filtration_type } = this.props.field;
+		const { type } = this.props.field;
 
 		return (
 			<div className={cn("field-wrapper", this.props.className)}>
-				{filtration_type === FiltrationType.String && (
+				{type === FiltrationType.String && (
 					<FreeInput
 						className="field__input"
 						field={field}
@@ -32,7 +32,7 @@ class Field extends React.Component<Props> {
 					/>
 				)}
 
-				{filtration_type === FiltrationType.Dropdown && (
+				{type === FiltrationType.Dropdown && (
 					<DropDown
 						className="field__input"
 						field={field}
@@ -40,7 +40,7 @@ class Field extends React.Component<Props> {
 					/>
 				)}
 
-				{filtration_type === FiltrationType.Numeric && (
+				{type === FiltrationType.Numeric && (
 					<NumericRange
 						className="field__input"
 						field={field}
@@ -48,7 +48,7 @@ class Field extends React.Component<Props> {
 					/>
 				)}
 
-				{filtration_type === FiltrationType.Date && (
+				{type === FiltrationType.Date && (
 					<DateRange
 						className="field__input"
 						field={field}

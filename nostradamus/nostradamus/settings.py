@@ -123,7 +123,7 @@ MIDDLEWARE = [
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "apps.authentication.token_middleware.JWTAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
@@ -141,8 +141,6 @@ SIMPLE_JWT = {
 }
 
 ROOT_URLCONF = "nostradamus.urls"
-
-AUTH_USER_MODEL = "authentication.User"
 
 TEMPLATES = [
     {

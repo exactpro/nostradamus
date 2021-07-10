@@ -7,18 +7,15 @@ class DescriptionAssessmentResponseSerializer(serializers.Serializer):
     areas_of_testing = serializers.ListField(child=serializers.CharField())
 
 
-class ProbabilitiesSerializer(serializers.Serializer):
+class PredictorResponseSerializer(serializers.Serializer):
     priority = serializers.DictField(child=serializers.FloatField())
     resolution = serializers.DictField(child=serializers.FloatField())
     areas_of_testing = serializers.DictField(child=serializers.FloatField())
+    time_to_resolve = serializers.DictField(child=serializers.FloatField())
 
 
-class PredictorResponseSerializer(serializers.Serializer):
-    probabilities = ProbabilitiesSerializer()
-
-
-class HighlightingResponseSerializer(serializers.Serializer):
-    terms = serializers.ListField(child=serializers.CharField())
+class HighlightingResponseSerializer(serializers.ListSerializer):
+    child = serializers.CharField()
 
 
 class PredictorRequestSerializer(serializers.Serializer):

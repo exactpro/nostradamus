@@ -1,16 +1,19 @@
-import { commonReducer } from "app/common/store/common/reducers";
-import { qaMetricsPageReducer } from "app/common/store/qa-metrics/reducers";
-import { toastsReducers } from "app/modules/toasts-overlay/store/reducer";
-import { applyMiddleware, combineReducers, createStore } from "redux";
-import thunk from "redux-thunk";
-import { composeWithDevTools } from "redux-devtools-extension";
-import { connectRouter, routerMiddleware } from "connected-react-router";
+import { analysisAndTrainingReducers } from "app/common/store/analysis-and-training/reducers";
+import descriptionAssessmentReducer from "app/common/store/description-assessment/reducer";
 
 import { authReducer } from "app/common/store/auth/reducers";
+import { commonReducer } from "app/common/store/common/reducers";
+import { qaMetricsPageReducer } from "app/common/store/qa-metrics/reducers";
 import { generalSettingsStore } from "app/common/store/settings/reducers";
+import { trainingReducers } from "app/common/store/traininig/reducers";
 import virtualAssistantReducer from "app/common/store/virtual-assistant/reducers";
-import { createBrowserHistory, History } from "history";
 import { RootStore } from "app/common/types/store.types";
+import { toastsReducers } from "app/modules/toasts-overlay/store/reducer";
+import { connectRouter, routerMiddleware } from "connected-react-router";
+import { createBrowserHistory, History } from "history";
+import { applyMiddleware, combineReducers, createStore } from "redux";
+import { composeWithDevTools } from "redux-devtools-extension";
+import thunk from "redux-thunk";
 
 export const history = createBrowserHistory();
 
@@ -21,8 +24,11 @@ const rootReducers = (history: History) =>
 		settings: generalSettingsStore,
 		virtualAssistant: virtualAssistantReducer,
 		qaMetricsPage: qaMetricsPageReducer,
-		router: connectRouter(history),
 		common: commonReducer,
+		analysisAndTraining: analysisAndTrainingReducers,
+		descriptionAssessment: descriptionAssessmentReducer,
+		training: trainingReducers,
+		router: connectRouter(history),
 	});
 
 function configureStore(preloadedState?: RootStore) {

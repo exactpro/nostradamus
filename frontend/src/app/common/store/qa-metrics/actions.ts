@@ -1,31 +1,15 @@
 import {
-	QAMetricsData,
-	QAMetricsResolutionChartData,
-	QAMetricsStorePart,
-	QAMetricsRecordsCount,
+	QAMetricsAllData, QAMetricsPrioritySortBy,
+	QAMetricsRecordsCount, QAMetricsStatuses
 } from "app/common/store/qa-metrics/types";
-import { HttpStatus } from "app/common/types/http.types";
+import { ObjectWithUnknownFields } from "app/common/types/http.types";
+import { FilterFieldBase } from "app/modules/filters/field/field-type";
+import { getFieldEmptyValue, setFieldValue } from "app/modules/filters/field/field.helper-function";
 
-export interface QAMetricsAllData {
-	predictions_table: QAMetricsData[];
-	prediction_table_rows_count: number;
-	areas_of_testing_chart: QAMetricsData;
-	priority_chart: QAMetricsData;
-	ttr_chart: QAMetricsData;
-	resolution_chart: QAMetricsResolutionChartData;
-}
-
-export const setStatusTrainModelQAMetrics = (newModelStatus: boolean) =>
-	({
-		type: "SET_STATUS_TRAIN_MODEL_QA_METRICS",
-		newModelStatus,
-	} as const);
-
-export const setQaMetricsStatus = (part: QAMetricsStorePart, newStatus: HttpStatus) =>
+export const setQaMetricsStatuses = (statuses: Partial<QAMetricsStatuses>) =>
 	({
 		type: "SET_QA_METRICS_PAGE_STATUS",
-		newStatus,
-		part,
+		statuses
 	} as const);
 
 export const setQaMetricsRecordsCount = (records_count: QAMetricsRecordsCount) =>
@@ -34,16 +18,37 @@ export const setQaMetricsRecordsCount = (records_count: QAMetricsRecordsCount) =
 		records_count,
 	} as const);
 
+export const setQaMetricsFilter = (fields: FilterFieldBase[]) =>
+	({
+		type: "SET_QA_METRICS_FILTER",
+		fields: // cause api don't return "current_value" property for unfilled field
+			fields.map((field: FilterFieldBase) => ({
+				exact_match: false,
+				current_value: setFieldValue(
+					field.type,
+					field.current_value || getFieldEmptyValue(field.type)
+				),
+				...field,
+			}))
+	} as const);
+
+
 export const setQAMetricsAllData = (data: QAMetricsAllData) =>
 	({
 		type: "SET_QA_METRICS_ALL_DATA",
 		data,
 	} as const);
 
-export const setQAMetricsTable = (tableData: QAMetricsData[]) =>
+export const setQAMetricsTable = (tableData: ObjectWithUnknownFields[]) =>
 	({
 		type: "SET_QA_METRICS_PAGE_TABLE",
 		tableData,
+	} as const);
+
+export const changeQAMetricsPrioritySortBy = (sortBy: QAMetricsPrioritySortBy) =>
+	({
+		sortBy,
+		type: "CHANGE_SORT_BY_QA_METRICS_PRIORITY",
 	} as const);
 
 export const clearQAMetricsData = () =>

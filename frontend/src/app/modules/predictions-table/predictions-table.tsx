@@ -1,13 +1,12 @@
-import Icon, { IconSize, IconType } from 'app/common/components/icon/icon';
-import { QAMetricsData } from 'app/common/store/qa-metrics/types';
-import React from 'react';
-
+import Icon, { IconType } from "app/common/components/icon/icon";
+import { ObjectWithUnknownFields } from "app/common/types/http.types";
+import React from "react";
 import "./predictions-table.scss";
-import cn from "classnames";
-import Tooltip from "app/common/components/tooltip/tooltip";
+import DropdownElement from "app/common/components/native-components/dropdown-element/dropdown-element";
+import TableCell from "app/modules/predictions-table/table-cell/table-cell";
 
 interface IProps {
-	tableData: QAMetricsData[];
+	tableData: ObjectWithUnknownFields[];
 	totalCount: number;
 	onChangePage: (pageIndex: number, limit: number) => void;
 }
@@ -23,13 +22,18 @@ class PredictionsTable extends React.Component<IProps, IState> {
 		currentPage: 1,
 	};
 
-	onChangeLimit = (e: React.ChangeEvent<HTMLSelectElement>) => {
-		const newLimit = Number(e.target.value);
+	onChangeLimit = (limit: string) => {
+		const newLimit = Number(limit);
 		const oldLimit = this.state.limit;
 		let newCurrentPage = Math.ceil((this.state.currentPage * oldLimit) / newLimit);
 
-		if ((newCurrentPage - 1) * newLimit > this.props.totalCount)
+		if (oldLimit > newLimit) {
+			newCurrentPage = ((this.state.currentPage - 1) * oldLimit) / newLimit + 1;
+		}
+
+		if ((newCurrentPage - 1) * newLimit > this.props.totalCount) {
 			newCurrentPage = Math.ceil(this.props.totalCount / newLimit);
+		}
 
 		this.setState({
 			limit: newLimit,
@@ -39,37 +43,9 @@ class PredictionsTable extends React.Component<IProps, IState> {
 	};
 
 	setPage = (newPage: number) => () => {
-		this.setState({
-			currentPage: newPage,
-		});
-		this.props.onChangePage(newPage, this.state.limit);
-	};
-
-	// TODO: refactor method to function
-	determineColor = (value: string): string => {
-		switch (value) {
-			case "Won’t Fixed":
-				return "green";
-			case "Not Won’t Fixed":
-				return "dark-blue";
-
-			case "Rejected":
-				return "orange";
-			case "Not Rejected":
-				return "violet-dark";
-
-			case "0–30 days":
-				return "cold";
-			case "31–90 days":
-				return "yellow-strong";
-			case "91–180 days":
-				return "orange";
-			case "> 180 days":
-				return "light-red";
-
-			default:
-				return "default";
-		}
+		const currentPage = newPage < 1 ? 1 : newPage;
+		this.setState({ currentPage });
+		this.props.onChangePage(currentPage, this.state.limit);
 	};
 
 	render() {
@@ -81,30 +57,9 @@ class PredictionsTable extends React.Component<IProps, IState> {
 			<div className="predictions-table">
 				{this.renderTableHeader()}
 
-				{/* for top fixed table header */}
-				<table className="predictions-table__table predictions-table__table_with-head">
-					<thead>
-						<tr>
-							{columnsNames.map((columnName, index) => (
-								<th key={index}>{columnName}</th>
-							))}
-						</tr>
-					</thead>
-
-					<tbody>
-						{tableData.map((item, index) => (
-							<tr key={index}>
-								{columnsNames.map((columnName, index) => (
-									<td key={index}>{String(item[columnName])}</td>
-								))}
-							</tr>
-						))}
-					</tbody>
-				</table>
-
 				{/* data table */}
 				<div className="predictions-table__scrollable-container">
-					<table className="predictions-table__table predictions-table__table_with-body">
+					<table className="predictions-table__table predictions-table__table">
 						<thead>
 							<tr>
 								{columnsNames.map((columnName, index) => (
@@ -116,29 +71,9 @@ class PredictionsTable extends React.Component<IProps, IState> {
 						<tbody>
 							{tableData.map((item, index) => (
 								<tr key={index}>
-									{columnsNames.map((columnName, index) => {
-										const str = String(item[columnName]);
-
-										const charActualWidth = 10; // Actual average width of symbols with font-size 16px
-										const isTooltipDisplayed =
-											str.replace(/\W/g, "").length * charActualWidth > 400; // if sum width of all symbols larger than td max-width than display tooltip
-
-										return (
-											<td
-												key={index}
-												className={`color_${this.determineColor(String(item[columnName]))}`}
-											>
-												<Tooltip message={str} isDisplayed={isTooltipDisplayed}>
-													<p
-														className={cn({
-															"predictions-table__table-cell-title": isTooltipDisplayed,
-														})}
-													>
-														{str}
-													</p>
-												</Tooltip>
-											</td>
-										);
+									{columnsNames.map((columnName) => {
+										const message = String(item[columnName]);
+										return <TableCell key={message} message={message} />;
 									})}
 								</tr>
 							))}
@@ -165,17 +100,12 @@ class PredictionsTable extends React.Component<IProps, IState> {
 			<div className="predictions-table__pagination predictions-table-pagination">
 				<div className="predictions-table-pagination__field">
 					<span className="predictions-table-pagination__label">Show by</span>
-
-					<select
-						className="predictions-table-pagination__select"
-						value={this.state.limit}
+					<DropdownElement
+						dropDownValues={["20", "50", "100"]}
 						onChange={this.onChangeLimit}
-					>
-						<option value={20}>20</option>
-						<option value={50}>50</option>
-						<option value={100}>100</option>
-					</select>
-					<Icon type={IconType.down} size={IconSize.small} className="predictions-table-pagination__select-icon"/>
+						writable={false}
+						value={this.state.limit.toString()}
+					/>
 				</div>
 
 				<div className="predictions-table-pagination__field">

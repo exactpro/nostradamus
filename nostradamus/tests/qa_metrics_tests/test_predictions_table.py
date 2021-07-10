@@ -109,7 +109,7 @@ class TestPredictionsTable(unittest.TestCase):
             self.issues, self.predictions_table_fields, None, None
         )
         areas_of_testing_percentage = calculate_aot_percentage(
-            predictions_table["Area of Testing"]
+            predictions_table["Area of Testing"], []
         )
 
         assert areas_of_testing_percentage == {"Other": 100}
@@ -152,7 +152,8 @@ class TestPredictionsTable(unittest.TestCase):
             self.issues, self.predictions_table_fields, None, None
         )
         resolution_percentage = calculate_resolution_percentage(
-            predictions_table, self.training_parameters["Resolution"],
+            predictions_table,
+            self.training_parameters["Resolution"],
         )
 
         assert resolution_percentage == {"Done": {"Done": 100, "not Done": 0}}

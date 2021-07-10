@@ -1,3 +1,4 @@
+import { ChartData } from "app/common/components/charts/types";
 import React, { CSSProperties, ReactElement, RefObject } from "react";
 import cn from "classnames";
 
@@ -5,7 +6,7 @@ import "app/common/components/charts/bar-chart/bar-chart.scss";
 
 interface IProps {
 	percentage: boolean;
-	data: BarChartData;
+	data: ChartData;
 	verticalDirection: boolean;
 	multiColors: boolean;
 }
@@ -13,10 +14,6 @@ interface IProps {
 interface IState {
 	maxChartSize: number;
 }
-
-type BarChartData = {
-	[key: string]: number;
-};
 
 export type BarChartColumn = {
 	value: number;
@@ -58,11 +55,7 @@ export class CustomBarChart extends React.Component<IProps, IState> {
 
 	render(): ReactElement {
 		const { props, state } = this;
-
-		const data: BarChartColumn[] = Object.entries(props.data).map(([columnName, value]) => ({
-			label: columnName,
-			value,
-		}));
+		const { data } = props;
 
 		let maxValue = 0;
 		let minValue = data[0].value;
@@ -88,8 +81,8 @@ export class CustomBarChart extends React.Component<IProps, IState> {
 					}
 
 					return (
-						<div className="bar-chart__item" key={item.label}>
-							<div className="bar-chart__item-label">{item.label}</div>
+						<div className="bar-chart__item" key={item.name}>
+							<div className="bar-chart__item-label">{item.name}</div>
 
 							<div className="bar-chart__item-chart" ref={this.chartAreaRef}>
 								{!!item.value && (

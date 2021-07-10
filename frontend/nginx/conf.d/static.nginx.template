@@ -1,0 +1,13 @@
+server {
+  listen 80;
+  server_name           '${SERVER_NAME}';
+#  access_log            /dev/stdout/ combined;
+#  error_log             /dev/stderr/;
+
+  location / {
+    root                  /usr/share/nginx/html;
+    index                 index.html;
+    try_files             $uri $uri/ /index.html;
+    add_header            Access-Control-Allow-Origin "*";
+  }
+}

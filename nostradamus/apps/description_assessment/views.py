@@ -11,14 +11,13 @@ from apps.qa_metrics.main.predictions_table import (
     calculate_area_of_testing_predictions,
     load_models,
 )
-from apps.settings.main.common import (
+from apps.settings.main.common import get_bug_resolutions
+from apps.settings.main.training import (
     get_training_parameters,
-    get_bug_resolutions,
     get_top_terms,
+    check_training_models,
 )
-from utils.const import (
-    STOP_WORDS,
-)
+from utils.const import STOP_WORDS
 from utils.data_converter import convert_to_integer
 from utils.redis import redis_conn
 
@@ -28,12 +27,11 @@ from utils.warnings import CannotAnalyzeDescriptionWarning
 
 from apps.description_assessment.serializers import (
     DescriptionAssessmentResponseSerializer,
-    PredictorResponseSerializer,
     HighlightingResponseSerializer,
     PredictorRequestSerializer,
     HighlightingRequestSerializer,
+    PredictorResponseSerializer,
 )
-from apps.analysis_and_training.main.training import check_training_files
 
 
 class DescriptionAssessment(APIView):
@@ -44,7 +42,7 @@ class DescriptionAssessment(APIView):
     def get(self, request):
         user = request.user
 
-        check_training_files(user)
+        check_training_models(user)
 
         resolutions = (
             [resolution["value"] for resolution in get_bug_resolutions(user)]
@@ -128,9 +126,7 @@ class Predictor(APIView):
             dumps(probabilities),
         )
 
-        context = {"probabilities": probabilities}
-
-        return Response(context)
+        return Response(probabilities)
 
 
 class Highlighting(APIView):
@@ -174,6 +170,4 @@ class Highlighting(APIView):
                 if term in top_terms:
                     highlighted_terms.append(term)
 
-        context = {"terms": highlighted_terms}
-
-        return Response(context)
+        return Response(highlighted_terms)

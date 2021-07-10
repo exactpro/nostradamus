@@ -1,8 +1,7 @@
 import {
 	Toast,
-	ToastButton,
 	ToastConfig,
-	ToastStyle,
+	ToastStyle, ToastWithActionsParams
 } from "app/modules/toasts-overlay/store/types";
 
 const DEFAULT_CONFIG: ToastConfig = {
@@ -25,24 +24,22 @@ export const addToast = (message: string, style: ToastStyle, config?: ToastConfi
 		} as Toast,
 	} as const);
 
+
 export const addToastWithAction = (
-	message: string,
-	style: ToastStyle,
-	buttons: ToastButton[],
-	outerId?: number
+	newToast: ToastWithActionsParams
 ) =>
 	({
 		type: "TOASTS_ADD_TOAST",
 		toast: {
-			message,
-			style,
+			message: newToast.message,
+			style: newToast.style,
 			actionToast: true,
-			buttons,
+			buttons: newToast.buttons,
 			config: {
 				...DEFAULT_CONFIG,
 				time: 300000,
 			},
-			outerId,
+			outerId: newToast.outerId,
 		} as Toast,
 	} as const);
 

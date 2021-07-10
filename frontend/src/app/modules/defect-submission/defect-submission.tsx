@@ -1,9 +1,12 @@
-import { AnalysisAndTrainingDefectSubmission } from "app/common/types/analysis-and-training.types";
+import { DefectSubmissionData } from "app/common/types/analysis-and-training.types";
 import React from "react";
 import cn from "classnames";
 
 import "./defect-submission.scss";
 import Tooltip from "app/common/components/tooltip/tooltip";
+import { connect, ConnectedProps } from "react-redux";
+import { setCardStatuses } from "app/common/store/analysis-and-training/actions";
+import { HttpStatus } from "app/common/types/http.types";
 
 const TimeFilters = {
 	Day: "Day",
@@ -15,8 +18,7 @@ const TimeFilters = {
 };
 
 interface Props {
-	defectSubmission: AnalysisAndTrainingDefectSubmission | undefined;
-	activeTimeFilter: string;
+	defectSubmission: DefectSubmissionData;
 	onChangePeriod: (period: string) => void;
 }
 
@@ -29,7 +31,7 @@ type LineCoordinateTemplate = {
 
 type GraphLinePoint = { data: string; createdValue: number; resolvedValue: number };
 
-class DefectSubmission extends React.Component<Props> {
+class DefectSubmission extends React.Component<PropsFromRedux> {
 	maxValue = 0;
 	minValue = 0;
 	segmentWidth = 120;
@@ -40,7 +42,6 @@ class DefectSubmission extends React.Component<Props> {
 	graphData: GraphLinePoint[] = [];
 
 	graphTooltipRef: React.RefObject<HTMLDivElement> = React.createRef();
-	graphPointerRef: React.RefObject<HTMLDivElement> = React.createRef();
 	graphRef: React.RefObject<HTMLDivElement> = React.createRef();
 
 	pointerCoordinates: number[] = [0, 0];
@@ -48,7 +49,10 @@ class DefectSubmission extends React.Component<Props> {
 
 	colorSchema: string[] = ["#E61A1A", "#33CC99"];
 
-	constructor(props: Props) {
+	timerId: NodeJS.Timeout | null = null;
+	resizeInterval = 500;
+
+	constructor(props: PropsFromRedux) {
 		super(props);
 
 		if (!this.props.defectSubmission) return;
@@ -57,7 +61,7 @@ class DefectSubmission extends React.Component<Props> {
 			([data, value]: [string, number]) => ({
 				data,
 				createdValue: value,
-				resolvedValue: this.props.defectSubmission!.resolved_line[data],
+				resolvedValue: this.props.defectSubmission.resolved_line[data],
 			})
 		);
 
@@ -92,8 +96,8 @@ class DefectSubmission extends React.Component<Props> {
 		if (svgElem && svgElem[0] && svgWrapper && svgWrapper[0]) {
 			const wrapperWidth = (svgWrapper.item(0) as HTMLDivElement).offsetWidth;
 
-			if (wrapperWidth > this.segmentWidth * this.graphData.length)
-				this.segmentWidth = (0.975 * wrapperWidth) / (this.graphData.length - 1 || 2);
+			const segmentWidth = (0.95 * wrapperWidth) / (this.graphData.length - 1 || 2);
+			this.segmentWidth = segmentWidth <= 120 ? 120 : segmentWidth;
 
 			this.scrollableGraphWidth =
 				(this.graphData.length - 1
@@ -103,18 +107,46 @@ class DefectSubmission extends React.Component<Props> {
 			this.potentialGraphHeight = svgElem.item(0).height.baseVal.value;
 			this.forceUpdate();
 		}
+
+		window.addEventListener("resize", this.resizeGraph);
+	};
+
+	componentWillUnmount = () => {
+		window.removeEventListener("resize", this.resizeGraph);
+	};
+
+	resizeGraph = () => {
+		if (this.timerId) {
+			clearInterval(this.timerId);
+			this.timerId = null;
+		}
+
+		this.timerId = setTimeout(() => {
+			const { setCardStatuses } = this.props;
+			setCardStatuses({ defectSubmission: HttpStatus.RELOADING });
+			setCardStatuses({ defectSubmission: HttpStatus.FINISHED });
+		}, this.resizeInterval);
 	};
 
 	displayPoint = (coords: number[], colorIndex: number) => {
 		if (
-			!this.graphPointerRef.current ||
+			!this.graphTooltipRef.current ||
 			(coords[0] === this.pointerCoordinates[0] && coords[1] === this.pointerCoordinates[1])
 		)
 			return;
 
+		const point = this.graphTooltipRef.current.getElementsByClassName(
+			"defect-submission__graph-pointer"
+		)[0] as HTMLDivElement;
+
 		this.pointerCoordinates = [...coords];
 
-		this.graphPointerRef.current.style.cssText = `left: ${coords[0]}px; top: ${coords[1]}px; background: ${this.colorSchema[colorIndex]}; display: flex`;
+		Object.assign(point.style, {
+			left: `${coords[0]}px`,
+			top: `${coords[1]}px`,
+			background: this.colorSchema[colorIndex],
+			display: "flex",
+		});
 	};
 
 	displayTooltip = (coords: number[], dataIndex: number, lineIndex: number) => {
@@ -126,12 +158,17 @@ class DefectSubmission extends React.Component<Props> {
 
 		this.tooltipCoordinates = [...coords];
 
+		const tooltip = this.graphTooltipRef.current.getElementsByClassName(
+			"tooltip-wrapper"
+		)[0] as HTMLDivElement;
+
 		const dataField = lineIndex === 0 ? "createdValue" : "resolvedValue";
 
-		this.graphTooltipRef.current.children[0].innerHTML = `${this.graphData[dataIndex][dataField]}`;
-		this.graphTooltipRef.current.style.cssText = `left: ${coords[0] - 15}px; top: ${
-			coords[1] - 5
-		}px;`;
+		tooltip.children[0].innerHTML = `${this.graphData[dataIndex][dataField]}`;
+		Object.assign(tooltip.style, {
+			left: `${coords[0]}px`,
+			top: `${coords[1]}px`,
+		});
 	};
 
 	euclideanDistance = (x1: number, y1: number, x2: number, y2: number) =>
@@ -379,25 +416,21 @@ class DefectSubmission extends React.Component<Props> {
 
 		const yAxis = [];
 
-		for (let i = 0; i <= beautifulSteps; i += 1)
+		for (let i = beautifulSteps; i >= 0; i -= 1)
 			yAxis.push(
-				<text
-					key={i}
-					x={this.yAxisBarWidth - 20}
-					y={(this.potentialGraphHeight - 10) * (1 - (1 / beautifulSteps) * i) - 10}
-					textAnchor="end"
-					className="line-chart__axis-text"
-				>
+				<span key={i} className="line-chart__axis-text">
 					{beautifulTick * i}
-				</text>
+				</span>
 			);
 
 		return yAxis;
 	};
 
 	render() {
-		const { activeTimeFilter } = this.props;
-		const graphHeight = Number(this.graphRef.current?.offsetHeight) - 5 || "calc( 100% - 25px )";
+		const { period } = this.props.defectSubmission;
+		const graphHeight = navigator.userAgent.includes("Chrome")
+			? "calc( 100% - 25px )"
+			: Number(this.graphRef.current?.offsetHeight) - 5 || "calc( 100% - 30px )";
 
 		return (
 			<div className="defect-submission">
@@ -408,7 +441,7 @@ class DefectSubmission extends React.Component<Props> {
 								"defect-submission-legend__point",
 								"defect-submission-legend__point_created"
 							)}
-						 />
+						/>
 						<p className="defect-submission-legend__title">
 							Created issues - {this.props.defectSubmission?.created_total_count}
 						</p>
@@ -419,7 +452,7 @@ class DefectSubmission extends React.Component<Props> {
 								"defect-submission-legend__point",
 								"defect-submission-legend__point_resolved"
 							)}
-						 />
+						/>
 						<p className="defect-submission-legend__title">
 							Resolved issues - {this.props.defectSubmission?.resolved_total_count}
 						</p>
@@ -427,24 +460,25 @@ class DefectSubmission extends React.Component<Props> {
 				</div>
 
 				<div className="defect-submission__scroll-container" ref={this.graphRef}>
-					<div>
-						<svg width={this.yAxisBarWidth} height="100%">
-							{this.renderYAxis()}
-						</svg>
+					<div
+						className="defect-submission__y-axis-bar"
+						style={{ height: this.potentialGraphHeight }}
+					>
+						{this.renderYAxis()}
 					</div>
 
 					<div className="defect-submission__graph">
 						<div>
-							<Tooltip message="" duration={0} tooltipOuterRef={this.graphTooltipRef}>
-								<div
-									className={cn(
-										"defect-submission__graph-pointer",
-										"defect-submission__graph-pointer_created"
-									)}
-									ref={this.graphPointerRef}
-								 />
-							</Tooltip>
-
+							<div ref={this.graphTooltipRef}>
+								<Tooltip message="" duration={0} style={{ marginLeft: -15, marginTop: -5 }}>
+									<div
+										className={cn(
+											"defect-submission__graph-pointer",
+											"defect-submission__graph-pointer_created"
+										)}
+									/>
+								</Tooltip>
+							</div>
 							<svg
 								width={this.scrollableGraphWidth}
 								height={graphHeight}
@@ -452,7 +486,7 @@ class DefectSubmission extends React.Component<Props> {
 							>
 								{this.graphData.length === 1
 									? this.renderGraphPoint()
-									: this.graphData.map((item, index) => this.renderGraphLine(index))}
+									: this.graphData.map((_, index) => this.renderGraphLine(index))}
 							</svg>
 						</div>
 					</div>
@@ -465,7 +499,7 @@ class DefectSubmission extends React.Component<Props> {
 							onClick={this.setFilter(val)}
 							className={cn(
 								"defect-submission__period",
-								activeTimeFilter === val && "defect-submission__period_active"
+								period === val && "defect-submission__period_active"
 							)}
 						>
 							{val}
@@ -477,4 +511,12 @@ class DefectSubmission extends React.Component<Props> {
 	}
 }
 
-export default DefectSubmission;
+const mapDispatchToProps = {
+	setCardStatuses,
+};
+
+const connector = connect(undefined, mapDispatchToProps);
+
+type PropsFromRedux = ConnectedProps<typeof connector> & Props;
+
+export default connector(DefectSubmission);

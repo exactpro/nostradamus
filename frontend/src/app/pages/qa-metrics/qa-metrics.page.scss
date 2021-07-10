@@ -35,6 +35,15 @@
 	.qa-metric-filters {
 		height: 515px;
 		width: 100%;
+		padding-bottom: 0;
+
+		.filters__buttons {
+			padding-right: 30px;
+		}
+
+		&_shifted {
+			padding-bottom: 20px !important;
+		}
 
 		&__container {
 			height: 100%;
@@ -44,18 +53,22 @@
 
 		&__section-filters {
 			align-self: flex-start;
+			width: 124px;
+			height: 50px;
 		}
 
 		&__filter {
 			margin-top: 20px;
 		}
 	}
+
 	.probability {
 		height: 295px;
 		width: 100%;
 	}
 
 	.bug-resolution {
+		padding-bottom: 0;
 		height: 195px;
 		width: 100%;
 
@@ -70,10 +83,50 @@
 			width: 46%;
 		}
 	}
+
 	.priority {
 		height: 300px;
 		width: 100%;
+
+		&__dropdown {
+			width: 120px;
+
+			input {
+				background: transparent;
+				padding: 0 30px 0 10px;
+			}
+		}
+
+		&__select-wrapper {
+			position: absolute;
+			top: 10px;
+			right: 20px;
+
+			height: 30px;
+
+			display: flex;
+			align-items: center;
+			padding: 5px 15px;
+
+			cursor: pointer;
+
+			&-label {
+				font-size: 16px;
+				line-height: 20px;
+				color: $grayDisabledText;
+			}
+
+			.dropdown-element__select {
+				border: none;
+				height: 30px;
+			}
+
+			.dropdown-element-wrapper {
+				max-height: 180px;
+			}
+		}
 	}
+
 	.ttr {
 		height: 295px;
 		width: 100%;
@@ -112,17 +165,20 @@
 @media screen and (max-width: 1600px) {
 	.qa-metrics-page {
 		.qa-metric-filters {
-			height: 450px !important;
+			height: 450px;
 		}
+
 		.bug-resolution {
-			height: 170px !important;
+			height: 170px;
 		}
+
 		.probability,
 		.ttr {
-			height: 260px !important;
+			height: 260px;
 		}
+
 		.priority {
-			height: 260px !important;
+			height: 260px;
 		}
 	}
 }
@@ -130,17 +186,24 @@
 @media screen and (max-width: 1280px) {
 	.qa-metrics-page {
 		.qa-metric-filters {
-			height: 380px !important;
+			height: 380px;
 		}
+
 		.bug-resolution {
-			height: 140px !important;
+			height: 140px;
+
+			.donut-chart-wrapper {
+				margin-top: -15px;
+			}
 		}
+
 		.probability,
 		.ttr {
-			height: 220px !important;
+			height: 220px;
 		}
+
 		.priority {
-			height: 220px !important;
+			height: 220px;
 		}
 	}
 }

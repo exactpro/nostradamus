@@ -18,12 +18,14 @@
 
 	.top-left {
 		display: flex;
+		align-items: flex-start;
 		flex-wrap: wrap-reverse;
 		flex-direction: row-reverse;
 	}
 
 	.top-right {
 		display: flex;
+		align-items: flex-start;
 		flex-wrap: wrap-reverse;
 		align-content: flex-start;
 	}
@@ -44,9 +46,10 @@
 		margin: 2.5px;
 		display: inline-flex;
 		height: 2em;
-		padding: 0 1em;
-		border-radius: 0.3em;
+		border-radius: 5px;
 		align-items: center;
+		justify-content: center;
+		cursor: pointer;
 
 		&_color {
 			&_violet {

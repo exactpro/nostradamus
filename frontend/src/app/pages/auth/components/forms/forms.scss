@@ -1,6 +1,19 @@
 @import "src/app/styles/_colors.scss";
 
 .auth-form {
+
+	&_type_sign-up &__field:first-of-type {
+		@media (max-width: 1280px) {
+			margin-top: 20px;
+		}
+	}
+
+	&_type_sign-in &__submit-button {
+		@media (max-width: 1280px) {
+			width: 220px;
+		}
+	}
+
 	&__title {
 		font-weight: bold;
 		font-size: 24px;
@@ -18,10 +31,6 @@
 
 		&:first-of-type {
 			margin-top: 60px;
-
-			@media (max-width: 1400px) {
-				margin-top: 20px;
-			}
 		}
 	}
 
@@ -34,6 +43,7 @@
 
 	&__input {
 		width: 100%;
+		min-width: 0;
 
 		margin-left: 20px;
 		box-sizing: border-box;

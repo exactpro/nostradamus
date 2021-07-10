@@ -9,19 +9,26 @@ export enum SettingsActionTypes {
 	sendData = "SEND_DATA",
 	setCollectingDataStatus = "SET_COLLECTING_DATA_STATUS",
 	clearSettings = "CLEAR_SETTINGS",
+
+	setATFiltersDefaultData = "SET_AT_FILTERS_DEFAULT_DATA",
+	setQAMetricsFiltersDefaultData = "SET_QA_METRICS_FILTERS_DEFAULT_DATA",
+	setPredictionsDefaultData = "SET_PREDICTIONS_DEFAULT_DATA",
 }
 
 export enum SettingsSections {
 	filters = "filters",
 	qaFilters = "qa_metrics",
 	predictions = "predictions_table",
-	training = "training",
+}
+
+export type SettingsStatuses = {
+	[key in SettingsSections]: HttpStatus
 }
 
 // Type for Filter section: Analysis&Training and QAMetrics
 export type FilterData = {
 	name: string;
-	filtration_type: string;
+	type: string;
 };
 
 export type FilterType = {
@@ -69,9 +76,8 @@ export interface SettingsData {
 }
 
 export interface SettingsStore {
-	isOpen: boolean;
-	isCollectingFinished: boolean;
-	status: { [key: string]: HttpStatus };
+	isOpen: boolean; 
+	status: SettingsStatuses;
 	defaultSettings: SettingsData;
 }
 

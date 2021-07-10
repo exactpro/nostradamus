@@ -1,11 +1,24 @@
 import { getDataFromLocalStorage } from "app/common/functions/local-storage";
 import { User } from "app/common/types/user.types";
 
+export enum SocketEventType {
+	updateCountIssues = 'UPDATE_COUNT_ISSUES'
+}
+
+export interface SocketEvent {
+	type: SocketEventType;
+	data?: unknown;
+}
+
+type callback = (...params: unknown[]) => unknown;
+
 export default class SocketClient {
+
 	private token = "";
 
-	host: string;
-	ws: WebSocket | undefined = undefined;
+	private readonly host: string;
+	private ws: WebSocket | undefined = undefined;
+	private subscribers: Map<SocketEventType, callback> = new Map()
 
 	constructor() {
 		if (process.env.NODE_ENV === "development") {
@@ -27,17 +40,45 @@ export default class SocketClient {
 		return this.ws;
 	}
 
-	// TODO: eslint-disable-next-line
-	// eslint-disable-next-line
-	startMonitor(type: string, cb: (data: any) => void): void {
+	private startWatching() {
 		const sockets = this.ws || this.connectToSocket();
 
-		// TODO: eslint-disable-next-line
-		// eslint-disable-next-line
-		sockets.addEventListener(type, (event: any) => {
-			// TODO: @typescript-eslint/no-unsafe-member-access
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-			cb(event.data);
-		});
+		sockets.addEventListener("message", (event: MessageEvent) => {
+			let eventData: SocketEvent;
+
+			try {
+				eventData = JSON.parse(event.data);
+			} catch (e) {
+				eventData = { type: event.data };
+			}
+
+			const cb = this.subscribers.get(eventData.type);
+
+			if (cb) {
+				cb((event.data as SocketEvent).data)
+			}
+		})
+	}
+
+	subscribeToEvent(type: SocketEventType, cb: callback) {
+		if (this.subscribers.size === 0) {
+			this.startWatching();
+		}
+
+		// TODO: add ability set some subscribes to one event type
+		if (this.subscribers.has(type)) {
+			throw new Error('This type event already has subscriber');
+		}
+
+		this.subscribers.set(type, cb);
+	}
+
+	unsubscribe(type: SocketEventType) {
+		this.subscribers.delete(type);
+
+		if (this.subscribers.size === 0) {
+			this.ws?.close();
+			this.ws = undefined;
+		}
 	}
 }

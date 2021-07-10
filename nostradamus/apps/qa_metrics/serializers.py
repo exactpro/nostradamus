@@ -5,7 +5,7 @@ from apps.analysis_and_training.serializers import (
 )
 
 
-class RecordsCountSerializer(serializers.Serializer):
+class QAMetricsSerializer(serializers.Serializer):
     total = serializers.IntegerField()
     filtered = serializers.IntegerField()
 
@@ -29,18 +29,24 @@ class PredictionsTableSerializer(serializers.ListSerializer):
     child = serializers.DictField(child=serializers.CharField())
 
 
-class QAMetricsFiltersContentSerializer(serializers.Serializer):
-    filters = FiltrationFieldRequestSerializer(many=True)
+class QAMetricsFiltersContentSerializer(serializers.ListSerializer):
+    child = FiltrationFieldRequestSerializer()
 
 
-class QAMetricsFiltersResultSerializer(QAMetricsFiltersContentSerializer):
-    records_count = RecordsCountSerializer()
+class QAMetricsFiltersActionSerializer(serializers.Serializer):
+    action = serializers.CharField()
+    filters = serializers.ListSerializer(
+        child=FiltrationFieldRequestSerializer()
+    )
+
+
+class QAMetricsFiltersResultSerializer(serializers.Serializer):
+    records_count = QAMetricsSerializer()
+    filters = serializers.ListSerializer(
+        child=FiltrationFieldRequestSerializer()
+    )
 
 
 class QAMetricsTableRequestSerializer(serializers.Serializer):
     limit = serializers.IntegerField()
     offset = serializers.IntegerField()
-
-
-class QAMetricsSerializer(serializers.Serializer):
-    records_count = RecordsCountSerializer()

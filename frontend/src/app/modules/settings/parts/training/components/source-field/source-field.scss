@@ -1,0 +1,48 @@
+@import "../../../../../../styles/colors";
+
+.settings-training-source {
+	display: flex;
+	align-items: center;
+	margin-top: 15px;
+
+	&__title {
+		margin-right: 20px;
+	}
+
+	&__arrow-left,
+	&__inscription,
+	&__check {
+		color: $orange;
+		margin: 0 20px;
+	}
+
+	&__arrow-left {
+		animation: arrow_move 1s ease-in-out both alternate infinite;
+	}
+
+	&__check {
+		color: $seaBlue;
+	}
+
+	&__inscription {
+		margin-left: 0;
+
+		&_success {
+			color: $seaBlue;
+		}
+	}
+	&__subtitle {
+		margin: 20px 0;
+		font-size: 18px;
+		color: $darkBlue;
+	}
+}
+
+@keyframes arrow_move {
+	from {
+		transform: translateX(10px);
+	}
+	to {
+		transform: translateX(-10px);
+	}
+}

@@ -1,0 +1,34 @@
+@import "../../../../../../styles/colors";
+
+.settings-training-bug-resolution {
+	&-row {
+		display: flex;
+		margin-top: 15px;
+
+		&__metric,
+		&__value {
+			display: flex;
+			align-items: center;
+			font-size: 16px;
+		}
+
+		&__metric {
+			width: 40%;
+			&-title {
+				margin-right: 20px;
+			}
+			.input-element__input {
+				color: $grayDisabledText;
+				border-color: $grayDisabled;
+			}
+		}
+
+		&__value {
+			width: 60%;
+			&-title {
+				margin-right: 20px;
+				margin-left: 30px;
+			}
+		}
+	}
+}

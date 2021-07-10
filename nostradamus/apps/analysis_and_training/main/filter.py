@@ -6,7 +6,7 @@ from utils.const import MANDATORY_FIELDS
 
 
 def update_drop_down_fields(filters: list, issues: pd.DataFrame) -> list:
-    """ Append values for drop-down fields.
+    """Append values for drop-down fields.
 
     Parameters:
     ----------
@@ -24,7 +24,7 @@ def update_drop_down_fields(filters: list, issues: pd.DataFrame) -> list:
         return [value for value in values if value != "" and value is not None]
 
     for filter_ in filters:
-        if filter_["filtration_type"] == "drop-down":
+        if filter_["type"] == "drop-down":
             issues[filter_["name"]] = issues[filter_["name"]].astype(
                 "category"
             )
@@ -42,7 +42,7 @@ def update_drop_down_fields(filters: list, issues: pd.DataFrame) -> list:
 
 
 def get_filters(user: Model, issues: pd.DataFrame) -> list:
-    """ Reads filters settings from db.
+    """Reads filters settings from db.
 
     Parameters:
     ----------
@@ -64,7 +64,7 @@ def get_filters(user: Model, issues: pd.DataFrame) -> list:
 
 
 def get_issues_fields(user: Model) -> list:
-    """ Reads filter settings and makes fields list for issues
+    """Reads filter settings and makes fields list for issues
     uploading.
 
     Parameters:

@@ -39,3 +39,20 @@ class PredictionsNotReadyWarning(BaseAPIWarning):
 class ModelsNotTrainedWarning(BaseAPIWarning):
     default_detail = "Models are not trained. Please, train models."
     default_code = "not_trained_models"
+
+
+class SignificantTermsCantCalculateWarning(BaseAPIWarning):
+    default_detail = "Significant Terms can't be calculated. There should be at least 100 bugs."
+    default_code = "significant_terms_cant_calculate"
+
+
+class SignificantTermsLessOnePercentWarning(BaseAPIWarning):
+    default_detail = "Significant Terms couldn't be calculated on a metric representing less than 1% from the whole dataset."
+    default_code = "significant_terms_cant_calculate_less_one_percent"
+
+
+class SignificantTermsMetricDoesntExist(BaseAPIWarning):
+    default_detail = (
+        "Significant Terms can't be calculated. Metric doesn't exist."
+    )
+    default_code = "significant_terms_metric_doesnt_exist"

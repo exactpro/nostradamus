@@ -13,12 +13,8 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 # install dependencies
-RUN apt-get update
-RUN apt-get -y upgrade
-RUN dpkg --configure -a
-RUN apt-get install gcc -y \
+RUN apt-get update && apt-get install -y gcc \ 
   build-essential libpq-dev libffi-dev --no-install-recommends
-RUN apt-get clean
 RUN pip install --upgrade pip && pip install flake8 && pip install Cython
 COPY ./requirements.txt .
 RUN pip wheel --no-cache-dir --no-deps --wheel-dir /usr/src/app/wheels -r requirements.txt

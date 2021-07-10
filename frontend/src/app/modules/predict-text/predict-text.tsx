@@ -34,6 +34,7 @@ interface Props {
 	onChangePredictOption: (predictOption: PredictMetric) => void;
 	onPredict: (text: string) => void;
 	onClearAll: () => void;
+	text: string;
 }
 
 class PredictText extends React.Component<Props, State> {
@@ -46,6 +47,12 @@ class PredictText extends React.Component<Props, State> {
 		},
 		layoutArr: [],
 	};
+
+	componentDidMount() {
+		this.setState({
+			text: this.props.text
+		});
+	}
 
 	onChangeText = (text: string) => {
 		this.setState({
@@ -79,7 +86,9 @@ class PredictText extends React.Component<Props, State> {
 	};
 
 	changeDropdownValue = (option: PredictMetricsName) => (value: any) => {
-		const layoutArr: PredictMetricsName[] = [...this.state.layoutArr].filter((item) => item !== option);
+		const layoutArr: PredictMetricsName[] = [...this.state.layoutArr].filter(
+			(item) => item !== option
+		);
 		layoutArr.push(option);
 
 		this.props.onChangePredictOption({

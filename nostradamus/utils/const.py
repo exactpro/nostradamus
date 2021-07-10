@@ -57,9 +57,9 @@ DEFAULT_PREDICTIONS_TABLE_FIELDS = [
 
 UNRESOLVED_BUGS_FILTER = {
     "name": "Resolution",
-    "filtration_type": "string",
+    "type": "drop-down",
     "current_value": "Unresolved",
-    "exact_match": True,
+    "exact_match": False,
 }
 
 MANDATORY_FIELDS = [

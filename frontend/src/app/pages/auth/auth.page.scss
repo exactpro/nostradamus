@@ -2,11 +2,31 @@
 
 $borderRadius: 10px;
 
+@mixin resolutionStyles($resolution, $formWidth, $contentHeight) {
+	@media screen and (max-width: $resolution) {
+		.auth-page {
+			&__slider {
+				width: calc(100% - #{$formWidth} + #{$borderRadius});
+			}
+			&__main {
+				width: $formWidth;
+			}
+			&__content {
+				height: $contentHeight;
+			}
+		}
+	}
+}
+
 .auth-page {
 	min-height: 700px;
 	height: 100vh;
 	width: 100vw;
 	background-size: cover;
+
+	@include resolutionStyles(1920px, 480px, 720px);
+	@include resolutionStyles(1600px, 410px, 600px);
+	@include resolutionStyles(1280px, 375px, 520px);
 
 	&__container {
 		width: 85%;
@@ -16,18 +36,19 @@ $borderRadius: 10px;
 		align-items: flex-start;
 		justify-content: center;
 		height: 100%;
-		padding-bottom: 100px;
-		padding-top: 20px;
+		padding-bottom: 20px;
+		//padding-bottom: 100px;
+		//padding-top: 20px;
 	}
 
 	&__content {
 		margin-top: 40px;
 
 		width: 100%;
-		height: 720px;
 
 		display: flex;
 		align-items: stretch;
+		flex-shrink: 0;
 
 		background: $white;
 		box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
@@ -38,12 +59,10 @@ $borderRadius: 10px;
 	}
 
 	&__slider {
-		width: calc(70% + #{$borderRadius});
 		height: 100%;
 	}
 
 	&__main {
-		width: 30%;
 		height: 100%;
 
 		position: absolute;
@@ -55,6 +74,7 @@ $borderRadius: 10px;
 		border-radius: $borderRadius;
 
 		padding: 40px 30px;
+		padding-right: 20px;
 	}
 
 	&__change-mod-button {
@@ -65,20 +85,8 @@ $borderRadius: 10px;
 	&__auth-form {
 		margin-top: 63px;
 
-		@media (max-width: 1400px) {
-			margin-top: 20px;
+		@media (max-width: 1280px) {
+			margin-top: 36px;
 		}
-	}
-}
-
-@media screen and (max-width: 1600px) {
-	.auth-page__content {
-		height: 600px !important;
-	}
-}
-
-@media screen and (max-width: 1280px) {
-	.auth-page__content {
-		height: 520px !important;
 	}
 }

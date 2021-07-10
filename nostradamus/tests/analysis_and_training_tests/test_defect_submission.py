@@ -1,5 +1,3 @@
-import datetime
-
 from pandas import DataFrame
 
 from apps.analysis_and_training.main.charts import get_defect_submission

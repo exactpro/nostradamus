@@ -12,7 +12,7 @@ import { ToastStyle } from "app/modules/toasts-overlay/store/types";
 export class AnalysisAndTrainingApi {
 	static baseUrl = "analysis_and_training";
 
-	public static async getTotalStatistic(): Promise<{ records_count?: MainStatisticData }> {
+	public static async getTotalStatistic(): Promise<MainStatisticData> {
 		try {
 			return await HttpClient.get(`${this.baseUrl}/`);
 		} catch (e) {
@@ -43,15 +43,13 @@ export class AnalysisAndTrainingApi {
 		try {
 			return await HttpClient.get(`${this.baseUrl}/frequently_terms/`);
 		} catch (e) {
-			store.dispatch(addToast(e.detail, ToastStyle.Error));
 			throw e;
 		}
 	}
 
 	public static async getStatistic(): Promise<AnalysisAndTrainingStatistic> {
 		try {
-			const request = await HttpClient.get(`${this.baseUrl}/statistics/`);
-			return request.statistics;
+			return  await HttpClient.get(`${this.baseUrl}/statistics/`);
 		} catch (e) {
 			store.dispatch(addToast(e.detail, ToastStyle.Error));
 			throw e;
@@ -60,10 +58,10 @@ export class AnalysisAndTrainingApi {
 
 	public static async getDefectSubmission(timeFilter?: string) {
 		try {
-			if (timeFilter) {
-				return await HttpClient.post(`${this.baseUrl}/defect_submission/`, { period: timeFilter });
-			}
-			return await HttpClient.get(`${this.baseUrl}/defect_submission/`);
+			return await HttpClient.get(
+				`${this.baseUrl}/defect_submission/`,
+				timeFilter ? { period: timeFilter } : undefined
+			);
 		} catch (e) {
 			throw e;
 		}
@@ -87,18 +85,27 @@ export class AnalysisAndTrainingApi {
 
 	public static async trainModel() {
 		try {
-			return await HttpClient.post(`${this.baseUrl}/train/`, {});
+			return await HttpClient.post(`ml-core/train/`, {});
 		} catch (e) {
 			throw e;
 		}
 	}
 
 
-	public static async getGeneralApplicationStatus() {
+	public static async getCollectingDataStatus() {
 		try {
 			return await HttpClient.get(this.baseUrl + '/status/');
 		} catch (e) {
 			throw e;
+		}
+	}
+
+	public static async getTrainingModelStatus() {
+		try {
+			await HttpClient.get('description_assessment/');
+			return true;
+		} catch (e) {
+			return false
 		}
 	}
 

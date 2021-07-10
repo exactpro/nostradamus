@@ -1,16 +1,17 @@
-import pickle
 from json import loads, dumps
-from typing import Dict, List
+from typing import Dict, List, Union
 
 from django.db.models import Model, Max
-from pandas import DataFrame
 from rest_framework.serializers import Serializer
+from imblearn.pipeline import Pipeline
 
+from apps.analysis_and_training.main.significant_terms import (
+    MarkUpEntities,
+    BugResolutions,
+)
 from apps.extractor.main.connector import get_issue_count
 
-from utils.const import (
-    DEFAULT_PREDICTIONS_TABLE_FIELDS,
-)
+from utils.const import DEFAULT_PREDICTIONS_TABLE_FIELDS
 from utils.exceptions import (
     IncorrectPredictionsTableOrder,
     NotFilledDefaultFields,
@@ -19,36 +20,38 @@ from utils.warnings import BugsNotFoundWarning
 
 from itertools import chain
 
+ModelParams = List[Dict[str, Dict[str, int]]]
+TrainingParameters = Union[List[str], List[int], Dict[str, List[str]]]
+ModelClasses = Dict[str, TrainingParameters]
+ModelPipeline = Dict[str, Pipeline]
+
 
 def init_filters(model: Model, settings: Model) -> None:
     """Creates a default filters settings.
 
-    Parameters:
-    ----------
-    model:
-        Object for which settings will be creating.
-    settings:
-        Link to user or team settings.
+    :param model: Object for which settings will be creating.
+    :param settings: Link to user settings.
+    :return:
     """
     filters = [
-        {"name": "Project", "filtration_type": "drop-down"},
-        {"name": "Attachments", "filtration_type": "numeric"},
-        {"name": "Priority", "filtration_type": "drop-down"},
-        {"name": "Resolved", "filtration_type": "date"},
-        {"name": "Labels", "filtration_type": "string"},
-        {"name": "Created", "filtration_type": "date"},
-        {"name": "Comments", "filtration_type": "numeric"},
-        {"name": "Status", "filtration_type": "drop-down"},
-        {"name": "Key", "filtration_type": "drop-down"},
-        {"name": "Summary", "filtration_type": "string"},
-        {"name": "Resolution", "filtration_type": "drop-down"},
-        {"name": "Description", "filtration_type": "string"},
-        {"name": "Components", "filtration_type": "string"},
+        {"name": "Project", "type": "drop-down"},
+        {"name": "Attachments", "type": "numeric"},
+        {"name": "Priority", "type": "drop-down"},
+        {"name": "Resolved", "type": "date"},
+        {"name": "Labels", "type": "string"},
+        {"name": "Created", "type": "date"},
+        {"name": "Comments", "type": "numeric"},
+        {"name": "Status", "type": "drop-down"},
+        {"name": "Key", "type": "drop-down"},
+        {"name": "Summary", "type": "string"},
+        {"name": "Resolution", "type": "drop-down"},
+        {"name": "Description", "type": "string"},
+        {"name": "Components", "type": "string"},
     ]
     for filter_ in filters:
         model.objects.create(
             name=filter_["name"],
-            filtration_type=filter_["filtration_type"],
+            type=filter_["type"],
             settings=settings,
         )
 
@@ -56,12 +59,8 @@ def init_filters(model: Model, settings: Model) -> None:
 def init_predictions_table(model: Model, settings: Model) -> None:
     """Creates a default predictions table settings.
 
-    Parameters:
-    ----------
-    model:
-        Object for which settings will be creating.
-    settings:
-        Link to user or team settings.
+    :param model: Object for which settings will be creating.
+    :param settings: Link to user settings.
     """
     names = [
         "Issue Key",
@@ -80,12 +79,8 @@ def init_predictions_table(model: Model, settings: Model) -> None:
 def read_settings(request_data: list, user: Model) -> None:
     """Reads settings and appends it to request.
 
-    Parameters:
-    ----------
-    request_data:
-        Django request.data object.
-    user:
-        User instance.
+    :param request_data: Django request.data object.
+    :param user: User instance.
     """
 
     # To avoid a circular dependency
@@ -96,67 +91,14 @@ def read_settings(request_data: list, user: Model) -> None:
         obj["settings"] = user_settings
 
 
-def get_training_parameters(instance: Model) -> Dict[str, str]:
-    """Get training parameters.
-
-    Parameters:
-    ----------
-    instance:
-        Instance of User or Team model.
-    Returns:
-    ----------
-        Training parameters of User or Team from database.
-    """
-    # To avoid a circular dependency
-    from apps.settings.models import UserSettings, UserTrainingParameters
-
-    user_settings = UserSettings.objects.get(user=instance)
-    user_training_parameters = UserTrainingParameters.objects.filter(
-        settings=user_settings
-    )
-    return {
-        params.name: loads(params.training_parameters)
-        for params in user_training_parameters
-    }
-
-
-def update_training_parameters(
-    instance: Model, params: Dict[str, str]
-) -> None:
-    """Updates training parameters settings.
-
-    Parameters:
-    ----------
-    model:
-        User instance.
-    params:
-        New parameters of training.
-    """
-    # To avoid a circular dependency
-    from apps.settings.models import UserSettings, UserTrainingParameters
-
-    user_settings = UserSettings.objects.get(user=instance)
-    for param in params:
-        UserTrainingParameters.objects.create(
-            name=param.get("name"),
-            training_parameters=param.get("value"),
-            settings=user_settings,
-        )
-
-
 def update_predictions_table(
     model: Model, settings: int, fields: List[Dict[str, str]]
 ) -> None:
     """Updates predictions table settings.
 
-    Parameters:
-    ----------
-    model:
-        User/Team model object.
-    settings:
-        Settings identifier.
-    fields:
-        List of predictions table fields.
+    :param model: User model object.
+    :param settings: Settings identifier.
+    :param fields: List of predictions table fields.
     """
 
     def _validate_default_fields() -> None:
@@ -187,14 +129,8 @@ def update_predictions_table(
 def get_filter_settings(user: Model) -> List[Dict[str, str]]:
     """Reads filter settings.
 
-    Parameters:
-    ----------
-    user:
-        User instance.
-
-    Returns:
-    ----------
-        Filter settings.
+    :param user: User instance.
+    :return: Filter settings.
     """
 
     # To avoid a circular dependency
@@ -212,14 +148,8 @@ def get_filter_settings(user: Model) -> List[Dict[str, str]]:
 def get_qa_metrics_settings(user: Model) -> List[Dict[str, str]]:
     """Reads QA Metrics settings.
 
-    Parameters:
-    ----------
-    user:
-        User instance.
-
-    Returns:
-    ----------
-        QA metrics settings.
+    :param user: User instance.
+    :return: QA metrics settings.
     """
 
     # To avoid a circular dependency
@@ -241,14 +171,8 @@ def get_qa_metrics_settings(user: Model) -> List[Dict[str, str]]:
 def get_predictions_table_settings(user: Model) -> List[Dict[str, str]]:
     """Reads predictions table settings.
 
-    Parameters:
-    ----------
-    user:
-        User instance.
-
-    Returns:
-    ----------
-        Predictions table settings.
+    :param user: User instance.
+    :return: Predictions table settings.
     """
 
     # To avoid a circular dependency
@@ -268,15 +192,10 @@ def get_predictions_table_settings(user: Model) -> List[Dict[str, str]]:
 
 
 def update_resolutions(request_data: Dict[str, str], user: Model) -> None:
-    """Appends resolutions to predictions_table settings
-    if their were not added.
+    """Appends resolutions to predictions_table settings if their were not added.
 
-    Parameters:
-    ----------
-    request_data:
-        Django request.data object.
-    user:
-        User instance
+    :param request_data: Django request.data object.
+    :param user: User instance.
     """
 
     def _delete_old_resolutions(resolutions: List[str]) -> None:
@@ -288,9 +207,8 @@ def update_resolutions(request_data: Dict[str, str], user: Model) -> None:
         old_resolutions:
             Resolutions from predictions_table settings.
         """
-
         for resolution in resolutions:
-            UserPredictionsTable.objects.filter(
+            UserPredictionsTable.objects.get(
                 settings=user_settings, name=resolution
             ).delete()
 
@@ -315,6 +233,18 @@ def update_resolutions(request_data: Dict[str, str], user: Model) -> None:
     if diff:
         _delete_old_resolutions(diff)
 
+    user_predictions_table = UserPredictionsTable.objects.filter(
+        settings_id=user_settings
+    )
+
+    # reset starting index after changes in predictions
+    position = 1
+    for table in user_predictions_table:
+        table.position = position
+        table.save()
+
+        position += 1
+
     for resolution in training_resolutions:
         if resolution not in qa_metrics_resolutions:
             UserPredictionsTable.objects.create(
@@ -337,14 +267,8 @@ def check_issues_exist() -> None:
 def split_values(values: list) -> set:
     """Makes a set of unique elements.
 
-    Parameters:
-    ----------
-    values:
-        A list of values by a field from db.
-
-    Returns:
-    ----------
-        Unique elements.
+    :param values: A list of values by a field from db.
+    :return: Unique elements.
     """
     values = [
         [
@@ -368,16 +292,9 @@ def check_filters_equality(
 ) -> bool:
     """Compares new filters and cached filters.
 
-    Parameters:
-    ----------
-    new_filters:
-        Received filters.
-    old_filters:
-        Cached filters.
-
-    Returns:
-    ----------
-        Equality of filters.
+    :param new_filters: Received filters.
+    :param old_filters: Cached filters.
+    :return: Equality of filters.
     """
     for new_filter in new_filters:
         for old_filter in old_filters:
@@ -390,17 +307,11 @@ def check_filters_equality(
     return True
 
 
-def get_bug_resolutions(user: Model) -> List[Dict[str, str]]:
+def get_bug_resolutions(user: Model) -> BugResolutions:
     """Get Bug Resolutions from database.
 
-    Parameters:
-    ----------
-    user:
-        User.
-
-    Returns:
-    ----------
-        Bug resolutions.
+    :param user: User instance.
+    :return: Bug resolutions.
     """
     # To avoid a circular dependency
     from apps.settings.models import (
@@ -420,14 +331,8 @@ def get_bug_resolutions(user: Model) -> List[Dict[str, str]]:
 def get_source_field(user: Model) -> str:
     """Get Source Field from database.
 
-    Parameters:
-    ----------
-    user:
-        User.
-
-    Returns:
-    ----------
-        Source Field.
+    :param user: User instance.
+    :return: Source Field.
     """
     # To avoid a circular dependency
     from apps.settings.models import (
@@ -445,17 +350,11 @@ def get_source_field(user: Model) -> str:
 
 def get_mark_up_entities(
     user: Model,
-) -> List[Dict[str, str]]:
+) -> MarkUpEntities:
     """Get Mark Up Entities from database.
 
-    Parameters:
-    ----------
-    user:
-        User.
-
-    Returns:
-    ----------
-        Entities.
+    :param user: User instance.
+    :return: Entities.
     """
     # To avoid a circular dependency
     from apps.settings.models import (
@@ -478,12 +377,8 @@ def get_mark_up_entities(
 def update_source_field(user: Model, source_field: Serializer) -> None:
     """Update Source Field in database.
 
-    Parameters:
-    ----------
-    user:
-        User.
-    data:
-        New Source Field.
+    :param user: User instance.
+    :param source_field: New Source Field.
     """
     # To avoid a circular dependency
     from apps.settings.models import (
@@ -549,40 +444,3 @@ def update_mark_up_entities(user: Model, mark_up_entities: Serializer) -> None:
             entities=dumps(mark_up_entity.get("entities")),
             settings=user_settings,
         )
-
-
-def get_top_terms(user: Model) -> DataFrame:
-    """Get Top Terms from database.
-
-    Parameters:
-    ----------
-    user:
-        User.
-
-    Returns:
-    ----------
-        Top Terms.
-    """
-    # To avoid a circular dependency
-    from apps.settings.models import UserTopTerms, UserSettings
-
-    user_settings = UserSettings.objects.get(user=user)
-
-    return pickle.loads(
-        UserTopTerms.objects.get(settings=user_settings).top_terms_object
-    )
-
-
-def remove_training_parameters(user: Model) -> None:
-    """Remove existing Training Parameters.
-
-    Parameters:
-    ----------
-    user:
-        User.
-    """
-    # To avoid a circular dependency
-    from apps.settings.models import UserTrainingParameters, UserSettings
-
-    user_settings = UserSettings.objects.get(user=user)
-    UserTrainingParameters.objects.filter(settings=user_settings).delete()

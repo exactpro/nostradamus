@@ -62,7 +62,9 @@ class Toast extends React.Component<ToastProps, IState> {
 		this.setState((state, props) => ({
 			expandable:
 				props.toast.actionToast ||
-				(this.messageRef.current ? this.messageRef.current.scrollWidth > 350 : false),
+				(this.messageRef.current
+					? this.messageRef.current.scrollWidth > this.messageRef.current.clientWidth
+					: false),
 		}));
 	};
 

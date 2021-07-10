@@ -19,7 +19,7 @@ def test_statistics_with_resolution_unresolved_piece(
     )
 
     corr_result = correct_result_statistics.copy()
-    corr_result["Time to Resolve"]["minimum"] = "1"
+    corr_result["Time to Resolve (TTR)"]["min"] = "1"
 
     assert result == corr_result
 
@@ -32,9 +32,9 @@ def test_statistics_with_resolution_unresolved_all(
     )
 
     corr_result = correct_result_statistics.copy()
-    corr_result["Time to Resolve"] = {
-        "minimum": "0",
-        "maximum": "0",
+    corr_result["Time to Resolve (TTR)"] = {
+        "max": "0",
+        "min": "0",
         "mean": "0",
         "std": "0",
     }
@@ -50,8 +50,8 @@ def test_statistics_error(statistics, correct_result_statistics):
     corr_result = correct_result_statistics.copy()
     for key in corr_result:
         corr_result[key] = {
-            "minimum": "0",
-            "maximum": "0",
+            "max": "0",
+            "min": "0",
             "mean": "0",
             "std": "0",
         }

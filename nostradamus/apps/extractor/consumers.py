@@ -1,6 +1,10 @@
+from json import dumps
+
 from channels.generic.websocket import WebsocketConsumer
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
+
+from apps.extractor.events import EventType
 
 
 class ExtractorConsumer(WebsocketConsumer):
@@ -21,8 +25,15 @@ class ExtractorConsumer(WebsocketConsumer):
 
     @staticmethod
     def loader_notification():
+        def _make_message(event_type):
+            return {"type": event_type.value, "data": "Bugs has been updated"}
+
         channel_layer = get_channel_layer()
+        message = _make_message(event_type=EventType.ISSUES_UPDATE)
         async_to_sync(channel_layer.group_send)(
             "extractor",
-            {"type": "bugs_updated_event", "text": "Bugs has been updated"},
+            {
+                "type": "bugs_updated_event",
+                "text": dumps(message),
+            },
         )

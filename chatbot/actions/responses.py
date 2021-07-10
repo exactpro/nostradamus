@@ -13,11 +13,11 @@ RESPONSES = {
         ],
         "ask_filter_string_type": [
             "This filtration type does substring search. It can be applied if a value you're looking for is too long.",
-            "There is also an exact-match flag with two options:\n* ON - full-match search;\n* OFF - substring search.",
+            "There is also an exact-match flag with two options:\n* ON - full-match search;\n* OFF - substring search.\n",
         ],
         "ask_filter_dropdown_type": [
             "This filtration type can be used for fields containing repetitive values like Priority, Resolution, etc.\nThe required elements can be easily chosen from the list.",
-            "There is also an exact-match flag with two options:\n* ON - full-match search, which means that all the chosen elements have to be listed in the record;\n* OFF - at least one chosen element has to be listed on a record.",
+            "There is also an exact-match flag with two options:\n* ON - full-match search, which means that all the chosen elements have to be listed in the record;\n* OFF - at least one chosen element has to be listed on a record.\n",
         ],
         "ask_filter_date_type": [
             "This filtration type can be applied to date fields.\nYou can easily choose a single date or even a specific range of dates."
@@ -55,9 +55,9 @@ RESPONSES = {
         ],
         "ask_training": [
             "Training gives me magical abilities!🧙‍♂️",
-            "With training, I can learn on the bugs you uploaded to predict:\n* How long it takes to fix a bug\n* What final decision will be made for a bug\n* What area of testing a bug belongs to\n* And even what priority level a bug will have when submitted!",
+            "With training, I can learn on the bugs you uploaded to predict:\n* How long it takes to fix a bug\n* What final decision will be made for a bug\n* What area of testing a bug belongs to\n* And even what priority level a bug will have when submitted!\n",
             "The more bugs you give the more accurate my predictions are! 💪🏽",
-            'Training is also the process of creating so-called "models":\n* Priority;\n* Time to Resolve;\n* A model for each area of testing;\n* A model for each resolution.',
+            'Training is also the process of creating so-called "models":\n* Priority;\n* Time to Resolve;\n* A model for each area of testing;\n* A model for each resolution.\n',
         ],
         "ask_training_purpose": [
             "Training enables me to produce predictions.\nThey are my superpower 😎",

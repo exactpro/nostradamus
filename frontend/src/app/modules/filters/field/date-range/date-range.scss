@@ -180,6 +180,7 @@
 
 			// for checked range
 			&:focus,
+			&:active,
 			&--active,
 			&--active:enabled:hover,
 			&--active:enabled:focus,

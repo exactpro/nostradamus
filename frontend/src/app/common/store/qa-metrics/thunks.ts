@@ -1,185 +1,253 @@
 import QaMetricsApi from "app/common/api/qa-metrics.api";
+import { checkModelIsFound } from "app/common/store/common/utils";
 import {
 	setQAMetricsAllData,
+	setQaMetricsFilter,
 	setQaMetricsRecordsCount,
-	setQaMetricsStatus,
+	setQaMetricsStatuses,
 	setQAMetricsTable,
-	setStatusTrainModelQAMetrics,
 } from "app/common/store/qa-metrics/actions";
-import { HttpError, HttpStatus } from "app/common/types/http.types";
+import {
+	QAMetricsRecordsCount,
+	QAMetricsAllData
+} from "app/common/store/qa-metrics/types";
+import { HttpError, HttpStatus, ObjectWithUnknownFields } from "app/common/types/http.types";
 import { FilterFieldBase } from "app/modules/filters/field/field-type";
+import { FiltersPopUp } from "app/modules/filters/filters";
 import { addToast } from "app/modules/toasts-overlay/store/actions";
 import { ToastStyle } from "app/modules/toasts-overlay/store/types";
-import {
-	checkFieldIsFilled,
-	getFieldEmptyValue,
-	setFieldValue,
-} from "app/modules/filters/field/field.helper-function";
-import { FiltersPopUp } from "app/modules/filters/filters";
 
-export const initQAMetrics = () => {
+export const getQAMetricsData = () => {
 	return async (dispatch: any) => {
-		dispatch(setQaMetricsStatus("filters", HttpStatus.LOADING));
+		dispatch(
+			setQaMetricsStatuses({
+				filter: HttpStatus.LOADING,
+				data: HttpStatus.LOADING,
+				table: HttpStatus.LOADING,
+			})
+		);
 
-		let countsRes;
-		let filtersRes;
+		let records_count: QAMetricsRecordsCount;
 
-		try {
-			countsRes = await QaMetricsApi.getCount();
-			filtersRes = await QaMetricsApi.getFilters();
-		} catch (e) {
-			dispatch(addToast((e as HttpError).detail || e.message, ToastStyle.Error));
-			dispatch(setQaMetricsStatus("filters", HttpStatus.FAILED));
+		if (await checkModelIsFound()) {
+			dispatch(uploadQAMetricsFilters());
+			records_count = await dispatch(getQAMetricsTotalStatistic());
+		} else {
+			dispatch(
+				setQaMetricsStatuses({
+					filter: HttpStatus.PREVIEW,
+					data: HttpStatus.PREVIEW,
+					table: HttpStatus.PREVIEW,
+				})
+			);
 			return;
 		}
 
-		const recordsCountCode = countsRes.status;
-		const filtersResCode = filtersRes.status;
+		if (records_count.filtered) {
+			dispatch(updateQAMetricsData());
+		} else {
+			dispatch(
+				addToast(
+					"With cached filters we didn't find data. Try to change filter.",
+					ToastStyle.Warning
+				)
+			);
 
-		const recordsCountResBody = await countsRes.json();
-		const filtersResBody = await filtersRes.json();
+			dispatch(
+				setQaMetricsStatuses({
+					data: HttpStatus.PREVIEW,
+					table: HttpStatus.PREVIEW,
+				})
+			);
+		}
+	};
+};
 
-		dispatch(setQaMetricsStatus("filters", HttpStatus.FINISHED));
+export const getQAMetricsTotalStatistic = () => {
+	return async (dispatch: any) => {
+		let records_count: QAMetricsRecordsCount;
 
-		if (recordsCountCode === 209 || filtersResCode === 209) {
-			const warning = recordsCountResBody.warning || filtersResBody.warning;
-			dispatch(setQaMetricsStatus("filters", HttpStatus.PREVIEW));
-			dispatch(setStatusTrainModelQAMetrics(false));
-			dispatch(addToast(warning.detail || warning.message, ToastStyle.Warning));
-			return [];
+		try {
+			records_count = await QaMetricsApi.getCount();
+		} catch (e) {
+			return;
 		}
 
-		if (!recordsCountResBody.records_count.filtered) {
-			dispatch(setQaMetricsStatus("data", HttpStatus.FAILED));
+		dispatch(setQaMetricsRecordsCount(records_count));
+
+		return records_count;
+	};
+};
+
+export const uploadQAMetricsFilters = () => {
+	return async (dispatch: any) => {
+		dispatch(
+			setQaMetricsStatuses({
+				filter: HttpStatus.LOADING,
+			})
+		);
+
+		let fields: FilterFieldBase[];
+
+		try {
+			fields = await QaMetricsApi.getFilters();
+		} catch (e) {
+			dispatch(
+				setQaMetricsStatuses({
+					filter: HttpStatus.FAILED,
+				})
+			);
+			return;
 		}
 
-		dispatch(setQaMetricsRecordsCount(recordsCountResBody.records_count));
-		dispatch(setStatusTrainModelQAMetrics(true));
+		dispatch(setQaMetricsFilter(fields));
 
-		return filtersResBody.map((field: FilterFieldBase) => ({
-			...field,
-			exact_match: false,
-			current_value: setFieldValue(
-				field.filtration_type,
-				field.current_value || getFieldEmptyValue(field.filtration_type)
-			),
-		}));
+		dispatch(
+			setQaMetricsStatuses({
+				filter: HttpStatus.FINISHED,
+			})
+		);
+	};
+};
+
+export const applyQAMetricsFilters = (filters: FilterFieldBase[]) => {
+	return async (dispatch: any) => {
+		dispatch(
+			setQaMetricsStatuses({
+				filter: HttpStatus.LOADING,
+				data: HttpStatus.LOADING,
+				table: HttpStatus.RELOADING,
+			})
+		);
+
+		let records_count: QAMetricsRecordsCount;
+
+		try {
+			records_count = await dispatch(saveQAMetricsFilters(filters));
+		} catch (e) {
+			dispatch(addToast((e as HttpError).detail || e.message, ToastStyle.Error));
+			dispatch(
+				setQaMetricsStatuses({
+					filter: HttpStatus.FAILED,
+				})
+			);
+			return;
+		}
+
+		if (records_count.filtered) {
+			dispatch(updateQAMetricsData());
+		} else {
+			dispatch(
+				setQaMetricsStatuses({
+					data: HttpStatus.PREVIEW,
+					table: HttpStatus.PREVIEW,
+				})
+			);
+
+			dispatch(addToast(FiltersPopUp.noDataFound, ToastStyle.Warning));
+		}
 	};
 };
 
 export const saveQAMetricsFilters = (filters: FilterFieldBase[]) => {
 	return async (dispatch: any) => {
-		dispatch(setQaMetricsStatus("filters", HttpStatus.LOADING));
+		dispatch(
+			setQaMetricsStatuses({
+				filter: HttpStatus.LOADING,
+			})
+		);
 
-		let response;
+		let response: {
+			records_count: QAMetricsRecordsCount;
+			filters: FilterFieldBase[];
+		};
 
 		try {
-			response = await QaMetricsApi.saveFilters([
-				...filters.filter((field) =>
-					checkFieldIsFilled(field.filtration_type, field.current_value)
-				),
-			]);
+			response = await QaMetricsApi.saveFilters([...filters]);
 		} catch (e) {
-			dispatch(addToast((e as HttpError).detail || e.message, ToastStyle.Error));
-			dispatch(setQaMetricsStatus("filters", HttpStatus.FAILED));
+			dispatch(
+				setQaMetricsStatuses({
+					filter: HttpStatus.FAILED,
+				})
+			);
 			return;
 		}
 
-		const code = response.status;
-		const body = await response.json();
+		dispatch(setQaMetricsRecordsCount(response.records_count));
+		dispatch(setQaMetricsFilter(response.filters));
 
-		dispatch(setQaMetricsStatus("filters", HttpStatus.FINISHED));
+		dispatch(
+			setQaMetricsStatuses({
+				filter: HttpStatus.FINISHED,
+			})
+		);
 
-		if (code === 209) {
-			dispatch(setQaMetricsStatus("filters", HttpStatus.PREVIEW));
-			dispatch(setStatusTrainModelQAMetrics(false));
-			dispatch(addToast(body.warning.detail || body.warning.message, ToastStyle.Warning));
-			return [];
-		}
-
-		if (body.warning) {
-			dispatch(setQaMetricsStatus("filters", HttpStatus.PREVIEW));
-			dispatch(setStatusTrainModelQAMetrics(false));
-			return [];
-		}
-
-		// check, that bugs is founded
-		if (!body.records_count.filtered) {
-			dispatch(setQaMetricsStatus("data", HttpStatus.FAILED));
-			dispatch(addToast(FiltersPopUp.noDataFound, ToastStyle.Warning));
-		}
-
-		dispatch(setStatusTrainModelQAMetrics(true));
-		dispatch(setQaMetricsRecordsCount(body.records_count));
-
-		const newFilters = body.filters.map((field: FilterFieldBase) => ({
-			...field,
-			exact_match: false,
-			current_value: setFieldValue(
-				field.filtration_type,
-				getFieldEmptyValue(field.filtration_type)
-			),
-		}));
-
-		return newFilters;
+		return response.records_count;
 	};
 };
 
 export const updateQAMetricsData = () => {
 	return async (dispatch: any) => {
-		dispatch(setQaMetricsStatus("data", HttpStatus.LOADING));
+		dispatch(
+			setQaMetricsStatuses({
+				data: HttpStatus.LOADING,
+				table: HttpStatus.LOADING,
+			})
+		);
 
-		// TODO: make try/catch block shortly
+		let test: QAMetricsAllData;
+
 		try {
-			// send request
-			const response = await QaMetricsApi.getQAMetricsData();
-
-			// separate to code and body
-			const code = response.status;
-			const body = await response.json();
-
-			// check, everything is ok
-			if (code === 209) {
-				dispatch(setQaMetricsStatus("data", HttpStatus.PREVIEW));
-				dispatch(setStatusTrainModelQAMetrics(false));
-				dispatch(addToast(body.warning.detail || body.warning.message, ToastStyle.Error));
-				return;
-			}
-
-			// save data to store
-			dispatch(setQAMetricsAllData(body));
-			dispatch(setQaMetricsStatus("data", HttpStatus.FINISHED));
+			test = await QaMetricsApi.getQAMetricsData();
 		} catch (e) {
-			dispatch(addToast((e as HttpError).detail || e.message, ToastStyle.Error));
-			dispatch(setQaMetricsStatus("data", HttpStatus.FAILED));
+			dispatch(
+				setQaMetricsStatuses({
+					data: HttpStatus.FAILED,
+					table: HttpStatus.FAILED,
+				})
+			);
+
+			return;
 		}
+
+		dispatch(setQAMetricsAllData(test));
+
+		dispatch(
+			setQaMetricsStatuses({
+				data: HttpStatus.FINISHED,
+				table: HttpStatus.FINISHED,
+			})
+		);
 	};
 };
 
 export const updateQAMetricsTable = (limit: number, offset: number) => {
 	return async (dispatch: any) => {
-		dispatch(setQaMetricsStatus("table", HttpStatus.RELOADING));
+		dispatch(
+			setQaMetricsStatuses({
+				table: HttpStatus.RELOADING,
+			})
+		);
 
-		// TODO: make try/catch block shortly
+		let response: ObjectWithUnknownFields[];
+
 		try {
-			const response = await QaMetricsApi.getQAMetricsPredictionsTable(limit, offset);
-
-			const code = response.status;
-			const body = await response.json();
-
-			// check, everything is ok
-			if (code === 209) {
-				dispatch(setQaMetricsStatus("table", HttpStatus.PREVIEW));
-				dispatch(addToast(body.warning.detail || body.warning.message, ToastStyle.Error));
-				return;
-			}
-
-			// save data to store
-			dispatch(setQAMetricsTable(body));
-			dispatch(setQaMetricsStatus("table", HttpStatus.FINISHED));
+			response = await QaMetricsApi.getQAMetricsPredictionsTable(limit, offset);
 		} catch (e) {
-			dispatch(addToast((e as HttpError).detail || e.message, ToastStyle.Error));
-			dispatch(setQaMetricsStatus("table", HttpStatus.FAILED));
+			dispatch(
+				setQaMetricsStatuses({
+					table: HttpStatus.FAILED,
+				})
+			);
+
+			return;
 		}
+
+		dispatch(setQAMetricsTable(response));
+		dispatch(
+			setQaMetricsStatuses({
+				table: HttpStatus.FINISHED,
+			})
+		);
 	};
 };

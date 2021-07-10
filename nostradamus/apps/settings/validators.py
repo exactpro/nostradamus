@@ -4,15 +4,11 @@ from utils.const import DEFAULT_PREDICTIONS_TABLE_FIELDS
 
 
 def default_fields_validator(name: str, value: bool) -> None:
-    """ Raises validation error when specified field have
+    """Raises validation error when specified field have
     incorrect is_default value.
 
-    Parameters:
-    ----------
-    name:
-        Predictions table field name.
-    value:
-        True if marked as is_default, otherwise False.
+    :param name: Predictions table field name.
+    :param value: True if marked as is_default, otherwise False.
     """
     if name in DEFAULT_PREDICTIONS_TABLE_FIELDS or name.startswith(
         "Resolution:"

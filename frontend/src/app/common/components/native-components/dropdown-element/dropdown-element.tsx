@@ -7,20 +7,28 @@ import cn from "classnames";
 import "app/common/components/native-components/dropdown-element/dropdown-element.scss";
 import { caseInsensitiveStringCompare } from "app/common/functions/helper";
 
+interface DropdownVariant {
+	value: string;
+	label: string;
+}
+
+type DropdownVariantsType = Array<string | DropdownVariant>;
+
 interface DropdownProps {
 	type: FilterElementType;
-	value: string;
-	dropDownValues: string[];
+	value: string | DropdownVariant;
+	dropDownValues: DropdownVariantsType;
 	writable: boolean;
 	excludeValues: string[];
 	onChange: (s: string) => void;
 	onClear?: () => void;
 	style?: React.CSSProperties;
 	placeholder?: string;
+	className?: string;
 }
 
 interface DropdownState {
-	inputValue: string;
+	inputValue: string | DropdownVariant;
 	isDropDownWrapperOpened: boolean;
 }
 
@@ -52,11 +60,11 @@ class DropdownElement extends Component<DropdownProps, DropdownState> {
 		this.setState({ isDropDownWrapperOpened: false });
 	};
 
-	selectDropdownOption = (inputValue: string) => (): void => {
+	selectDropdownOption = (newValue: string | DropdownVariant) => (): void => {
 		const { onChange, writable } = this.props;
 
-		this.setState({ inputValue }, this.blurDropDownElement);
-		onChange(inputValue);
+		this.setState({ inputValue: newValue }, this.blurDropDownElement);
+		onChange(typeof newValue === 'string' ? newValue : newValue.value);
 
 		if (!writable && this.dropdownElementRef.current) this.dropdownElementRef.current.blur();
 	};
@@ -71,9 +79,11 @@ class DropdownElement extends Component<DropdownProps, DropdownState> {
 	};
 
 	shouldComponentUpdate = (nextProps: DropdownProps): boolean => {
-		const { value } = this.props;
-		if (!nextProps.value.length && value) this.setState({ inputValue: "" });
-		if (nextProps.value !== value) this.setState({ inputValue: nextProps.value });
+		let value  = typeof this.props.value === "string" ? this.props.value : this.props.value.value;
+		let newValue  = typeof nextProps.value === "string" ? nextProps.value : nextProps.value.value;
+
+		if (!newValue.length && value) this.setState({ inputValue: "" });
+		if (newValue !== value) this.setState({ inputValue: nextProps.value });
 		return true;
 	};
 
@@ -105,21 +115,37 @@ class DropdownElement extends Component<DropdownProps, DropdownState> {
 
 		const isInputEditable: boolean = allowedOpening && writable;
 
-		let dropDownOptions: string[] = [...dropDownValues];
+		let dropDownOptions: DropdownVariantsType = [...dropDownValues];
 
 		if (isInputEditable) {
-			dropDownOptions = dropDownOptions.filter((str: string) => {
-				if (inputValue.length)
-					return this.isStrIncludesSubstr(str, inputValue) && !excludeValues?.includes(str);
+			dropDownOptions = dropDownOptions.filter((variant: string | DropdownVariant) => {
+				let inputValueTemp = typeof inputValue === "string" ? inputValue : inputValue.value;
+				if (inputValueTemp.length) {
+					if (typeof variant === "string") {
+						return (
+							this.isStrIncludesSubstr(variant, inputValueTemp) && !excludeValues?.includes(variant)
+						);
+					} else {
+						return (
+							this.isStrIncludesSubstr(variant.value, inputValueTemp) &&
+							!excludeValues?.includes(variant.value)
+						);
+					}
+				}
 				return true;
 			});
 		}
 
-		dropDownOptions.sort((a, b) => caseInsensitiveStringCompare(a, b));
+		dropDownOptions.sort((a, b) => {
+			return caseInsensitiveStringCompare(
+				typeof a === "string" ? a : a.value,
+				typeof b === "string" ? b : b.value
+			);
+		});
 
 		return (
 			<div
-				className="dropdown-element"
+				className={cn('dropdown-element', this.props.className)}
 				tabIndex={1}
 				ref={this.dropdownElementRef}
 				onFocus={this.focusDropDownElement}
@@ -127,7 +153,7 @@ class DropdownElement extends Component<DropdownProps, DropdownState> {
 				style={style}
 			>
 				<input
-					value={inputValue}
+					value={typeof inputValue === "string" ? inputValue : inputValue.label}
 					onChange={this.changeInputValue}
 					placeholder={placeholder}
 					disabled={!isInputEditable}
@@ -144,20 +170,27 @@ class DropdownElement extends Component<DropdownProps, DropdownState> {
 									"dropdown-element-wrapper_hidden": !isDropDownWrapperOpened,
 								})}
 							>
-								{dropDownOptions.map((item) => (
+								{dropDownOptions.map((item) => {
 									// eslint-disable-next-line jsx-a11y/no-static-element-interactions
-									<div
-										className={cn("dropdown-element-wrapper__option", {
-											"dropdown-element-wrapper__option_disabled":
-												!inputValue.length && excludeValues?.includes(item),
-										})}
-										onKeyDown={() => ({})}
-										onClick={this.selectDropdownOption(item)}
-										key={item}
-									>
-										{item}
-									</div>
-								))}
+
+									let label = typeof item === 'string' ? item : item.label;
+									let value = typeof item === 'string' ? item : item.value;
+									let inputValueTemp = typeof inputValue === "string" ? inputValue : inputValue.value;
+
+									return (
+										<div
+											className={cn("dropdown-element-wrapper__option", {
+												"dropdown-element-wrapper__option_disabled":
+													!inputValueTemp.length && excludeValues?.includes(value),
+											})}
+											onKeyDown={() => ({})}
+											onClick={this.selectDropdownOption(item)}
+											key={value}
+										>
+											{label}
+										</div>
+									);
+								})}
 							</div>
 						)}
 					</>

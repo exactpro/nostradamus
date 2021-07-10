@@ -8,6 +8,10 @@ from .views import (
     SourceFieldView,
     MarkUpEntitiesView,
     BugResolutionView,
+    TopTermsView,
+    ModelsView,
+    TrainingParametersView,
+    IssuesFields,
 )
 
 urlpatterns = [
@@ -18,4 +22,8 @@ urlpatterns = [
     path("training/source_field/", SourceFieldView.as_view()),
     path("training/markup_entities/", MarkUpEntitiesView.as_view()),
     path("training/bug_resolution/", BugResolutionView.as_view()),
+    path("training/top_terms/", TopTermsView.as_view()),
+    path("training/models/", ModelsView.as_view()),
+    path("training/training_parameters/", TrainingParametersView.as_view()),
+    path("training/filters/", IssuesFields.as_view()),
 ]

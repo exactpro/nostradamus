@@ -73,7 +73,7 @@ class TestReport(unittest.TestCase):
         assert filters == [
             {
                 "name": "Created",
-                "filtration_type": "date",
+                "type": "date",
                 "current_value": ("01-01-2000", "30-01-2000"),
                 "exact_match": True,
             }
@@ -90,7 +90,7 @@ class TestReport(unittest.TestCase):
         assert filters == [
             {
                 "name": "Resolved",
-                "filtration_type": "date",
+                "type": "date",
                 "current_value": ("01-12-1980", "31-12-1980"),
                 "exact_match": True,
             }

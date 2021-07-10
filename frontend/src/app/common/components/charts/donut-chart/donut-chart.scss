@@ -8,8 +8,8 @@
 	justify-content: flex-start;
 
 	&-legend {
-		max-width: 150px;
-		align-self: flex-end;
+		margin-right: 25px;
+		align-self: center;
 
 		&__wrapper {
 			display: flex;
@@ -38,15 +38,13 @@
 			line-height: 19px;
 			font-feature-settings: "cpsp" on, "liga" off;
 			color: $gray;
-			@media screen and (max-width: 1280px) {
-				font-size: 13px;
-			}
 		}
 	}
 
 	&-wrapper {
-		width: 50%;
 		position: relative;
+		width: 140px;
+		flex-shrink: 0;
 
 		&__percentage-block {
 			position: absolute;
@@ -55,10 +53,32 @@
 			transform: translate(-50%, -50%);
 			opacity: 0;
 			transition: opacity 0.2s ease-out;
+			font-size: 25px;
 
 			&_visible {
 				opacity: 1;
 			}
+		}
+	}
+}
+
+@media screen and (max-width: 1600px) {
+	.donut-chart-wrapper {
+		width: 120px;
+	}
+}
+
+@media screen and (max-width: 1280px) {
+	.donut-chart-legend {
+		margin-right: 15px;
+
+		&__wrapper {
+			&:not(:last-child) {
+				margin-bottom: 15px;
+			}
+		}
+		&__title {
+			font-size: 13px;
 		}
 	}
 }

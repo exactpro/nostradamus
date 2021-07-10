@@ -17,7 +17,10 @@ from apps.qa_metrics.main.predictions_table import (
     calculate_issues_predictions,
     get_predictions_table_fields,
 )
-from apps.analysis_and_training.main.training import check_training_files
+from apps.settings.main.training import (
+    check_training_models,
+    get_training_parameters,
+)
 from apps.qa_metrics.serializers import (
     PredictionsInfoSerializer,
     PredictionsTableSerializer,
@@ -25,16 +28,14 @@ from apps.qa_metrics.serializers import (
     QAMetricsFiltersResultSerializer,
     QAMetricsTableRequestSerializer,
     QAMetricsSerializer,
+    QAMetricsFiltersActionSerializer,
 )
 
 from apps.settings.main.common import (
     get_qa_metrics_settings,
     check_filters_equality,
-    get_training_parameters,
 )
-from utils.const import (
-    UNRESOLVED_BUGS_FILTER,
-)
+from utils.const import UNRESOLVED_BUGS_FILTER
 from apps.extractor.main.preprocessor import get_issues_dataframe
 from utils.redis import redis_conn, clear_cache
 
@@ -57,15 +58,13 @@ class QAMetricsView(APIView):
 
         cache = redis_conn.get(f"user:{request.user.id}:qa_metrics:filters")
 
-        filters = [UNRESOLVED_BUGS_FILTER]
+        filters = []
         if cache:
             filters = loads(cache)
 
         context = {
-            "records_count": {
-                "total": total_count,
-                "filtered": get_issue_count(filters),
-            },
+            "total": total_count,
+            "filtered": get_issue_count(filters + [UNRESOLVED_BUGS_FILTER]),
         }
         return Response(context)
 
@@ -78,7 +77,7 @@ class QAMetricsFilterView(APIView):
     def get(self, request):
         user = request.user
 
-        check_training_files(user)
+        check_training_models(user)
 
         cached_filters = redis_conn.get(
             f"user:{request.user.id}:qa_metrics:filters"
@@ -98,7 +97,7 @@ class QAMetricsFilterView(APIView):
 
     @swagger_auto_schema(
         operation_description="Apply or Clear filters.",
-        request_body=QAMetricsFiltersContentSerializer,
+        request_body=QAMetricsFiltersActionSerializer,
         responses={200: QAMetricsFiltersResultSerializer},
     )
     def post(self, request):
@@ -119,13 +118,10 @@ class QAMetricsFilterView(APIView):
                         filter_.update(
                             {
                                 "current_value": new_filter["current_value"],
-                                "filtration_type": new_filter[
-                                    "filtration_type"
-                                ],
+                                "type": new_filter["type"],
                                 "exact_match": new_filter["exact_match"],
                             }
                         )
-        filters += [UNRESOLVED_BUGS_FILTER]
 
         cached_filters = redis_conn.get(
             f"user:{request.user.id}:qa_metrics:filters"
@@ -135,7 +131,9 @@ class QAMetricsFilterView(APIView):
         context = {
             "records_count": {
                 "total": get_issue_count(filters=[UNRESOLVED_BUGS_FILTER]),
-                "filtered": get_issue_count(filters),
+                "filtered": get_issue_count(
+                    filters + [UNRESOLVED_BUGS_FILTER]
+                ),
             },
             "filters": filters,
         }
@@ -184,7 +182,7 @@ class PredictionsInfoView(APIView):
         if cached_predictions:
             predictions = loads(cached_predictions)
         else:
-            check_training_files(user)
+            check_training_models(user)
 
             training_parameters = get_training_parameters(request.user)
             predictions_table_fields = get_predictions_table_fields(user)
@@ -209,7 +207,8 @@ class PredictionsInfoView(APIView):
             prediction_table = paginate_bugs(predictions_table, offset, limit)
 
             areas_of_testing_percentage = calculate_aot_percentage(
-                predictions_table["Area of Testing"]
+                predictions_table["Area of Testing"],
+                training_parameters["areas_of_testing"],
             )
             priority_percentage = calculate_priority_percentage(
                 predictions_table["Priority"], training_parameters["Priority"]
@@ -240,11 +239,6 @@ class PredictionsInfoView(APIView):
                 ex=60 * 30,
             )
             redis_conn.set(
-                name=f"user:{request.user.id}:qa_metrics:filters",
-                value=dumps(filters),
-                ex=60 * 30,
-            )
-            redis_conn.set(
                 name=f"user:{request.user.id}:qa_metrics:predictions_table",
                 value=dumps(list(predictions_table.T.to_dict().values())),
                 ex=60 * 30,
@@ -267,7 +261,7 @@ class PredictionsTableView(APIView):
         cache = redis_conn.get(f"user:{user.id}:qa_metrics:filters")
         filters = loads(cache) if cache else [UNRESOLVED_BUGS_FILTER]
 
-        check_training_files(user)
+        check_training_models(user)
 
         cached_predictions = redis_conn.get(
             f"user:{request.user.id}:qa_metrics:predictions_table"

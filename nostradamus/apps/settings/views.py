@@ -1,9 +1,15 @@
-from json import dumps
+import sys
 
+import pandas as pd
+from pickle import loads
+from base64 import b64decode
+from json import dumps
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from drf_yasg.utils import swagger_auto_schema
 
+from apps.analysis_and_training.main import common
+from apps.analysis_and_training.main.filter import get_issues_fields
 from apps.extractor.main.connector import get_fields, get_unique_values
 from apps.settings.main.common import (
     read_settings,
@@ -19,7 +25,12 @@ from apps.settings.main.common import (
     update_source_field,
     update_bug_resolutions,
     update_mark_up_entities,
+)
+from apps.settings.main.training import (
+    save_top_terms,
+    save_training_parameters,
     remove_training_parameters,
+    save_models,
 )
 from apps.settings.serializers import (
     UserFilterSerializer,
@@ -33,7 +44,13 @@ from apps.settings.serializers import (
     QAMetricsFiltersSettingsSerializer,
     BugResolutionSettingsSerializer,
     FiltersSettingsSerializer,
+    TrainingParametersSerializer,
+    TopTermsSerializer,
+    ModelsSerializer,
+    FiltersSerializer,
 )
+from utils import stemmed_tfidf_vectorizer
+
 from utils.redis import (
     redis_conn,
     remove_cache_record,
@@ -43,9 +60,7 @@ from utils.redis import (
 
 
 class FilterSettingsView(APIView):
-    @swagger_auto_schema(
-        responses={200: FiltersSettingsSerializer},
-    )
+    @swagger_auto_schema(responses={200: FiltersSettingsSerializer},)
     def get(self, request):
         check_issues_exist()
 
@@ -56,10 +71,7 @@ class FilterSettingsView(APIView):
 
         return Response(result)
 
-    @swagger_auto_schema(
-        request_body=UserFilterSerializer,
-        responses={200: UserFilterSerializer},
-    )
+    @swagger_auto_schema(request_body=FiltersSerializer)
     def post(self, request):
         check_issues_exist()
 
@@ -77,13 +89,11 @@ class FilterSettingsView(APIView):
 
         clear_page_cache(["analysis_and_training"], request.user.id)
 
-        return Response({"result": "success"})
+        return Response()
 
 
 class QAMetricsSettingsView(APIView):
-    @swagger_auto_schema(
-        responses={200: QAMetricsFiltersSettingsSerializer},
-    )
+    @swagger_auto_schema(responses={200: QAMetricsFiltersSettingsSerializer},)
     def get(self, request):
         check_issues_exist()
 
@@ -121,13 +131,11 @@ class QAMetricsSettingsView(APIView):
             dumps(get_qa_metrics_settings(request.user)),
         )
 
-        return Response({"result": "success"})
+        return Response()
 
 
 class PredictionsTableSettingsView(APIView):
-    @swagger_auto_schema(
-        responses={200: PredictionsTableSettingsSerializer},
-    )
+    @swagger_auto_schema(responses={200: PredictionsTableSettingsSerializer},)
     def get(self, request):
         check_issues_exist()
 
@@ -167,7 +175,7 @@ class PredictionsTableSettingsView(APIView):
             request.user.id,
         )
 
-        return Response({"result": "success"})
+        return Response()
 
 
 class TrainingSettingsView(APIView):
@@ -202,13 +210,11 @@ class TrainingSettingsView(APIView):
 
         remove_training_parameters(user)
 
-        return Response({"result": "success"})
+        return Response()
 
 
 class SourceFieldView(APIView):
-    @swagger_auto_schema(
-        responses={200: SourceFieldGetViewSerializer},
-    )
+    @swagger_auto_schema(responses={200: SourceFieldGetViewSerializer},)
     def get(self, request):
         check_issues_exist()
 
@@ -231,13 +237,11 @@ class SourceFieldView(APIView):
         update_source_field(request.user, source_field_serializer.data)
         remove_training_parameters(request.user)
 
-        return Response({"result": "success"})
+        return Response()
 
 
 class MarkUpEntitiesView(APIView):
-    @swagger_auto_schema(
-        responses={200: MarkUpEntiitiesSerializer},
-    )
+    @swagger_auto_schema(responses={200: MarkUpEntiitiesSerializer},)
     def get(self, request):
         check_issues_exist()
 
@@ -259,9 +263,7 @@ class MarkUpEntitiesView(APIView):
 
 
 class BugResolutionView(APIView):
-    @swagger_auto_schema(
-        responses={200: BugResolutionSettingsSerializer},
-    )
+    @swagger_auto_schema(responses={200: BugResolutionSettingsSerializer},)
     def get(self, request):
         check_issues_exist()
 
@@ -273,4 +275,56 @@ class BugResolutionView(APIView):
             "resolution_names": resolution,
         }
 
+        return Response(result)
+
+
+class ModelsView(APIView):
+    @swagger_auto_schema(request_body=ModelsSerializer)
+    def post(self, request):
+        check_issues_exist()
+
+        # problem import because of class encoded into pickle
+        sys.modules["training"] = common
+        sys.modules[
+            "training.stemmed_tfidf_vectorizer"
+        ] = stemmed_tfidf_vectorizer
+
+        models = loads(b64decode(request.data["models"]))
+
+        del sys.modules["training"]
+        del sys.modules["training.stemmed_tfidf_vectorizer"]
+
+        save_models(request.user, models)
+
+        return Response()
+
+
+class TrainingParametersView(APIView):
+    @swagger_auto_schema(request_body=TrainingParametersSerializer)
+    def post(self, request):
+        check_issues_exist()
+
+        training_parameters = request.data["training_parameters"]
+        save_training_parameters(request.user, training_parameters)
+
+        return Response()
+
+
+class TopTermsView(APIView):
+    @swagger_auto_schema(request_body=TopTermsSerializer)
+    def post(self, request):
+        check_issues_exist()
+
+        top_terms = pd.read_json(request.data["top_terms"])
+        save_top_terms(request.user, top_terms)
+
+        return Response()
+
+
+class IssuesFields(APIView):
+    @swagger_auto_schema(responses={200: FiltersSettingsSerializer})
+    def get(self, request):
+        check_issues_exist()
+
+        result = {"issues_fields": get_issues_fields(request.user)}
         return Response(result)
