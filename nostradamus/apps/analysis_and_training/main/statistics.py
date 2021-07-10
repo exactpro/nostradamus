@@ -11,43 +11,30 @@ def calculate_statistics(issues: pd.DataFrame, series: list) -> dict:
         - mean value;
         - standard deviation (std).
 
-    Parameters
-    ----------
-    issues:
-        DataFrame to be used for calculations.
-    series:
-        Series names to be used as metrics for calculations.
-
-    Returns
-    -------
-        Calculated statistics.
+    :param issues: DataFrame to be used for calculations.
+    :param series: Series names to be used as metrics for calculations.
+    :return: Calculated statistics.
     """
     statistics = {}
     for name in series:
         try:
             if name == "Time to Resolve":
                 issues = issues[issues.Resolution != "Unresolved"]
-            statistics.update(
-                {
-                    name: {
-                        "minimum": str(issues[name].min()),
-                        "maximum": str(issues[name].max()),
-                        "mean": str(int(math_round(issues[name].mean()))),
-                        "std": str(
-                            int(math_round(np.nan_to_num(issues[name].std())))
-                        ),
-                    }
-                }
-            )
+            compute = {
+                "max": str(issues[name].max()),
+                "min": str(issues[name].min()),
+                "mean": str(int(math_round(issues[name].mean()))),
+                "std": str(int(math_round(np.nan_to_num(issues[name].std())))),
+            }
         except (TypeError, ValueError):
-            statistics.update(
-                {
-                    name: {
-                        "minimum": "0",
-                        "maximum": "0",
-                        "mean": "0",
-                        "std": "0",
-                    }
-                }
-            )
+            compute = {
+                "max": "0",
+                "min": "0",
+                "mean": "0",
+                "std": "0",
+            }
+
+        if name == "Time to Resolve":
+            name = "Time to Resolve (TTR)"
+        statistics.update({name: compute})
     return statistics

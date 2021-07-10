@@ -7,6 +7,10 @@ export enum HttpStatus {
 	FAILED = "failed",
 }
 
+export interface ObjectWithUnknownFields<T = unknown> {
+	[key: string]: T
+}
+
 export interface HttpException {
 	detail: string;
 	code: number;
@@ -26,20 +30,16 @@ export class HttpError extends Error implements HttpException {
 	}
 }
 
-interface FieldError {
+export interface HTTPFieldValidationError {
 	name: string;
 	errors: string[];
 }
 
-export class HttpValidationError extends HttpError {
-	fields: FieldError[];
-	detailArr: string[] = [];
+export class HTTPValidationError {
 
-	constructor(props: HttpException, fields: FieldError[]) {
-		super(props);
+	fields: HTTPFieldValidationError[]
 
+	constructor(fields: HTTPFieldValidationError[]) {
 		this.fields = fields;
-		this.detail = this.fields[0].errors[0];
-		this.fields.forEach(({ errors }) => this.detailArr.push(...errors));
 	}
 }

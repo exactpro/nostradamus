@@ -3,7 +3,6 @@ import unittest
 import pandas as pd
 
 from apps.extractor.main.jira_api import JAPI
-from apps.extractor.main.connector import get_largest_keys
 
 
 @pytest.mark.usefixtures("JQL")

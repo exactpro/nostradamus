@@ -85,7 +85,7 @@ class TestFilter(unittest.TestCase):
         filter = [
             {
                 "name": "Priority",
-                "filtration_type": "drop-down",
+                "type": "drop-down",
                 "current_value": ["Minor"],
                 "exact_match": False,
             },
@@ -98,7 +98,7 @@ class TestFilter(unittest.TestCase):
         filter = [
             {
                 "name": "Priority",
-                "filtration_type": "drop-down",
+                "type": "drop-down",
                 "current_value": ["Critical"],
                 "exact_match": False,
             },
@@ -111,7 +111,7 @@ class TestFilter(unittest.TestCase):
         filter = [
             {
                 "name": "Project",
-                "filtration_type": "drop-down",
+                "type": "drop-down",
                 "current_value": ["Test Project"],
                 "exact_match": False,
             },
@@ -124,7 +124,7 @@ class TestFilter(unittest.TestCase):
         filter = [
             {
                 "name": "Project",
-                "filtration_type": "drop-down",
+                "type": "drop-down",
                 "current_value": ["Nostradamus"],
                 "exact_match": False,
             },
@@ -137,7 +137,7 @@ class TestFilter(unittest.TestCase):
         filter = [
             {
                 "name": "Resolution",
-                "filtration_type": "drop-down",
+                "type": "drop-down",
                 "current_value": ["Rejected", "Unresolved"],
                 "exact_match": False,
             },
@@ -150,7 +150,7 @@ class TestFilter(unittest.TestCase):
         filter = [
             {
                 "name": "Resolution",
-                "filtration_type": "drop-down",
+                "type": "drop-down",
                 "current_value": ["Won't Do"],
                 "exact_match": False,
             }
@@ -163,7 +163,7 @@ class TestFilter(unittest.TestCase):
         filter = [
             {
                 "name": "Created",
-                "filtration_type": "date",
+                "type": "date",
                 "current_value": [
                     dt.strftime(
                         dt.now() - td(days=1), "%Y-%m-%dT%H:%M:%S.%f%zZ"
@@ -181,7 +181,7 @@ class TestFilter(unittest.TestCase):
         filter = [
             {
                 "name": "Created",
-                "filtration_type": "date",
+                "type": "date",
                 "current_value": [
                     dt.strftime(
                         dt.now() + td(days=1), "%Y-%m-%dT%H:%M:%S.%f%zZ"
@@ -199,7 +199,7 @@ class TestFilter(unittest.TestCase):
         filter = [
             {
                 "name": "Created",
-                "filtration_type": "date",
+                "type": "date",
                 "current_value": [
                     None,
                     dt.strftime(
@@ -217,7 +217,7 @@ class TestFilter(unittest.TestCase):
         filter = [
             {
                 "name": "Created",
-                "filtration_type": "date",
+                "type": "date",
                 "current_value": [
                     None,
                     dt.strftime(
@@ -235,7 +235,7 @@ class TestFilter(unittest.TestCase):
         filter = [
             {
                 "name": "Created",
-                "filtration_type": "date",
+                "type": "date",
                 "current_value": [
                     dt.strftime(
                         dt.now() - td(days=1), "%Y-%m-%dT%H:%M:%S.%f%zZ"
@@ -255,7 +255,7 @@ class TestFilter(unittest.TestCase):
         filter = [
             {
                 "name": "Created",
-                "filtration_type": "date",
+                "type": "date",
                 "current_value": [
                     dt.strftime(
                         dt.now() + td(days=1), "%Y-%m-%dT%H:%M:%S.%f%zZ"
@@ -275,7 +275,7 @@ class TestFilter(unittest.TestCase):
         filter = [
             {
                 "name": "Labels",
-                "filtration_type": "string",
+                "type": "string",
                 "current_value": "Test Label",
                 "exact_match": False,
             }
@@ -289,7 +289,7 @@ class TestFilter(unittest.TestCase):
         filter = [
             {
                 "name": "Labels",
-                "filtration_type": "string",
+                "type": "string",
                 "current_value": "Nostra",
                 "exact_match": False,
             }

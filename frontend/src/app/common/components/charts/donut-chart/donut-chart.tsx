@@ -1,3 +1,4 @@
+import { ChartData } from "app/common/components/charts/types";
 import React from "react";
 import { ResponsivePie } from "@nivo/pie";
 import cn from "classnames";
@@ -7,10 +8,6 @@ import "app/common/components/charts/donut-chart/donut-chart.scss";
 export const DonutChartColorSchemes = {
 	greenBlue: ["#33CC99", "#5CADD6"],
 	orangeViolet: ["#FFA666", "#BCAAF2"],
-};
-
-export type DonutChartData = {
-	[key: string]: number;
 };
 
 export type DonutChartSector = {
@@ -23,7 +20,7 @@ export type DonutChartSector = {
 interface IProps {
 	className?: string;
 	colorSchema?: string[];
-	data: DonutChartData;
+	data: ChartData;
 }
 
 interface iState {
@@ -50,10 +47,10 @@ class DonutChart extends React.Component<IProps, iState> {
 	constructor(props: IProps) {
 		super(props);
 
-		this.data = Object.entries(this.props.data).map(([sectorName, value], index) => ({
-			label: sectorName,
-			id: sectorName,
-			value: Math.round(value),
+		this.data = this.props.data.map((sector, index) => ({
+			label: sector.name,
+			id: sector.name,
+			value: Math.round(sector.value),
 			color: this.props.colorSchema![index],
 		}));
 	}

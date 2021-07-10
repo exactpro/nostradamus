@@ -6,8 +6,8 @@ import {
 	ValueUnion,
 } from "app/modules/filters/field/field-type";
 
-export const getFieldEmptyValue = (filtration_type: FiltrationType): ValueUnion => {
-	switch (filtration_type) {
+export const getFieldEmptyValue = (type: FiltrationType): ValueUnion => {
+	switch (type) {
 		case FiltrationType.String:
 			return "";
 
@@ -21,10 +21,10 @@ export const getFieldEmptyValue = (filtration_type: FiltrationType): ValueUnion 
 };
 
 export const setFieldValue = (
-	filtration_type: FiltrationType,
+	type: FiltrationType,
 	newValue: ValueUnion
 ): ValueUnion => {
-	switch (filtration_type) {
+	switch (type) {
 		case FiltrationType.String:
 			return newValue;
 
@@ -45,8 +45,8 @@ export const setFieldValue = (
 	}
 };
 
-export const checkFieldIsFilled = (filtration_type: FiltrationType, value: ValueUnion): boolean => {
-	switch (filtration_type) {
+export const checkFieldIsFilled = (type: FiltrationType, value: ValueUnion): boolean => {
+	switch (type) {
 		case FiltrationType.String:
 			return !!value;
 

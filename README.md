@@ -14,7 +14,7 @@ Nostradamus also calculates various statistical data including distributions and
 * a list of the most frequently used terms;
 * a list of the most significant words, etc.
 
-This knowledge further allows to achieve various IT-related goals, e.g.:
+This knowledge further allows achieving various IT-related goals, e.g.:
 * 📝 More accurate planning and goal setting for Project Managers;
 * 📈 Improving the defect report quality for QA Engineers and Junior Analysts;
 * 🔎 Discovering the dependencies hidden in development, for system architects and developers.

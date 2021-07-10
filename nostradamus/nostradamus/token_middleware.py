@@ -16,11 +16,11 @@ class JWTAuthMiddleware:
         token = f"{self.get_token(scope)}"
         token_body = {"token": token}
 
-        backend_host = "http://nostradamus-core:8000"
-        token_verify_route = "/token/verify/"
+        backend_host = "http://auth:8080"
+        token_verify_route = "/token_verify/"
 
-        request = requests.post(
-            backend_host + token_verify_route, json=token_body
+        request = requests.get(
+            backend_host + token_verify_route, params=token_body
         )
         if request.status_code == 401:
             raise IncorrectUserCredentials

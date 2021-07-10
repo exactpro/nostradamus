@@ -1,0 +1,36 @@
+@import "src/app/styles/colors";
+
+.table-cell {
+	transition: height 0.2s ease-in-out;
+
+	&__title {
+		word-break: break-all;
+	}
+}
+
+.color {
+	&_green {
+		color: $green;
+	}
+	&_dark-blue {
+		color: $darkBlue;
+	}
+	&_orange {
+		color: $orange;
+	}
+	&_violet-dark {
+		color: $violetDark;
+	}
+	&_cold {
+		color: $cold;
+	}
+	&_yellow-strong {
+		color: $yellowStrong;
+	}
+	&_orange {
+		color: $orange;
+	}
+	&_light-red {
+		color: $lightRed;
+	}
+}

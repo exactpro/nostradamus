@@ -3,8 +3,10 @@ import { InferValueTypes } from "app/common/store/utils";
 import * as actions from "./actions";
 
 const initialState: CommonStore = {
-	isCollectingFinished: false,
-	isTrainFinished: false,
+	isLoadedIssuesStatus: false,
+	isIssuesExist: false,
+	isSearchingModelFinished: false,
+	isModelFounded: false,
 };
 
 type actionsUserTypes = ReturnType<InferValueTypes<typeof actions>>;
@@ -13,11 +15,16 @@ export const commonReducer = (state: CommonStore = initialState, action: actions
 
 	switch (action.type) {
 
-		case 'MARK_LOAD_ISSUES_FINISHED':
+		case 'UPDATE_COMMON_STATUSES':
 			return {
 				...state,
-				isCollectingFinished: true,
+				...action.statuses,
 			};
+
+		case 'RESET_COMMON_STATUSES':
+		return {
+			...initialState
+		};
 
 		default:
 			return { ...state };

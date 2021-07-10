@@ -22,6 +22,5 @@ RUN apk add --no-cache bash \
 COPY --from=build /src/app/build /usr/share/nginx/html
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
 COPY nginx/conf.d/* /etc/nginx/conf.d/
-RUN mkdir -p /opt/nginx/certs
 COPY frontend-entrypoint.sh .
 ENTRYPOINT ["bash", "frontend-entrypoint.sh"]

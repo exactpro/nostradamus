@@ -17,7 +17,6 @@ export interface UserSignIn {
  * Model of user data for registration
  */
 export interface UserSignUp {
-	team: number | null;
 	email: string;
 	name: string;
 	password: string;
@@ -33,12 +32,4 @@ export interface User {
 	team: string; // team name, not id
 	role: UserRole; // role name, not id
 	token: string;
-}
-
-/**
- * Main team model
- */
-export interface Team {
-	id: number;
-	name: string;
 }

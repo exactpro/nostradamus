@@ -91,6 +91,10 @@
 		border-radius: 2px;
 	}
 
+	&__title {
+		word-break: break-all;
+	}
+
 	&__check-mark {
 		width: 100%;
 		height: 100%;

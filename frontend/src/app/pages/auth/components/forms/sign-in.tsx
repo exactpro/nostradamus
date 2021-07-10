@@ -67,7 +67,7 @@ class SignIn extends React.Component<SignInProps, SignInState> {
 			return false;
 		}
 
-		if (password.length < 6 || !/^[a-zA-Z0-9_.]+$/i.exec(password)) {
+		if (password.length < 6) {
 			return false;
 		}
 
@@ -85,7 +85,7 @@ class SignIn extends React.Component<SignInProps, SignInState> {
 
 		return (
 			<form
-				className={cn("auth-form", this.props.className)}
+				className={cn("auth-form", "auth-form_type_sign-in", this.props.className)}
 				onChange={this.formValidation}
 				onSubmit={this.formSubmit}
 			>

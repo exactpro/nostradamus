@@ -17,9 +17,9 @@
 
 	&__value-item {
 		display: inline-flex;
-		align-items: flex-end;
+		align-items: center;
 
-		padding: 3px 7px 5px;
+		padding: 0 7px;
 		margin-right: 5px;
 
 		border-radius: 4px;
@@ -30,6 +30,8 @@
 		max-width: 100px;
 
 		&-text {
+			padding: 3px 0 5px;
+			height: 100%;
 			text-overflow: ellipsis;
 			overflow: hidden;
 			white-space: nowrap;
@@ -70,6 +72,7 @@
 	}
 
 	&__select-window {
+		width: max-content;
 		position: absolute;
 		z-index: 10;
 		top: calc(100% + 3px);

@@ -1,0 +1,10 @@
+.settings-training-table {
+	&_disabled {
+		filter: opacity(0.75);
+		pointer-events: none;
+	}
+
+	&-main {
+		margin-top: 15px;
+	}
+}

@@ -10,12 +10,11 @@ import {
 	setFieldValue,
 } from "app/modules/filters/field/field.helper-function";
 import { UpdateFieldFunction } from "app/modules/filters/filters.class";
-import { caseInsensitiveStringCompare } from "app/common/functions/helper";
 
 export class FilterField {
 	// base properties
 	name: string;
-	filtration_type: FiltrationType;
+	type: FiltrationType;
 	exact_match: boolean;
 	current_value: ValueUnion;
 	values?: FilterFieldDropdownValue;
@@ -25,20 +24,20 @@ export class FilterField {
 
 	constructor(field: FilterFieldBase, updateFunction: UpdateFieldFunction) {
 		this.name = field.name;
-		this.filtration_type = field.filtration_type;
+		this.type = field.type;
 		this.exact_match = field.exact_match;
 
-		if (field.current_value && checkFieldIsFilled(field.filtration_type, field.current_value)) {
-			this.current_value = setFieldValue(field.filtration_type, field.current_value);
+		if (field.current_value && checkFieldIsFilled(field.type, field.current_value)) {
+			this.current_value = setFieldValue(field.type, field.current_value);
 		} else {
 			this.current_value = setFieldValue(
-				field.filtration_type,
-				getFieldEmptyValue(this.filtration_type)
+				field.type,
+				getFieldEmptyValue(this.type)
 			);
 		}
 
 		if (field.values) {
-			this.values = field.values.sort((a, b) => caseInsensitiveStringCompare(a, b));
+			this.values = field.values.map(val => String(val));
 		}
 
 		this.updateFunction = updateFunction;
@@ -50,21 +49,21 @@ export class FilterField {
 	};
 
 	updateValue = (newValue: ValueUnion) => {
-		this.current_value = setFieldValue(this.filtration_type, newValue);
+		this.current_value = setFieldValue(this.type, newValue);
 	};
 
 	resetValue = () => {
 		this.toggleExactMatch(false);
-		this.updateValue(getFieldEmptyValue(this.filtration_type));
+		this.updateValue(getFieldEmptyValue(this.type));
 		this.applyField();
 	};
 
 	applyField = () => {
 		const field: FilterFieldBase = {
 			name: this.name,
-			filtration_type: this.filtration_type,
+			type: this.type,
 			exact_match: this.exact_match,
-			current_value: setFieldValue(this.filtration_type, this.current_value),
+			current_value: setFieldValue(this.type, this.current_value),
 		};
 		if (this.values) field.values = this.values;
 		this.updateFunction(field);

@@ -1,6 +1,6 @@
 @import "../../../styles/colors";
 
-$horizontaTriangleSize: 7.5px;
+$horizontalTriangleSize: 7.5px;
 $verticalTriangleSize: 10px;
 
 .tooltip {
@@ -23,21 +23,47 @@ $verticalTriangleSize: 10px;
 			visibility: visible;
 			opacity: 1;
 		}
+
 		&_hided {
 			visibility: hidden;
 			opacity: 0;
+		}
+
+		&_bottom-reverted,
+		&_top-reverted,
+		&_left-reverted,
+		&_right-reverted {
+			.tooltip-wrapper__content {
+				transform: scaleX(-1);
+			}
 		}
 
 		&_bottom {
 			bottom: 0;
 			flex-direction: column-reverse;
 			transform: translateY(calc(100% + #{$verticalTriangleSize}/ 2));
+
+			&-reverted {
+				transform: scaleX(-1)
+					translate(
+						calc(100% - #{$horizontalTriangleSize} * 5),
+						calc(100% + #{$verticalTriangleSize}/ 2)
+					);
+			}
 		}
 
 		&_top {
 			top: 0;
 			flex-direction: column;
 			transform: translateY(calc(-100% - #{$verticalTriangleSize}/ 2));
+
+			&-reverted {
+				transform: scaleX(-1)
+					translate(
+						calc(100% - #{$horizontalTriangleSize} * 5),
+						calc(-100% - #{$verticalTriangleSize}/ 2)
+					);
+			}
 		}
 
 		&_left {
@@ -57,10 +83,12 @@ $verticalTriangleSize: 10px;
 		}
 
 		&__content {
+			max-width: 400px;
+			width: max-content;
+			white-space: pre-wrap;	
 			background: $smoothOrange;
 			border-radius: 8px;
 			padding: 12px 25px;
-			white-space: nowrap;
 
 			font-size: 15px;
 			line-height: 19px;
@@ -86,13 +114,13 @@ $verticalTriangleSize: 10px;
 
 			&_right {
 				margin-right: -1px;
-				border-width: $horizontaTriangleSize $horizontaTriangleSize $horizontaTriangleSize 0;
+				border-width: $horizontalTriangleSize $horizontalTriangleSize $horizontalTriangleSize 0;
 				border-color: transparent $smoothOrange transparent transparent;
 			}
 
 			&_left {
 				margin-left: -1px;
-				border-width: $horizontaTriangleSize 0 $horizontaTriangleSize $horizontaTriangleSize;
+				border-width: $horizontalTriangleSize 0 $horizontalTriangleSize $horizontalTriangleSize;
 				border-color: transparent transparent transparent $smoothOrange;
 			}
 		}

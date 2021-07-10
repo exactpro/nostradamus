@@ -56,3 +56,13 @@ class InvalidSourceField(APIException):
 class InconsistentGivenData(APIException):
     default_detail = "Cannot train models. Given data is inconsistent."
     default_code = "inconsistent_data"
+
+
+class BugResolutionEmpty(APIException):
+    default_detail = "Bug resolutions are empty. Model can't be trained."
+    default_code = "empty_bug_resolution"
+
+
+class AreaOfTestingEmpty(APIException):
+    default_detail = "Areas of Testing are empty. Model can't be trained."
+    default_code = "empty_area_of_testing"

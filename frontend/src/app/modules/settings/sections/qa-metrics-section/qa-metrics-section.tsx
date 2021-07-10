@@ -1,25 +1,29 @@
 import React, { Component } from "react";
 import { SettingsSections } from "app/common/store/settings/types";
-import { uploadSettingsData } from "app/common/store/settings/thunks";
+import {
+	uploadSettingsQAMetricsFilterData,
+	uploadSettingsPredictionsData,
+	sendSettingsQAMetricsFiltersData,
+} from "app/common/store/settings/thunks";
 import { connect, ConnectedProps } from "react-redux";
 import { RootStore } from "app/common/types/store.types";
 import { HttpStatus } from "app/common/types/http.types";
 import CircleSpinner from "app/common/components/circle-spinner/circle-spinner";
-import SettingsFilter from "app/modules/settings/fields/settings_filter/setings_filter";
-import SettingsPredictions from "app/modules/settings/fields/settings_predictions/settings_predictions";
+import SettingsFilter from "app/modules/settings/parts/filter/filter";
+import SettingsPredictions from "app/modules/settings/parts/predictions/predictions";
 import "app/modules/settings/sections/qa-metrics-section/qa-metrics-section.scss";
 
 class QAMetricsSection extends Component<Props> {
 	componentDidMount = () => {
-		const { uploadSettingsData } = this.props;
+		const { uploadSettingsQAMetricsFilterData, uploadSettingsPredictionsData } = this.props;
 		// eslint-disable-next-line @typescript-eslint/no-floating-promises
-		uploadSettingsData(SettingsSections.qaFilters);
+		uploadSettingsQAMetricsFilterData();
 		// eslint-disable-next-line @typescript-eslint/no-floating-promises
-		uploadSettingsData(SettingsSections.predictions);
+		uploadSettingsPredictionsData();
 	};
 
 	render() {
-		const { status } = this.props;
+		const { status, sendSettingsQAMetricsFiltersData } = this.props;
 
 		return (
 			<div className="qa-metrics-section">
@@ -35,7 +39,10 @@ class QAMetricsSection extends Component<Props> {
 				)}
 				{status[SettingsSections.qaFilters] === HttpStatus.FINISHED && (
 					<div className="qa-metrics-section__filter">
-						<SettingsFilter section={SettingsSections.qaFilters} />
+						<SettingsFilter
+							section={SettingsSections.qaFilters}
+							saveDataFunc={sendSettingsQAMetricsFiltersData}
+						/>
 					</div>
 				)}
 				{status[SettingsSections.qaFilters] === HttpStatus.RELOADING && (
@@ -52,7 +59,11 @@ const mapStateToProps = ({ settings }: RootStore) => ({
 	status: settings.settingsStore.status,
 });
 
-const mapDispatchToProps = { uploadSettingsData };
+const mapDispatchToProps = {
+	uploadSettingsQAMetricsFilterData,
+	uploadSettingsPredictionsData,
+	sendSettingsQAMetricsFiltersData,
+};
 
 const connector = connect(mapStateToProps, mapDispatchToProps);
 

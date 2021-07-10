@@ -1,6 +1,6 @@
 import { TagCloudGenerator } from "app/common/components/charts/tag-cloud/tag-cloud-generator";
+import TermBlock from "app/common/components/charts/tag-cloud/term-block";
 import { Tag } from "app/common/components/charts/tag-cloud/types";
-import Tooltip from "app/common/components/tooltip/tooltip";
 import { Terms } from "app/modules/significant-terms/store/types";
 import cn from "classnames";
 import React from "react";
@@ -13,7 +13,20 @@ interface IProps {
 	percentage?: boolean;
 }
 
-export class TagCloud extends React.Component<IProps> {
+interface IState {
+	screenCoefficient: number;
+	tagList: Tag[][];
+}
+
+export class TagCloud extends React.Component<IProps, IState> {
+	constructor(props: IProps) {
+		super(props);
+		this.state = {
+			screenCoefficient: this.getScreenSizeCoefficient(),
+			tagList: new TagCloudGenerator().prepare(props.tags),
+		};
+	}
+
 	getShortVersion(termName: string): string {
 		if (termName.length > 9) {
 			return `${termName.slice(0, 8)}...`;
@@ -22,38 +35,44 @@ export class TagCloud extends React.Component<IProps> {
 	}
 
 	getScreenSizeCoefficient = () => {
-		if (window.screen.width < 1600) return 1;
-		else if (window.screen.width >= 1600 && window.screen.width < 1920) return 1600 / 1280;
-		else return 1920 / 1280;
+		const coeff = 0.9;
+		if (window.innerWidth < 1920) return (coeff * window.innerWidth) / 1280;
+		return (coeff * 1920) / 1280;
 	};
 
-
-	renderBlock = (termsList: Tag[], position: string) => {
-		const standardSize = 12;
-		const screenCoefficient = this.getScreenSizeCoefficient();
-
-		return (
-			<div className={cn("tag-cloud__block", position)}>
-				{termsList.map(({ name, size, absoluteValue, color }, index) => (
-					<div
-						key={name}
-						className={cn("tag-cloud__term", `tag-cloud__term_color_${color}`)}
-						style={{ fontSize: Math.floor((size || standardSize)*screenCoefficient), zIndex: 10 - index }}
-					>
-						<Tooltip
-							duration={1}
-							message={`${name} - ${absoluteValue.toFixed(1)}${this.props.percentage ? "%" : ""}`}
-						>
-							{this.getShortVersion(name)}
-						</Tooltip>
-					</div>
-				))}
-			</div>
-		);
+	recalculateScreenCoefficient = () => {
+		this.setState({
+			screenCoefficient: this.getScreenSizeCoefficient(),
+		});
 	};
+
+	componentDidMount = () => {
+		window.addEventListener("resize", this.recalculateScreenCoefficient);
+	};
+
+	componentWillUnmount = () => {
+		window.removeEventListener("resize", this.recalculateScreenCoefficient);
+	};
+
+	renderBlock = (termsList: Tag[], position: string) => (
+		<div className={cn("tag-cloud__block", position)}>
+			{termsList.map(({ name, size, absoluteValue, color }, index) => (
+				<TermBlock
+					key={name}
+					shortName={this.getShortVersion(name)}
+					name={name}
+					value={`${absoluteValue.toFixed(1)}${this.props.percentage ? "%" : ""}`}
+					color={color}
+					size={size}
+					screenCoefficient={this.state.screenCoefficient}
+					zIndex={index}
+				/>
+			))}
+		</div>
+	);
 
 	render() {
-		const tagList = new TagCloudGenerator().prepare(this.props.tags);
+		const { tagList } = this.state;
 
 		return (
 			<div className={cn("tag-cloud", this.props.className)}>

@@ -27,8 +27,8 @@ TYPES_MAPPING = {"created": "date", "project": "drop-down"}
 def make_report(
     created_issues: DataFrame, resolved_issues: DataFrame, date: str
 ) -> dict:
-    """ Creates status report.
-    
+    """Creates status report.
+
     Parameters
     ----------
     created_issues:
@@ -62,7 +62,7 @@ def make_report(
 def build_report_filters(
     field: str, values: tuple, f_type: str, exact_match: bool
 ) -> list:
-    """ Creates filters for pymongo query.
+    """Creates filters for pymongo query.
 
     Parameters
     ----------
@@ -82,7 +82,7 @@ def build_report_filters(
     filters = [
         {
             "name": field,
-            "filtration_type": f_type,
+            "type": f_type,
             "current_value": values,
             "exact_match": exact_match,
         }
@@ -92,7 +92,7 @@ def build_report_filters(
 
 
 def make_report_path(date: str) -> str:
-    """ Creates path for generated report.
+    """Creates path for generated report.
 
     Parameters
     ----------
@@ -110,7 +110,7 @@ def make_report_path(date: str) -> str:
 
 
 def get_report_dir():
-    """ Creates reports folder if it haven't been create yet.
+    """Creates reports folder if it haven't been create yet.
 
     Returns:
     ----------
@@ -126,7 +126,7 @@ def get_report_dir():
 
 
 def get_file_size(file_path: str) -> str:
-    """ Requests file size.
+    """Requests file size.
 
     Parameters
     ----------
@@ -139,7 +139,7 @@ def get_file_size(file_path: str) -> str:
     """
 
     def _convert_bytes(size: float) -> str:
-        """ Converts file sizes.
+        """Converts file sizes.
 
         Parameters
         ----------
@@ -160,7 +160,7 @@ def get_file_size(file_path: str) -> str:
 
 
 def make_report_link(filename: str) -> str:
-    """ Generates link to report downloading.
+    """Generates link to report downloading.
 
     Parameters
     ----------
@@ -179,7 +179,7 @@ def make_report_link(filename: str) -> str:
 
 
 def get_issues_for_report(fields, filters) -> DataFrame:
-    """ Query database for issues which will be written to a report.
+    """Query database for issues which will be written to a report.
 
     Parameters
     ----------
@@ -247,7 +247,10 @@ def create_report_file(
 
         text_style = writer.book.add_format({"bold": True, "border": 1})
         sheet.write_column(
-            row, 0, ["Total", "Created", "Resolved"], text_style,
+            row,
+            0,
+            ["Total", "Created", "Resolved"],
+            text_style,
         )
         sheet.write_column(
             row,
@@ -300,7 +303,7 @@ def write_report_dataframe(
 
 
 def parse_field(name: str, value: Optional) -> dict:
-    """ Creates filtration payload.
+    """Creates filtration payload.
 
     Parameters
     ----------

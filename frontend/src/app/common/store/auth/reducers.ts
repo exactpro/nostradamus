@@ -8,7 +8,6 @@ import * as actions from "./actions";
 const initialState: AuthStore = {
 	status: HttpStatus.PREVIEW,
 	user: getDataFromLocalStorage<User>("user"),
-	teamList: [],
 };
 
 type actionsUserTypes = ReturnType<InferValueTypes<typeof actions>>;
@@ -31,12 +30,6 @@ export const authReducer = (state: AuthStore = initialState, action: actionsUser
 			return {
 				...state,
 				status: action.status,
-			};
-
-		case "ACTION_AUTH_SET_TEAM_LIST":
-			return {
-				...state,
-				teamList: [...action.teamList],
 			};
 
 		default:

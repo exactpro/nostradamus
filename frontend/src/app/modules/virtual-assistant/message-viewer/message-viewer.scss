@@ -61,6 +61,21 @@
 				}
 			}
 		}
+
+		&__ul {
+			&-dash {
+				list-style-type: none;
+				> li {
+					&:before {
+						content: " - ";
+					}
+				}
+			}
+			&-point {
+				list-style-type: disc;
+				list-style-position: inside;
+			}
+		}
 	}
 
 	&-typing-preview {
@@ -137,6 +152,7 @@
 	}
 
 	&-choice-list {
+		margin-top: 15px;
 		width: 100%;
 		margin-right: 10px;
 		display: flex;
@@ -163,11 +179,6 @@
 			pointer-events: none;
 			animation: hideChoiceList 0.2s ease-out forwards;
 		}
-	}
-
-	&-choice-wrapper {
-		min-height: 30px;
-		margin-top: 15px;
 	}
 
 	&-dropdown-list {
@@ -298,38 +309,36 @@
 		}
 	}
 
-  &-widget{
+	&-widget {
+		&-buttons {
+			display: flex;
+			flex-direction: column;
+			margin: 10px 0;
 
-    &-buttons{
-      display: flex;
-      flex-direction: column;
-      margin: 10px 0;
+			&__send {
+				align-self: flex-end;
+				color: white;
+				background-color: $blue;
+				font-weight: 500;
+				margin-right: 10px;
 
-      &__send{
-        align-self: flex-end;
-        color: white;
-        background-color: $blue;
-        font-weight: 500;
-        margin-right: 10px;
+				&_disabled {
+					color: white !important;
+					opacity: 1 !important;
+					background: $grayDisabled !important  ;
+				}
 
-        &_disabled{
-          color: white !important;
-          opacity: 1 !important;
-          background: $grayDisabled !important  ;
-        }
+				&_shifted {
+					margin-right: -10px;
+					margin-bottom: -10px;
+				}
 
-        &_shifted{
-          margin-right: -10px;
-          margin-bottom: -10px;
-        }
-
-        &:hover:not(&_disabled) {
-          background-color: $activeHover;
-        }
-      }
-    }
-  }
-
+				&:hover:not(&_disabled) {
+					background-color: $activeHover;
+				}
+			}
+		}
+	}
 }
 
 .icon-Left-Arrow {
@@ -348,4 +357,3 @@
 		display: none;
 	}
 }
-

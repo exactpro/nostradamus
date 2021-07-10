@@ -2,6 +2,7 @@ import Button, { ButtonStyled } from "app/common/components/button/button";
 import { IconType } from "app/common/components/icon/icon";
 import Field from "app/modules/filters/field/field";
 import { FilterFieldBase } from "app/modules/filters/field/field-type";
+import { checkFieldIsFilled } from "app/modules/filters/field/field.helper-function";
 import { FiltersClass } from "app/modules/filters/filters.class";
 import cn from "classnames";
 import React from "react";
@@ -39,7 +40,11 @@ export class Filters extends React.Component<InnerProps> {
 	};
 
 	apply = () => {
-		this.props.applyFilters(this.filters.fields);
+		this.props.applyFilters(
+			this.filters.fields.filter((field) =>
+				checkFieldIsFilled(field.type, field.current_value)
+			)
+		);
 	};
 
 	checIsFiltersDefault = (filters: FilterFieldBase[]) =>

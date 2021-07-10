@@ -12,8 +12,8 @@ export class FiltersClass {
 		this.fields = this.fields.map((field: FilterFieldBase) => ({
 			...field,
 			current_value: setFieldValue(
-				field.filtration_type,
-				getFieldEmptyValue(field.filtration_type)
+				field.type,
+				getFieldEmptyValue(field.type)
 			),
 		}));
 	};
@@ -30,12 +30,12 @@ export class FiltersClass {
 
 	setFilter(filter: FilterFieldBase[]): FilterFieldBase[] {
 		return filter.map((field) => {
-			if (field.filtration_type === FiltrationType.String && field.current_value instanceof Array) {
+			if (field.type === FiltrationType.String && field.current_value instanceof Array) {
 				field.current_value = field.current_value.length
 					? (field.current_value as [string])[0]
 					: "";
 			}
-			if (field.filtration_type === FiltrationType.Dropdown) field.values!.sort();
+			if (field.type === FiltrationType.Dropdown) field.values!.sort();
 			return field;
 		});
 	}

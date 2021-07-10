@@ -1,7 +1,7 @@
 [
 	{
 		"name": "Project",
-		"filtration_type": "drop-down",
+		"type": "drop-down",
 		"values": [
 			"Abdera",
 			"Apache Flex",
@@ -52,31 +52,31 @@
 	},
 	{
 		"name": "Attachments",
-		"filtration_type": "numeric",
+		"type": "numeric",
 		"current_value": [],
 		"exact_match": false
 	},
 	{
 		"name": "Priority",
-		"filtration_type": "drop-down",
+		"type": "drop-down",
 		"values": ["Trivial", "Blocker", "Unfilled", "Critical", "Major", "Minor"],
 		"current_value": [],
 		"exact_match": false
 	},
-	{ "name": "Resolved", "filtration_type": "date", "current_value": [], "exact_match": false },
-	{ "name": "Labels", "filtration_type": "string", "current_value": [], "exact_match": false },
-	{ "name": "Created", "filtration_type": "date", "current_value": [], "exact_match": false },
-	{ "name": "Comments", "filtration_type": "numeric", "current_value": [], "exact_match": false },
+	{ "name": "Resolved", "type": "date", "current_value": [], "exact_match": false },
+	{ "name": "Labels", "type": "string", "current_value": [], "exact_match": false },
+	{ "name": "Created", "type": "date", "current_value": [], "exact_match": false },
+	{ "name": "Comments", "type": "numeric", "current_value": [], "exact_match": false },
 	{
 		"name": "Status",
-		"filtration_type": "drop-down",
+		"type": "drop-down",
 		"values": ["Resolved", "In Progress", "Open", "Closed", "Patch Available", "Reopened"],
 		"current_value": [],
 		"exact_match": false
 	},
 	{
 		"name": "Key",
-		"filtration_type": "drop-down",
+		"type": "drop-down",
 		"values": [
 			"AMQ-4315",
 			"ASTERIXDB-1646",
@@ -55255,10 +55255,10 @@
 		"current_value": [],
 		"exact_match": false
 	},
-	{ "name": "Summary", "filtration_type": "string", "current_value": [], "exact_match": false },
+	{ "name": "Summary", "type": "string", "current_value": [], "exact_match": false },
 	{
 		"name": "Resolution",
-		"filtration_type": "drop-down",
+		"type": "drop-down",
 		"values": [
 			"Not A Bug",
 			"Workaround",
@@ -55288,6 +55288,6 @@
 		"current_value": [],
 		"exact_match": false
 	},
-	{ "name": "Description", "filtration_type": "string", "current_value": [], "exact_match": false },
-	{ "name": "Components", "filtration_type": "string", "current_value": [], "exact_match": false }
+	{ "name": "Description", "type": "string", "current_value": [], "exact_match": false },
+	{ "name": "Components", "type": "string", "current_value": [], "exact_match": false }
 ]

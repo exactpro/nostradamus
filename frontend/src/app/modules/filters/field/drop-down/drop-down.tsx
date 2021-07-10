@@ -10,6 +10,9 @@ import { UpdateFieldFunction } from "app/modules/filters/filters.class";
 import cn from "classnames";
 import React, { RefObject } from "react";
 import SelectWindow from "app/common/components/native-components/select-window/select-window";
+import PopupComponent, {
+	ChildPosition,
+} from "app/common/components/popup-component/popup-component";
 
 interface Props {
 	className?: string;
@@ -71,7 +74,10 @@ class DropDown extends React.PureComponent<Props, State> {
 		this.field.updateValue([]);
 		this.field.applyField();
 
-		this.setState({ isOpen: false });
+		this.setState({
+			isCheckedVariantList: false,
+			isOpen: false,
+		});
 	};
 
 	toggleExactMatch = () => {
@@ -121,57 +127,64 @@ class DropDown extends React.PureComponent<Props, State> {
 			);
 		}
 
+		const maxWidth = this.fieldRef.current?.offsetWidth;
+		
 		return (
-			<div
-				className={cn("drop-down", "field", this.props.className, {
-					"drop-down_without-left-padding": value.length >= 2,
-				})}
-				tabIndex={0}
-				onBlur={this.onBlur}
-				ref={this.fieldRef}
-				onFocus={this.onFocus}
-			>
-				{value.length > 1 && (
-					<ExactMatch exactMatch={this.field.exact_match} onToggle={this.toggleExactMatch} />
-				)}
+			<div tabIndex={0} onBlur={this.onBlur} ref={this.fieldRef} onFocus={this.onFocus}>
+				<PopupComponent
+					parent={
+						<div
+							className={cn("drop-down", "field", this.props.className, {
+								"drop-down_without-left-padding": value.length >= 2,
+							})}
+						>
+							{value.length > 1 && (
+								<ExactMatch exactMatch={this.field.exact_match} onToggle={this.toggleExactMatch} />
+							)}
 
-				{[...value].splice(0, 2).map((item, index) =>
-					item ? (
-						<Tooltip duration={1} message={item} key={index}>
-							<span className="drop-down__value-item">
-								<span className="drop-down__value-item-text">{item}</span>
+							{[...value].splice(0, 2).map((item, index) =>
+								item ? (
+									<Tooltip duration={1} message={item} key={index}>
+										<span className="drop-down__value-item">
+											<span className="drop-down__value-item-text">{item}</span>
 
-								<ResetValue
-									className="drop-down__value-item-remove"
-									onClick={this.resetItem(item)}
+											<ResetValue
+												className="drop-down__value-item-remove"
+												onClick={this.resetItem(item)}
+											/>
+										</span>
+									</Tooltip>
+								) : null
+							)}
+
+							{value.length > 2 && (
+								<span className="drop-down__more-value" onClick={this.openCheckedVariant}>
+									+ {value.length - 2} more
+								</span>
+							)}
+
+							{value.length === 0 && (
+								<span className="drop-down__no-value">Select {this.field.name}</span>
+							)}
+
+							<ResetValue onClick={this.resetValue} className="drop-down__reset" />
+						</div>
+					}
+					child={
+						this.state.isOpen && (
+							<div className="drop-down__select-window" style={{ maxWidth }}>
+								<SelectWindow
+									selectWindowAllValues={values}
+									selectWindowCheckedValues={value}
+									onSelectValue={this.toggleItem}
+									searchable={!this.state.isCheckedVariantList}
 								/>
-							</span>
-						</Tooltip>
-					) : null
-				)}
-
-				{value.length > 2 && (
-					<span className="drop-down__more-value" onClick={this.openCheckedVariant}>
-						+ {value.length - 2} more
-					</span>
-				)}
-
-				{value.length === 0 && (
-					<span className="drop-down__no-value">Select {this.field.name}</span>
-				)}
-
-				<ResetValue onClick={this.resetValue} className="drop-down__reset" />
-
-				{this.state.isOpen && (
-					<div className="drop-down__select-window">
-						<SelectWindow
-							selectWindowAllValues={values}
-							selectWindowCheckedValues={value}
-							onSelectValue={this.toggleItem}
-							searchable={!this.state.isCheckedVariantList}
-						/>
-					</div>
-				)}
+							</div>
+						)
+					}
+					isChildDisplayed={this.state.isOpen}
+					childPosition={ChildPosition.bottom_right}
+				/>
 			</div>
 		);
 	}

@@ -1,5 +1,6 @@
 import os
-import pandas as pd
+
+from apps.analysis_and_training.main.mark_up import mark_up_series
 
 os.environ["DJANGO_SETTINGS_MODULE"] = "nostradamus.settings"
 
@@ -12,13 +13,17 @@ django.setup()
 
 import unittest
 import pytest
-
+from utils.warnings import (
+    SignificantTermsMetricDoesntExist,
+    SignificantTermsLessOnePercentWarning,
+)
 from datetime import datetime as dt
-
 from apps.extractor.main.connector import DB
 from apps.extractor.main.preprocessor import get_issues_dataframe
 from apps.analysis_and_training.main.significant_terms import (
     get_significant_terms,
+    check_standard_metric,
+    check_aot_metric,
 )
 
 
@@ -39,7 +44,11 @@ class TestSignificantTerms(unittest.TestCase):
                 {
                     "Project": "Test Project",
                     "Attachments": 12,
-                    "Priority": "Minor" if _ % 5 == 0 else "Major",
+                    "Priority": "Blocker"
+                    if _ % 150 == 0
+                    else "Major"
+                    if _ % 5 == 0
+                    else "Minor",
                     "Created": dt.now(),
                     "Resolved": dt.now(),
                     "Updated": dt.now(),
@@ -62,7 +71,7 @@ class TestSignificantTerms(unittest.TestCase):
                     "Assignee": "Test Assignee",
                     "Reporter": "Test Reporter",
                 }
-                for _ in range(200)
+                for _ in range(15000)
             ],
             ordered=False,
         )
@@ -94,42 +103,15 @@ class TestSignificantTerms(unittest.TestCase):
             ],
             filters=[],
         )
+        aot = self.settings_for_aot.copy()
+        aot["mark_up_entities"][0]["entities"] = ["Major"]
 
-        significant_terms = get_significant_terms(
-            issues, self.settings_for_aot
-        )
+        significant_terms = get_significant_terms(issues, aot)
 
         result_significant_terms = self.result_significant_terms.copy()
         result_significant_terms["metrics"].append("AOT1")
 
         assert significant_terms == result_significant_terms
-
-    def test_get_significant_terms_with_filter_negative(self):
-        issues = get_issues_dataframe(
-            fields=[
-                "Priority",
-                "Resolution",
-                "Description_tr",
-                "Assignee",
-                "Reporter",
-            ],
-            filters=[
-                {
-                    "name": "Priority",
-                    "filtration_type": "drop-down",
-                    "current_value": ["Critical"],
-                    "exact_match": False,
-                }
-            ],
-        )
-
-        significant_terms = get_significant_terms(issues)
-
-        assert significant_terms == {
-            "metrics": [],
-            "chosen_metric": "",
-            "terms": {},
-        }
 
     def test_get_significant_terms_with_filter_positive(self):
         issues = get_issues_dataframe(
@@ -143,7 +125,7 @@ class TestSignificantTerms(unittest.TestCase):
             filters=[
                 {
                     "name": "Priority",
-                    "filtration_type": "drop-down",
+                    "type": "drop-down",
                     "current_value": ["Major"],
                     "exact_match": False,
                 }
@@ -164,3 +146,82 @@ class TestSignificantTerms(unittest.TestCase):
                 ],
             ]
         )
+
+    def test_check_aot_metric_doesnt_exist_metric(self):
+        issues = get_issues_dataframe(
+            fields=[
+                "Priority",
+                "Resolution",
+                "Description_tr",
+                "Assignee",
+                "Reporter",
+            ],
+            filters=[],
+        )
+        metric = "test"
+        source_field = self.settings_for_aot["source_field"]
+        mark_up_entities = self.settings_for_aot["mark_up_entities"]
+
+        with pytest.raises(SignificantTermsMetricDoesntExist) as excinfo:
+            check_aot_metric(issues, metric, source_field, mark_up_entities)
+
+        assert excinfo
+
+    def test_check_standard_metric_doesnt_exist_metric(self):
+        issues = get_issues_dataframe(
+            fields=[
+                "Priority",
+                "Resolution",
+                "Description_tr",
+                "Assignee",
+                "Reporter",
+            ],
+            filters=[],
+        )
+        metric = "Resolution test"
+
+        with pytest.raises(SignificantTermsMetricDoesntExist) as excinfo:
+            check_standard_metric(issues, metric)
+
+        assert excinfo
+
+    def test_check_standard_metric_few_bugs_for_metric(self):
+        issues = get_issues_dataframe(
+            fields=[
+                "Priority",
+                "Resolution",
+                "Description_tr",
+                "Assignee",
+                "Reporter",
+            ],
+            filters=[],
+        )
+        metric = "Priority Blocker"
+
+        with pytest.raises(SignificantTermsLessOnePercentWarning) as excinfo:
+            check_standard_metric(issues, metric)
+
+        assert excinfo
+
+    def test_check_aot_metric_few_bugs_for_metric(self):
+        issues = get_issues_dataframe(
+            fields=[
+                "Priority",
+                "Resolution",
+                "Description_tr",
+                "Assignee",
+                "Reporter",
+            ],
+            filters=[],
+        )
+        metric = "AOT1"
+        source_field = self.settings_for_aot["source_field"]
+        mark_up_entities = self.settings_for_aot.copy()
+        mark_up_entities = mark_up_entities["mark_up_entities"]
+        for area in mark_up_entities:
+            area["entities"] = ["Blocker"]
+
+        with pytest.raises(SignificantTermsLessOnePercentWarning) as excinfo:
+            check_aot_metric(issues, metric, source_field, mark_up_entities)
+
+        assert excinfo

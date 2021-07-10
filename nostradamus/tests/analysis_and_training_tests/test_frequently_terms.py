@@ -1,5 +1,4 @@
 import os
-import pandas as pd
 
 os.environ["DJANGO_SETTINGS_MODULE"] = "nostradamus.settings"
 

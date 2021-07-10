@@ -3,9 +3,12 @@ from json import dumps, loads
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.analysis_and_training.main.common import check_required_percentage
 from apps.analysis_and_training.main.significant_terms import (
     calculate_significance_weights,
     get_significant_terms,
+    check_aot_metric,
+    check_standard_metric,
 )
 from apps.analysis_and_training.main.frequently_used_terms import (
     calculate_frequently_terms,
@@ -21,19 +24,15 @@ from apps.analysis_and_training.serializers import (
     FilterResultSerializer,
     AnalysisAndTrainingSerializer,
     SignificantTermsRequestSerializer,
-    SignificantTermsResponseSerializer,
-    SignificantTermsRenderSerializer,
+    SignificantTermsPostResponseSerializer,
     DefectSubmissionSerializer,
     DefectSubmissionResponseSerializer,
     FrequentlyTermsResponseSerializer,
     StatisticsResponseSerializer,
     StatusResponseSerializer,
+    SignificantTermsGetResponseSerializer,
 )
-from apps.analysis_and_training.main.training import train
-from apps.analysis_and_training.main.mark_up import (
-    mark_up_series,
-    mark_up_other_data,
-)
+from apps.analysis_and_training.main.mark_up import mark_up_series
 from apps.analysis_and_training.main.filter import (
     get_filters,
     get_issues_fields,
@@ -46,15 +45,18 @@ from apps.settings.main.common import (
 )
 
 from apps.extractor.main.preprocessor import get_issues_dataframe
-from utils.redis import redis_conn, remove_cache_record, clear_cache
-from utils.exceptions import InvalidSourceField
+from utils.redis import redis_conn, remove_cache_record
 from drf_yasg.utils import swagger_auto_schema
 
-from utils.warnings import BugsNotFoundWarning
+from utils.warnings import (
+    SignificantTermsCantCalculateWarning,
+    SignificantTermsLessOnePercentWarning,
+    SignificantTermsMetricDoesntExist,
+)
 
 SWAGGER_DESCRIPTIONS = {
-    "Filter_post": "If filtration_type=string, current_value='string'. If filtration_type=numeric, current_value=[integer array]. \n\
-    If filtration_type= 'numeric' or 'date' and one of the values is not entered, null is expected to replace this value. For example: [int/date, null]"
+    "Filter_post": "If type=string, current_value='string'. If type=numeric, current_value=[integer array]. \n\
+    If type= 'numeric' or 'date' and one of the values is not entered, null is expected to replace this value. For example: [int/date, null]"
 }
 
 
@@ -80,10 +82,8 @@ class AnalysisAndTrainingView(APIView):
         filtered_count = get_issue_count(filters)
 
         context = {
-            "records_count": {
-                "total": total_count,
-                "filtered": filtered_count,
-            },
+            "total": total_count,
+            "filtered": filtered_count,
         }
 
         return Response(context)
@@ -139,9 +139,7 @@ class FilterView(APIView):
                                     "current_value": new_filter[
                                         "current_value"
                                     ],
-                                    "filtration_type": new_filter[
-                                        "filtration_type"
-                                    ],
+                                    "type": new_filter["type"],
                                     "exact_match": new_filter["exact_match"],
                                 }
                             )
@@ -170,47 +168,12 @@ class FilterView(APIView):
 
 class DefectSubmissionView(APIView):
     @swagger_auto_schema(
-        operation_description="Defect Submission rendering",
-        responses={200: DefectSubmissionResponseSerializer},
-    )
-    def get(self, request):
-        cached_filters = redis_conn.get(
-            f"user:{request.user.id}:analysis_and_training:filters"
-        )
-        context = None
-        filters = loads(cached_filters) if cached_filters else None
-        if not context:
-            default_period = "Month"
-            issues = get_issues_dataframe(
-                fields=["Key", "Created", "Resolved"], filters=filters
-            )
-
-            if issues.empty:
-                return Response({})
-
-            coordinates = get_defect_submission(
-                issues=issues, period=default_period
-            )
-            context = {
-                **coordinates,
-                **get_max_amount(coordinates),
-                "period": default_period,
-            }
-
-            redis_conn.set(
-                f"user:{request.user.id}:analysis_and_training:defect_submission",
-                dumps(context),
-            )
-
-        return Response(context)
-
-    @swagger_auto_schema(
         operation_description="Defect Submission calculation",
         query_serializer=DefectSubmissionSerializer,
         responses={200: DefectSubmissionResponseSerializer},
     )
-    def post(self, request):
-        period = request.GET["period"]
+    def get(self, request):
+        period = request.GET.get("period", "Month")
         cache = redis_conn.get(
             f"user:{request.user.id}:analysis_and_training:filters"
         )
@@ -240,7 +203,7 @@ class DefectSubmissionView(APIView):
 class SignificantTermsView(APIView):
     @swagger_auto_schema(
         operation_description="Significant Terms rendering",
-        responses={200: SignificantTermsRenderSerializer},
+        responses={200: SignificantTermsGetResponseSerializer},
     )
     def get(self, request):
         cache = redis_conn.get(
@@ -271,14 +234,13 @@ class SignificantTermsView(APIView):
         }
 
         significant_terms = get_significant_terms(issues, settings)
-        context = {"significant_terms": significant_terms}
 
-        return Response(context)
+        return Response(significant_terms)
 
     @swagger_auto_schema(
         operation_description="Significant terms calculation",
         query_serializer=SignificantTermsRequestSerializer,
-        responses={200: SignificantTermsResponseSerializer},
+        responses={200: SignificantTermsPostResponseSerializer},
     )
     def post(self, request):
         metric = request.GET["metric"]
@@ -291,6 +253,7 @@ class SignificantTermsView(APIView):
         issues = get_issues_dataframe(
             fields=[
                 metric.split()[0],
+                metric,
                 source_field,
                 "Description_tr",
                 "Assignee",
@@ -302,85 +265,23 @@ class SignificantTermsView(APIView):
         if issues.empty:
             return Response({})
 
+        if len(issues) < 100:
+            raise SignificantTermsCantCalculateWarning
+
         mark_up_entities = get_mark_up_entities(request.user)
         if metric.split()[0] not in ("Resolution", "Priority"):
-            if source_field and mark_up_entities:
-                for area in mark_up_entities:
-                    if area["area_of_testing"] == metric.split()[0]:
-                        issues = mark_up_series(
-                            issues,
-                            source_field,
-                            metric.split()[0],
-                            area["entities"],
-                        )
+            check_aot_metric(
+                issues=issues,
+                metric=metric,
+                source_field=source_field,
+                mark_up_entities=mark_up_entities,
+            )
+        else:
+            check_standard_metric(issues, metric)
 
         significant_terms = calculate_significance_weights(issues, metric)
-        context = {"significant_terms": significant_terms}
 
-        return Response(context)
-
-
-class TrainView(APIView):
-    @swagger_auto_schema(
-        operation_description="Training",
-        responses={200: "{'result': 'success'}"},
-    )
-    def post(self, request):
-
-        user = request.user
-
-        cache = redis_conn.get(
-            f"user:{request.user.id}:analysis_and_training:filters"
-        )
-        filters = loads(cache) if cache else None
-        fields = get_issues_fields(request.user)
-        issues = get_issues_dataframe(filters=filters, fields=fields)
-
-        if issues.empty:
-            raise BugsNotFoundWarning
-
-        source_field = get_source_field(user)
-        if source_field not in issues.columns:
-            raise InvalidSourceField
-
-        resolutions = (
-            [resolution["value"] for resolution in get_bug_resolutions(user)]
-            if len(get_bug_resolutions(user)) != 0
-            else []
-        )
-
-        areas_of_testing = []
-
-        mark_up_entities = get_mark_up_entities(user)
-        if source_field:
-            areas_of_testing = [
-                area["area_of_testing"] for area in mark_up_entities
-            ] + ["Other"]
-            for area in mark_up_entities:
-                issues = mark_up_series(
-                    issues,
-                    get_source_field(user),
-                    area["area_of_testing"],
-                    area["entities"],
-                )
-            issues = mark_up_other_data(issues, areas_of_testing)
-
-        train(
-            user,
-            issues,
-            areas_of_testing,
-            resolutions,
-        )
-
-        clear_cache(
-            ["qa_metrics:predictions_page", "qa_metrics:predictions_table"],
-            request.user.id,
-        )
-
-        context = {
-            "result": "success",
-        }
-        return Response(context, status=200)
+        return Response(significant_terms)
 
 
 class FrequentlyTermsView(APIView):
@@ -402,9 +303,7 @@ class FrequentlyTermsView(APIView):
 
         freq_terms = calculate_frequently_terms(issues)
 
-        context = {"frequently_terms": freq_terms}
-
-        return Response(context)
+        return Response(freq_terms)
 
 
 class StatisticsView(APIView):
@@ -426,11 +325,14 @@ class StatisticsView(APIView):
 
         statistics = calculate_statistics(
             issues,
-            ["Comments", "Attachments", "Time to Resolve"],
+            [
+                "Time to Resolve",
+                "Attachments",
+                "Comments",
+            ],
         )
-        context = {"statistics": statistics}
 
-        return Response(context)
+        return Response(statistics)
 
 
 class StatusView(APIView):

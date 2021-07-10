@@ -1,0 +1,60 @@
+@import "../../../../../../../styles/colors";
+
+.settings-filter-table-row {
+	display: flex;
+	position: relative;
+
+	&__name {
+		width: 40%;
+	}
+
+	&__type {
+		width: 60%;
+	}
+
+	&__tabled {
+		border-right: 1px solid $darkBlue;
+	}
+
+	&__dropdown-wrapper {
+		display: flex;
+	}
+
+	&__accept-button {
+		background-color: $seaBlue;
+		width: 60px;
+		color: white;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+
+		&:disabled {
+			cursor: not-allowed;
+		}
+	}
+
+	&__section-edit-wrapper {
+		position: absolute;
+		right: 0;
+		top: 50%;
+		transform: translateY(-50%);
+		display: flex;
+	}
+
+	&__edit-button,
+	&__delete-button {
+		margin-right: 10px;
+		background-color: transparent;
+		color: white;
+		opacity: 0.5;
+		transition: opacity 0.2s ease-out;
+
+		&:hover {
+			opacity: 1;
+
+			&:disabled {
+				cursor: not-allowed;
+			}
+		}
+	}
+}

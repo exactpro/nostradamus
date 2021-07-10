@@ -16,7 +16,6 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
-from rest_framework_simplejwt.views import TokenVerifyView
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
@@ -35,12 +34,10 @@ urlpatterns = [
     ),
     path("admin/", admin.site.urls),
     path("analysis_and_training/", include("apps.analysis_and_training.urls")),
-    path("auth/", include("apps.authentication.urls")),
     path("settings/", include("apps.settings.urls")),
     path(
         "description_assessment/", include("apps.description_assessment.urls")
     ),
     path("qa_metrics/", include("apps.qa_metrics.urls")),
     path("virtual_assistant/", include("apps.virtual_assistant.urls")),
-    path("token/verify/", TokenVerifyView.as_view()),
 ] + staticfiles_urlpatterns()

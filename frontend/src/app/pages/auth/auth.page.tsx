@@ -3,7 +3,7 @@ import { Link, Redirect, Route, Switch } from "react-router-dom";
 
 import { RootStore } from "app/common/types/store.types";
 import { connect, ConnectedProps } from "react-redux";
-import { getTeamList, userSignIn, userSignUp } from "app/common/store/auth/thunks";
+import { userSignIn, userSignUp } from "app/common/store/auth/thunks";
 
 import Button, { ButtonStyled } from "app/common/components/button/button";
 import { IconType } from "app/common/components/icon/icon";
@@ -19,9 +19,6 @@ import authPageBackground from "assets/images/auth-page/auth-page-background.png
 import { RouterNames } from "app/common/types/router.types";
 
 class AuthPage extends React.PureComponent<Props> {
-	componentDidMount() {
-		this.props.getTeamList();
-	}
 
 	render() {
 		const { props } = this;
@@ -76,7 +73,6 @@ class AuthPage extends React.PureComponent<Props> {
 										className="auth-page__auth-form"
 										signUp={props.userSignUp}
 										status={props.status}
-										teamList={props.teamList}
 									/>
 								</Route>
 
@@ -98,13 +94,11 @@ class AuthPage extends React.PureComponent<Props> {
 
 const mapStateToProps = ({ auth }: RootStore) => ({
 	status: auth.status,
-	teamList: auth.teamList,
 });
 
 const mapDispatchToProps = {
 	userSignIn,
 	userSignUp,
-	getTeamList,
 };
 
 const connector = connect(mapStateToProps, mapDispatchToProps);

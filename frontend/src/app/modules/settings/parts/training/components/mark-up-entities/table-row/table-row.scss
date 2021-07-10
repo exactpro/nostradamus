@@ -1,0 +1,50 @@
+@import "../../../../../../../styles/colors";
+
+.settings-training-table-row {
+	position: relative;
+	display: flex;
+
+	&__select {
+		display: flex;
+		width: 60%;
+	}
+
+	&__edit-wrapper {
+		position: absolute;
+		right: 0;
+		display: flex;
+		top: 50%;
+		transform: translateY(-50%);
+	}
+
+	&__input {
+		width: 40%;
+		border-right: 1px solid $darkBlue;
+	}
+	&__accept-button {
+		background-color: $seaBlue;
+		width: 60px;
+		color: white;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		&:disabled {
+			cursor: not-allowed;
+		}
+	}
+
+	&__edit-button,
+	&__delete-button {
+		background-color: $seaBlue;
+		color: rgba(255, 255, 255, 0.5);
+		transition: color 0.2s ease-out;
+
+		&:hover {
+			color: rgba(255, 255, 255, 1);
+		}
+		
+		&:disabled {
+			cursor: not-allowed;
+		}
+	}
+}

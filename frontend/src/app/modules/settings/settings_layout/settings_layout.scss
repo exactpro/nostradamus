@@ -1,0 +1,21 @@
+@import "../../../styles/colors";
+
+.settings-layout {
+	font-weight: 500;
+	font-size: 14px;
+	line-height: 17px;
+	color: $darkGray;
+
+    &__title {
+		font-weight: 500;
+		font-size: 20px;
+		line-height: 22px;
+		color: $deepDarkBlue;
+    }
+
+    &__footer {
+		display: flex;
+		justify-content: space-between;
+		margin-top: 30px;
+	}
+}

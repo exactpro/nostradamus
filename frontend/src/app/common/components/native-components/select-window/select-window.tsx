@@ -20,9 +20,12 @@ export default function SelectWindow(props: SelectWindowProps): ReactElement {
 
 	const { searchable, placeholder, children, selectWindowAllValues } = props;
 
-	const filteredValues: string[] = [...selectWindowAllValues].filter((str) =>
-		isStrIncludesSubstr(str.toString(), quickSearchValue)
-	);
+	let filteredValues: string[] = [...selectWindowAllValues];
+	if (searchable) {
+		filteredValues = filteredValues.filter((str) =>
+			isStrIncludesSubstr(str.toString(), quickSearchValue)
+		);
+	}
 
 	return (
 		<div className="select-window-element">
@@ -75,8 +78,7 @@ export default function SelectWindow(props: SelectWindowProps): ReactElement {
 											/>
 										)}
 									</span>
-
-									{item}
+									<span className="select-window-element__title">{item}</span>
 								</label>
 							);
 						})

@@ -1,14 +1,12 @@
 import Icon, { IconSize, IconType } from "app/common/components/icon/icon";
-
-import "app/modules/sidebar/sidebar.scss";
-import { deleteUser } from "app/common/store/auth/actions";
+import Tooltip from "app/common/components/tooltip/tooltip";
+import { logout } from "app/common/store/auth/thunks";
 import { activateSettings } from "app/common/store/settings/actions";
-import {
-	activateVirtualAssistant,
-	clearMessages,
-} from "app/common/store/virtual-assistant/actions";
+import { activateVirtualAssistant } from "app/common/store/virtual-assistant/actions";
 import { RouterNames } from "app/common/types/router.types";
 import { RootStore } from "app/common/types/store.types";
+
+import "app/modules/sidebar/sidebar.scss";
 
 import arrowIcon from "assets/icons/arrow.icon.svg";
 import logoFull from "assets/images/logo-full.svg";
@@ -18,12 +16,6 @@ import cn from "classnames";
 import React from "react";
 import { connect, ConnectedProps } from "react-redux";
 import { Link, RouteComponentProps } from "react-router-dom";
-import Tooltip from "app/common/components/tooltip/tooltip";
-import {
-	setStatusTrainModelQAMetrics,
-	clearQAMetricsData,
-} from "app/common/store/qa-metrics/actions";
-import { clearSettingsData } from "app/common/store/settings/thunks";
 
 enum SideBarTabs {
 	settings = "Settings",
@@ -78,10 +70,7 @@ class Sidebar extends React.Component<Props, SideBarState> {
 	};
 
 	logOut = () => {
-		this.props.deleteUser();
-		this.props.clearQAMetricsData();
-		this.props.clearSettingsData();
-		this.props.clearMessages();
+		this.props.logout();
 	};
 
 	render() {
@@ -136,14 +125,14 @@ class Sidebar extends React.Component<Props, SideBarState> {
 						<div className="navigation-bar__actions">
 							{/* excluded section */}
 							{/*
-							 <div className="navigation-bar__actions-item disabled">
-							 <Icon
-							 type={IconType.account}
-							 size={IconSize.normal}
-							 className="navigation-bar__actions-item-icon"
-							 />
-							 Account Management
-							 </div> */}
+               <div className="navigation-bar__actions-item disabled">
+               <Icon
+               type={IconType.account}
+               size={IconSize.normal}
+               className="navigation-bar__actions-item-icon"
+               />
+               Account Management
+               </div> */}
 
 							<button onClick={this.logOut} className="navigation-bar__actions-item">
 								<Icon
@@ -250,17 +239,13 @@ const mapStateToProps = (store: RootStore) => ({
 	user: store.auth.user,
 	isSettingsOpen: store.settings.settingsStore.isOpen,
 	isVirtualAssistantOpen: store.virtualAssistant.isOpen,
-	isCollectingFinished: store.common.isCollectingFinished,
+	isCollectingFinished: store.common.isIssuesExist,
 });
 
 const mapDispatchToProps = {
-	deleteUser,
 	activateSettings,
 	activateVirtualAssistant,
-	setStatusTrainModelQAMetrics,
-	clearQAMetricsData,
-	clearSettingsData,
-	clearMessages,
+	logout,
 };
 
 const connector = connect(mapStateToProps, mapDispatchToProps);

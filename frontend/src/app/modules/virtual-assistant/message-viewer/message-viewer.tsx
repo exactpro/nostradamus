@@ -70,11 +70,9 @@ export default function MessageViewer(props: Props) {
 				)}
 			</div>
 
-			<div className="message-viewer-choice-wrapper">
-				{choiceList && (
-					<MessageViewerChoiceList choiceList={choiceList} sendMessageData={selectMessageData} />
-				)}
-			</div>
+			{choiceList && (
+				<MessageViewerChoiceList choiceList={choiceList} sendMessageData={selectMessageData} />
+			)}
 
 			{isTyping && (
 				<div className="message-viewer-typing-preview">

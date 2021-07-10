@@ -38,7 +38,7 @@ class HttpClientConstructor {
 
 	public set token(token: string | null) {
 		if (token) {
-			this.headers.set("Authorization", `JWT ${token}`);
+			this.headers.set("Authorization", `${token}`);
 		} else {
 			this.headers.delete("Authorization");
 		}
@@ -69,6 +69,10 @@ class HttpClientConstructor {
 		const res: Response = await this.request(url, "GET", query, undefined, outerUrl);
 
 		if (res.ok) {
+			if (res.status === 209) {
+				throw new Error((await res.json()).warning.detail);
+			}
+
 			return fullResponse ? res : res.json();
 		}
 		throw (await res.json()).exception;
@@ -78,14 +82,18 @@ class HttpClientConstructor {
 		url: string,
 		query?: any | null,
 		body?: any,
-		outerUrl?: string,
-		fullResponse?: boolean
+		outerUrl?: string
 	) {
 		const res: Response = await this.request(url, "POST", query, body, outerUrl);
 		if (res.ok) {
-			return fullResponse ? res : res.json();
-		} 
-		
+			if (res.status === 209) {
+				throw new Error((await res.json()).warning.detail);
+			}
+
+			const string = await res.text();
+			return string === "" ? {} : JSON.parse(string);
+		}
+
 		throw (await res.json()).exception;
 	}
 }

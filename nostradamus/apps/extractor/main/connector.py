@@ -92,7 +92,7 @@ def build_query(filters: list = None, query: dict = None) -> dict:
         for filter_ in filters:
             if filter_.get("current_value"):
                 query_[filter_["name"]] = _build_filtration_conditions(
-                    filter_["filtration_type"],
+                    filter_["type"],
                     filter_["current_value"],
                     filter_["exact_match"],
                 )
@@ -226,7 +226,7 @@ def get_fields() -> list:
     Returns:
         Unique field names.
     """
-    fields = [key for key in DB.find_one()]
+    fields = [key for key in DB.find_one({}, {"_id": 0})]
 
     return fields
 

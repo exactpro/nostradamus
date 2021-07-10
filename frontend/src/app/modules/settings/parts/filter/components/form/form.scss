@@ -1,0 +1,57 @@
+@import "../../../../../../styles/colors";
+
+.settings-filter-form {
+	display: flex;
+	margin-top: 15px;
+
+	&__title {
+		margin-bottom: 5px;
+	}
+
+	&__dropdown-wrapper {
+		display: flex;
+		align-items: center;
+	}
+
+	&__add-position {
+		display: inline-block;
+		padding: 6px;
+		margin-left: 15px;
+		border: 1.5px solid $gray;
+		background-color: transparent;
+		border-radius: 100%;
+		opacity: 0.5;
+		cursor: pointer;
+		transform: rotate(45deg);
+		transition: opacity 0.2s ease-out, color 0.2s ease-out, border-color 0.2s ease-out;
+
+		&:hover:not([disabled]) {
+			opacity: 1;
+			color: $seaBlue;
+			border-color: $seaBlue;
+		}
+    }
+    
+    &__name {
+		width: 40%;
+
+		&_tabled {
+			border-right: 1px solid $darkBlue;
+		}
+	}
+
+	&__type {
+		width: 60%;
+		&__dropdown-wrapper {
+			display: flex;
+		}
+		&__accept-button {
+			background-color: $seaBlue;
+			width: 60px;
+			color: white;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+	}
+}

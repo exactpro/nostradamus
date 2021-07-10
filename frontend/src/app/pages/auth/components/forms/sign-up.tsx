@@ -2,17 +2,16 @@ import React, { ReactElement } from "react";
 import cn from "classnames";
 
 import Button from "app/common/components/button/button";
-import Icon, {IconSize, IconType} from "app/common/components/icon/icon";
+import { IconType } from "app/common/components/icon/icon";
 
 import "./forms.scss";
-import { Team, UserSignUp } from "app/common/types/user.types";
+import { UserSignUp } from "app/common/types/user.types";
 import { HttpStatus } from "app/common/types/http.types";
 
 interface SignUpProps {
 	className?: string;
 	signUp: (signUpData: UserSignUp) => void;
 	status: HttpStatus;
-	teamList: Team[];
 }
 
 interface SignUpState {
@@ -30,7 +29,6 @@ class SignUp extends React.Component<SignUpProps, SignUpState> {
 			form: {
 				isValid: false,
 				value: {
-					team: null,
 					email: "",
 					name: "",
 					password: "",
@@ -39,43 +37,31 @@ class SignUp extends React.Component<SignUpProps, SignUpState> {
 		};
 	}
 
-  changeField = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const {form} = this.state;
-    const name: 'email' | 'name' | 'password' = e.target.name as ('email' | 'name' | 'password');
+	changeField = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const { form } = this.state;
+		const name: "email" | "name" | "password" = e.target.name as "email" | "name" | "password";
 
 		form.value[name] = e.target.value;
 
 		this.setState({ form });
 	};
 
-  changeSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const {form} = this.state;
+	formValidation = () => {
+		const { isValid } = this.state.form;
 
-		form.value.team = parseInt(e.target.value, 10) > -1 ? parseInt(e.target.value, 10) : null;
+		if (isValid !== this.checkFormIsValid()) {
+			this.setFormValidationStatus(!isValid);
+		}
+	};
 
+	setFormValidationStatus = (newStatus: boolean) => {
+		const { form } = this.state;
+		form.isValid = newStatus;
 		this.setState({ form });
 	};
 
-  formValidation = () => {
-    const {isValid} = this.state.form;
-
-    if (isValid !== this.checkFormIsValid()) {
-      this.setFormValidationStatus(!isValid);
-    }
-  };
-
-  setFormValidationStatus = (newStatus: boolean) => {
-    const {form} = this.state;
-    form.isValid = newStatus;
-    this.setState({ form });
-  }
-
-  checkFormIsValid = () => {
-    const {team, email, name, password} = this.state.form.value;
-
-		if (typeof team !== "number") {
-			return false;
-		}
+	checkFormIsValid = () => {
+		const { email, name, password } = this.state.form.value;
 
 		// email contain @ and dot in domain and doesn't contain space symbols
 		if (!/[a-zA-Z0-9_\-.]+@([a-zA-Z0-9_\-.]+\.)+[a-zA-Z0-9_\-.]{1,10}$/i.exec(email)) {
@@ -87,7 +73,7 @@ class SignUp extends React.Component<SignUpProps, SignUpState> {
 			return false;
 		}
 
-		if (password.length < 6 || !/^[a-zA-Z0-9_.]+$/i.exec(password)) {
+		if (password.length < 6) {
 			return false;
 		}
 
@@ -97,39 +83,19 @@ class SignUp extends React.Component<SignUpProps, SignUpState> {
 	formSubmit = (e: React.FormEvent): void => {
 		e.preventDefault();
 
-    this.props.signUp(this.state.form.value);
-  };
+		this.props.signUp(this.state.form.value);
+	};
 
 	render(): ReactElement {
 		const { state, props } = this;
 
 		return (
 			<form
-				className={cn("auth-form", props.className)}
+				className={cn("auth-form", "auth-form_type_sign-up", props.className)}
 				onChange={this.formValidation}
 				onSubmit={this.formSubmit}
 			>
 				<h3 className="auth-form__title">Register</h3>
-
-        <label className="auth-form__field">
-          <span className="auth-form__label">Team</span>
-          <select
-            className="auth-form__input"
-            id="sign-up_team"
-            placeholder="Team"
-            value={this.state.form.value.team || -1}
-            onChange={this.changeSelect}
-            name="team"
-          >
-            <option value={-1}>Select</option>
-            {
-              this.props.teamList.map((team: Team) => (
-                <option key={team.id} value={team.id}>{team.name}</option>
-              ))
-            }
-          </select>
-					<Icon type={IconType.down} size={IconSize.small} className="auth-form__select-icon"/>
-        </label>
 
 				<label className="auth-form__field" htmlFor="sign-up__e-mail">
 					<span className="auth-form__label">E-mail</span>

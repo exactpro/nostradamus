@@ -2,18 +2,19 @@ import {
 	SettingsActionTypes,
 	SettingsSections,
 	SettingsDataUnion,
+	FilterData,
+	PredictionTableData,
+	SettingsStatuses,
 } from "app/common/store/settings/types";
-import { HttpStatus } from "app/common/types/http.types";
 
 export const activateSettings = () =>
 	({
 		type: SettingsActionTypes.activateSettings,
 	} as const);
 
-export const setSettingsStatus = (section: SettingsSections, status: HttpStatus) =>
+export const setSettingsStatus = (statuses: Partial<SettingsStatuses>) =>
 	({
-		status,
-		section,
+		statuses,
 		type: SettingsActionTypes.setSettingsStatus,
 	} as const);
 
@@ -23,6 +24,21 @@ export const uploadData = (section: SettingsSections, settings: SettingsDataUnio
 		settings,
 		type: SettingsActionTypes.uploadData,
 	} as const);
+
+export const setATFiltersDefaultData = (filtersData: FilterData[]) => ({
+	filtersData,
+	type: SettingsActionTypes.setATFiltersDefaultData
+} as const)
+
+export const setQAMetricsFiltersDefaultData = (filtersData: FilterData[]) => ({
+	filtersData,
+	type: SettingsActionTypes.setQAMetricsFiltersDefaultData
+} as const)
+
+export const setPredictionsDefaultData = (predictionData: PredictionTableData[]) => ({
+	predictionData,
+	type: SettingsActionTypes.setPredictionsDefaultData
+} as const)
 
 export const setCollectingDataStatus = (isCollectionFinished: boolean) =>
 	({

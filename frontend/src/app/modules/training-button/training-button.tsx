@@ -1,57 +1,33 @@
-import { AnalysisAndTrainingApi } from "app/common/api/analysis-and-training.api";
 import CircleSpinner from "app/common/components/circle-spinner/circle-spinner";
 import Icon, { IconSize, IconType } from "app/common/components/icon/icon";
 import { isOneOf } from "app/common/functions/helper";
-import { HttpError, HttpStatus } from "app/common/types/http.types";
-import { addToast } from "app/modules/toasts-overlay/store/actions";
-import { ToastStyle } from "app/modules/toasts-overlay/store/types";
+import { startTrainModel } from "app/common/store/traininig/thunks";
+import { HttpStatus } from "app/common/types/http.types";
+import { RootStore } from "app/common/types/store.types";
 import cn from "classnames";
 import React from "react";
 import { connect, ConnectedProps } from "react-redux";
-import { setStatusTrainModelQAMetrics } from "app/common/store/qa-metrics/actions";
 
 import "./training-button.scss";
 
-interface InnerProps {
+interface DirectProps {
 	className?: string;
-	dashboardStatus: HttpStatus;
 }
 
-interface State {
-	trainingStatus: HttpStatus;
-}
+class TrainingButton extends React.PureComponent<Props> {
 
-class TrainingButton extends React.Component<Props, State> {
-	constructor(props: Props) {
-		super(props);
-
-		this.state = { trainingStatus: HttpStatus.PREVIEW };
-	}
-
-	trainModel = async () => {
-		this.setState({ trainingStatus: HttpStatus.LOADING });
-		addToast("Start training", ToastStyle.Info);
-
-		try {
-			const res = await AnalysisAndTrainingApi.trainModel();
-
-			if (res.result === "success") this.props.setStatusTrainModelQAMetrics(true);
-			this.setState({ trainingStatus: HttpStatus.FINISHED });
-		} catch (e) {
-			this.props.addToast((e as HttpError).detail || e.message, ToastStyle.Warning);
-			this.setState({ trainingStatus: HttpStatus.FAILED });
-		}
+	trainModel =  () => {
+		this.props.startTrainModel();
 	};
 
 	render() {
-		const { trainingStatus } = this.state;
-		const { className, dashboardStatus } = this.props;
+		const { className, status } = this.props;
 
 		let classStatus = "";
 		let text;
 		let icon;
 
-		switch (trainingStatus) {
+		switch (status) {
 			case HttpStatus.PREVIEW: {
 				text = "Train Model";
 				icon = IconType.trainModel;
@@ -60,6 +36,13 @@ class TrainingButton extends React.Component<Props, State> {
 			}
 
 			case HttpStatus.LOADING: {
+				text = "Searching model...";
+				icon = IconType.trainModel;
+				classStatus = "_loading";
+				break;
+			}
+
+			case HttpStatus.RELOADING: {
 				text = "Model is training...";
 				icon = IconType.trainModel;
 				classStatus = "_loading";
@@ -87,14 +70,13 @@ class TrainingButton extends React.Component<Props, State> {
 			}
 		}
 
-		const loading = isOneOf<HttpStatus>(trainingStatus, [HttpStatus.LOADING, HttpStatus.RELOADING]);
+		const loading = isOneOf<HttpStatus>(status, [HttpStatus.LOADING, HttpStatus.RELOADING]);
 
 		return (
 			<button
 				type="button"
 				className={cn("training-button", `training-button${classStatus}`, className)}
 				onClick={this.trainModel}
-				disabled={dashboardStatus !== HttpStatus.FINISHED}
 			>
 				{loading && (
 					<CircleSpinner size={50} alignCenter={false} className="training-button__spinner" />
@@ -114,13 +96,18 @@ class TrainingButton extends React.Component<Props, State> {
 	}
 }
 
-const connector = connect(() => ({}), {
-	addToast,
-	setStatusTrainModelQAMetrics,
+const mapStateToProps = (store: RootStore) => ({
+	status: store.training.status
 });
+
+const mapDispatchToProps = {
+	startTrainModel
+}
+
+const connector = connect(mapStateToProps, mapDispatchToProps);
 
 type PropsFromRedux = ConnectedProps<typeof connector>;
 
-type Props = PropsFromRedux & InnerProps;
+type Props = PropsFromRedux & DirectProps;
 
 export default connector(TrainingButton);

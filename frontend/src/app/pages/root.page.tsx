@@ -1,4 +1,8 @@
-import { checkCollectingIssuesFinished } from 'app/common/store/common/thunks';
+import { verifyToken } from "app/common/store/auth/thunks";
+import {
+	checkIssuesStatus,
+	searchTrainedModel
+} from "app/common/store/common/thunks";
 
 import { RouterNames } from "app/common/types/router.types";
 import { RootStore } from "app/common/types/store.types";
@@ -22,7 +26,9 @@ const SidebarWithRouter = withRouter((props) => <Sidebar {...props} />);
 class RootPage extends React.Component<Props> {
 
 	componentDidMount() {
+		this.props.verifyToken(this.props.token);
 		this.props.checkCollectingIssuesFinished();
+		this.props.searchTrainedModel();
 	}
 
 	render(): ReactElement {
@@ -62,10 +68,14 @@ class RootPage extends React.Component<Props> {
 	}
 }
 
-const mapStateToProps = (store: RootStore) => ({});
+const mapStateToProps = (store: RootStore) => ({
+	token: store.auth.user!.token
+});
 
 const mapDispatchToProps = {
-	checkCollectingIssuesFinished,
+	verifyToken,
+	checkCollectingIssuesFinished: checkIssuesStatus,
+	searchTrainedModel
 };
 
 const connector = connect(
