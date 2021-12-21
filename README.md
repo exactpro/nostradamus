@@ -63,5 +63,4 @@ Please navigate to `127.0.0.1` to start analysing your data.
 Please read our [Wiki page](https://github.com/exactpro/nostradamus/wiki) that covers most of the popular questions regarding the application's behavior.
 
 You are always welcome to reach us via:
-* 📮 our email-address: `nostradamus@exactprosystems.com`
-* ⌨️ direct message to [@il1tvinov](https://github.com/il1tvinov) 
+* 📮 our email-address: `nostradamus@exactprosystems.com` 
