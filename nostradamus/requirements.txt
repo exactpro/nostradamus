@@ -13,7 +13,7 @@ pre-commit==2.2.0
 redis==3.4.1
 mongoengine==0.19.1
 gunicorn==20.0.4
-celery==4.4.2
+celery==5.2.2
 channels-redis==2.4.2
 channels==2.4.0
 pystemmer==2.0.0.1
