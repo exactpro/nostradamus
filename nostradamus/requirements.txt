@@ -1,5 +1,5 @@
 Django==3.0.7
-djangorestframework==3.11.0
+djangorestframework==3.11.2
 jira==2.0.0
 pandas==1.0.3
 imbalanced-learn==0.4.2
