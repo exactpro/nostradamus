@@ -1,2 +1,2 @@
 parsedatetime==2.6
-djangorestframework==3.11.0
+djangorestframework==3.11.2
